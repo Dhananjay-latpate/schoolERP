@@ -18,6 +18,7 @@ export type AdmissionStatus =
   | "rejected";
 
 export type AdmissionSubmission = {
+  applicationId?: string;
   firstName: string;
   middleName?: string;
   lastName: string;

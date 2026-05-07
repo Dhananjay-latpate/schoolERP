@@ -28,10 +28,16 @@ import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import {
+  closeAdmissionSession,
+  commenceAdmissionSession,
+  createAdmissionSession,
   PrincipalApiError,
   createFeeStructure,
   createPrincipalClass,
+  getAdmissionSessionReadiness,
   getPrincipalDashboardStats,
+  initializeAdmissionSession,
+  listAdmissionSessions,
   listFeeStructures,
   listClasses,
   listPendingCustomPaymentPlans,
@@ -42,10 +48,12 @@ import {
   updatePendingCustomPaymentPlan,
   type EditableCustomInstallment,
   type PrincipalApplication,
+  type PrincipalAdmissionSession,
   type PrincipalClass,
   type PrincipalDashboardStats,
   type PrincipalFeeStructure,
   type PendingCustomPaymentPlan,
+  type AdmissionSessionReadiness,
 } from "@/lib/principalApi";
 import { clearPrincipalSession, getPrincipalToken } from "@/lib/principalSession";
 

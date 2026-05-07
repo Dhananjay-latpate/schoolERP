@@ -63,6 +63,38 @@ export type PrincipalClass = {
   isActive?: boolean;
 };
 
+export type AdmissionSessionStatus =
+  | "draft"
+  | "ready"
+  | "commenced"
+  | "closed";
+
+export type PrincipalAdmissionSession = {
+  id: string;
+  sessionCode: string;
+  startYear: number;
+  endYear: number;
+  status: AdmissionSessionStatus;
+  isActive: boolean;
+  initializedAt?: string | null;
+  commencedAt?: string | null;
+  closedAt?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdmissionSessionReadiness = {
+  sessionId: string;
+  sessionCode: string;
+  totalActiveClasses: number;
+  classesWithFeeStructures: number;
+  missingFeeStructureClassIds: string[];
+  hasClasses: boolean;
+  allClassesHaveFeeStructures: boolean;
+  canCommence: boolean;
+};
+
 export type FeeComponentInput = {
   name: string;
   amount: number;
@@ -381,6 +413,85 @@ export async function createPrincipalClass(
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function listAdmissionSessions(
+  token: string,
+): Promise<PrincipalAdmissionSession[]> {
+  return request<PrincipalAdmissionSession[]>(
+    "/api/principal/admissions/sessions",
+    token,
+  );
+}
+
+export async function createAdmissionSession(
+  token: string,
+  payload: { sessionCode: string; notes?: string },
+): Promise<PrincipalAdmissionSession> {
+  return request<PrincipalAdmissionSession>(
+    "/api/principal/admissions/sessions",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function initializeAdmissionSession(
+  token: string,
+  sessionId: string,
+  payload?: {
+    sourceSessionCode?: string;
+    copyClasses?: boolean;
+    copyFeeStructures?: boolean;
+    overwriteExisting?: boolean;
+  },
+): Promise<{
+  session: PrincipalAdmissionSession;
+  classesCreated: number;
+  feeStructuresCreated: number;
+}> {
+  return request<{
+    session: PrincipalAdmissionSession;
+    classesCreated: number;
+    feeStructuresCreated: number;
+  }>(`/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}/initialize`, token, {
+    method: "POST",
+    body: JSON.stringify(payload ?? {}),
+  });
+}
+
+export async function getAdmissionSessionReadiness(
+  token: string,
+  sessionId: string,
+): Promise<AdmissionSessionReadiness> {
+  return request<AdmissionSessionReadiness>(
+    `/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}/readiness`,
+    token,
+  );
+}
+
+export async function commenceAdmissionSession(
+  token: string,
+  sessionId: string,
+): Promise<PrincipalAdmissionSession> {
+  return request<PrincipalAdmissionSession>(
+    `/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}/commence`,
+    token,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
+export async function closeAdmissionSession(
+  token: string,
+  sessionId: string,
+): Promise<PrincipalAdmissionSession> {
+  return request<PrincipalAdmissionSession>(
+    `/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}/close`,
+    token,
+    { method: "POST", body: JSON.stringify({}) },
+  );
 }
 
 export async function listFeeStructures(token: string): Promise<PrincipalFeeStructure[]> {

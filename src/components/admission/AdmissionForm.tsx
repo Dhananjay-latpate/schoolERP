@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { z } from "zod";
 
 import {
@@ -113,6 +113,29 @@ const STEP_FIELDS: Record<number, Array<keyof AdmissionFormValues>> = {
   5: [],
 };
 
+const FIELD_TO_STEP: Partial<Record<keyof AdmissionFormValues, number>> = {
+  firstName: 0,
+  middleName: 0,
+  lastName: 0,
+  gender: 0,
+  dateOfBirth: 0,
+  fatherName: 1,
+  motherName: 1,
+  address: 1,
+  emergencyContact: 1,
+  classAdmitted: 2,
+  paymentMethod: 2,
+  customPaymentAmount: 2,
+  customPaymentReason: 2,
+  placeOfBirth: 3,
+  nationality: 3,
+  religion: 3,
+  caste: 3,
+  subCaste: 3,
+  adharNumber: 3,
+  motherTongue: 3,
+};
+
 type Phase = "form" | "payment" | "done";
 
 interface DraftNotification {
@@ -121,6 +144,8 @@ interface DraftNotification {
 
 export function AdmissionForm() {
   const router = useRouter();
+  const submitLockRef = useRef(false);
+  const draftLockRef = useRef(false);
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<Phase>("form");
   const [submittedApp, setSubmittedApp] = useState<AdmissionRecord | null>(
@@ -187,55 +212,95 @@ export function AdmissionForm() {
     setStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const onSubmit = handleSubmit(async (values) => {
-    // Guard: application already submitted — re-enter payment flow instead of creating another
-    if (submittedApp && submittedApp.status !== "draft") {
-      if (values.paymentMethod === "custom_payment") {
-        router.push(`/admissions/${submittedApp.applicationId}`);
+  const onSubmit = handleSubmit(
+    async (values) => {
+      if (submitLockRef.current) return;
+      submitLockRef.current = true;
+
+      // Guard: application already submitted — re-enter payment flow instead of creating another
+      if (submittedApp && submittedApp.status !== "draft") {
+        if (values.paymentMethod === "custom_payment") {
+          router.push(`/admissions/${submittedApp.applicationId}`);
+          submitLockRef.current = false;
+          return;
+        }
+        setPhase("payment");
+        submitLockRef.current = false;
         return;
       }
-      setPhase("payment");
-      return;
-    }
-    setErrorMessage(null);
-    setIsSubmitting(true);
-    try {
-      const response = await submitAdmission({
-        ...values,
-        status: "submitted",
-      });
-      setSubmittedApp(response);
+      setErrorMessage(null);
+      setIsSubmitting(true);
+      try {
+        const response = await submitAdmission({
+          applicationId: submittedApp?.applicationId,
+          ...values,
+          status: "submitted",
+        });
+        setSubmittedApp(response);
 
-      if (values.paymentMethod === "custom_payment") {
-        // Create the custom plan then redirect to status page
-        await createCustomPlan(
-          response.applicationId,
-          values.customPaymentAmount!,
-          values.customPaymentReason!,
+        if (values.paymentMethod === "custom_payment") {
+          // Create the custom plan then redirect to status page
+          await createCustomPlan(
+            response.applicationId,
+            values.customPaymentAmount!,
+            values.customPaymentReason!,
+          );
+          router.push(`/admissions/${response.applicationId}`);
+          return;
+        }
+
+        setPhase("payment");
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Something went wrong while submitting. Please try again.",
         );
-        router.push(`/admissions/${response.applicationId}`);
+      } finally {
+        setIsSubmitting(false);
+        submitLockRef.current = false;
+      }
+    },
+    (invalidErrors: FieldErrors<AdmissionFormValues>) => {
+      const invalidEntries = Object.entries(invalidErrors) as Array<
+        [keyof AdmissionFormValues, unknown]
+      >;
+
+      if (invalidEntries.length === 0) {
+        setErrorMessage("Please review the form and try again.");
         return;
       }
 
-      setPhase("payment");
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while submitting. Please try again.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  });
+      const [firstInvalidField] = invalidEntries[0];
+      const invalidStep = FIELD_TO_STEP[firstInvalidField];
+      if (invalidStep !== undefined && invalidStep !== step) {
+        setStep(invalidStep);
+      }
+
+      const fieldError = invalidErrors[firstInvalidField];
+      const message =
+        fieldError && typeof fieldError === "object" && "message" in fieldError
+          ? String(fieldError.message)
+          : "Please complete all required fields before submitting.";
+
+      setErrorMessage(message);
+    },
+  );
 
   const saveDraft = async () => {
+    if (draftLockRef.current) return;
+    draftLockRef.current = true;
+
     setErrorMessage(null);
     setIsSavingDraft(true);
     try {
       const values = getValues();
       // Strip empty date/class — backend cannot coerce empty string to Date or find a class by empty id
-      const payload = { ...values, status: "draft" as const };
+      const payload = {
+        applicationId: submittedApp?.applicationId,
+        ...values,
+        status: "draft" as const,
+      };
       if (!payload.dateOfBirth)
         delete (payload as Record<string, unknown>).dateOfBirth;
       if (!payload.classAdmitted)
@@ -251,6 +316,7 @@ export function AdmissionForm() {
       );
     } finally {
       setIsSavingDraft(false);
+      draftLockRef.current = false;
     }
   };
 
@@ -472,7 +538,10 @@ export function AdmissionForm() {
                         <ChevronRight size={16} />
                       </Button>
                     ) : (
-                      <Button type="submit" disabled={isSubmitting}>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting || isSavingDraft}
+                      >
                         {isSubmitting ? (
                           <>
                             <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
