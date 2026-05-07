@@ -55,7 +55,10 @@ import {
   type PendingCustomPaymentPlan,
   type AdmissionSessionReadiness,
 } from "@/lib/principalApi";
-import { clearPrincipalSession, getPrincipalToken } from "@/lib/principalSession";
+import {
+  clearPrincipalSession,
+  getPrincipalToken,
+} from "@/lib/principalSession";
 
 const PAGE_SIZE = 10;
 const TOAST_TTL_MS = 3500;
@@ -148,19 +151,34 @@ const PIPELINE_STAGES: {
 ];
 
 // Allowed transitions for each stage
-const STAGE_TRANSITIONS: Record<PipelineStage, { status: string; label: string; direction: "forward" | "back" | "terminal" }[]> = {
+const STAGE_TRANSITIONS: Record<
+  PipelineStage,
+  {
+    status: string;
+    label: string;
+    direction: "forward" | "back" | "terminal";
+  }[]
+> = {
   payment_completed: [
     { status: "under_review", label: "Start Review", direction: "forward" },
   ],
   under_review: [
     { status: "approved", label: "Approve", direction: "forward" },
     { status: "on_hold", label: "Put on Hold", direction: "back" },
-    { status: "needs_correction", label: "Request Correction", direction: "back" },
+    {
+      status: "needs_correction",
+      label: "Request Correction",
+      direction: "back",
+    },
     { status: "rejected", label: "Reject", direction: "terminal" },
   ],
   on_hold: [
     { status: "under_review", label: "Resume Review", direction: "forward" },
-    { status: "needs_correction", label: "Request Correction", direction: "back" },
+    {
+      status: "needs_correction",
+      label: "Request Correction",
+      direction: "back",
+    },
     { status: "rejected", label: "Reject", direction: "terminal" },
   ],
   needs_correction: [
@@ -169,9 +187,7 @@ const STAGE_TRANSITIONS: Record<PipelineStage, { status: string; label: string; 
     { status: "rejected", label: "Reject", direction: "terminal" },
   ],
   approved: [],
-  rejected: [
-    { status: "under_review", label: "Re-open", direction: "back" },
-  ],
+  rejected: [{ status: "under_review", label: "Re-open", direction: "back" }],
 };
 
 function paymentBadgeVariant(
@@ -212,11 +228,17 @@ function normalizeDateForInput(value: string): string {
 }
 
 function isReviewableStatus(status: string): boolean {
-  return ["payment_completed", "under_review", "on_hold", "needs_correction"].includes(status);
+  return [
+    "payment_completed",
+    "under_review",
+    "on_hold",
+    "needs_correction",
+  ].includes(status);
 }
 
 function csvEscape(value: string | number | null | undefined): string {
-  const stringified = value === null || value === undefined ? "" : String(value);
+  const stringified =
+    value === null || value === undefined ? "" : String(value);
   const escaped = stringified.replace(/"/g, '""');
   return `"${escaped}"`;
 }
@@ -239,7 +261,11 @@ type AuditLogEntry = {
   failureCount: number;
 };
 type CustomPlanDraftMap = Record<string, EditableCustomInstallment[]>;
-type SettingsInstallmentDraft = { name: string; dueDate: string; percentage: number };
+type SettingsInstallmentDraft = {
+  name: string;
+  dueDate: string;
+  percentage: number;
+};
 
 // Modal for performing a single stage transition
 type TransitionModal = {
@@ -256,7 +282,8 @@ export default function PrincipalAdmissionsDashboardPage() {
   const [activeSection, setActiveSection] = useState<
     "pipeline" | "custom_plans" | "settings" | "audit"
   >("pipeline");
-  const [activePipelineStage, setActivePipelineStage] = useState<PipelineStage>("payment_completed");
+  const [activePipelineStage, setActivePipelineStage] =
+    useState<PipelineStage>("payment_completed");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [yearFilter, setYearFilter] = useState("all");
@@ -266,7 +293,9 @@ export default function PrincipalAdmissionsDashboardPage() {
   const [stats, setStats] = useState<PrincipalDashboardStats>(DEFAULT_STATS);
   const [applications, setApplications] = useState<PrincipalApplication[]>([]);
   const [classes, setClasses] = useState<PrincipalClass[]>([]);
-  const [pendingCustomPlans, setPendingCustomPlans] = useState<PendingCustomPaymentPlan[]>([]);
+  const [pendingCustomPlans, setPendingCustomPlans] = useState<
+    PendingCustomPaymentPlan[]
+  >([]);
 
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isLoadingApps, setIsLoadingApps] = useState(false);
@@ -274,14 +303,25 @@ export default function PrincipalAdmissionsDashboardPage() {
   const [isLoadingCustomPlans, setIsLoadingCustomPlans] = useState(false);
   const [actionLoadingFor, setActionLoadingFor] = useState<string | null>(null);
   const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
-  const [customPlanActionLoadingFor, setCustomPlanActionLoadingFor] = useState<string | null>(null);
-  const [customPlanSaveLoadingFor, setCustomPlanSaveLoadingFor] = useState<string | null>(null);
-  const [customPlanComments, setCustomPlanComments] = useState<Record<string, string>>({});
-  const [customPlanDrafts, setCustomPlanDrafts] = useState<CustomPlanDraftMap>({});
-  const [editingCustomPlanId, setEditingCustomPlanId] = useState<string | null>(null);
+  const [customPlanActionLoadingFor, setCustomPlanActionLoadingFor] = useState<
+    string | null
+  >(null);
+  const [customPlanSaveLoadingFor, setCustomPlanSaveLoadingFor] = useState<
+    string | null
+  >(null);
+  const [customPlanComments, setCustomPlanComments] = useState<
+    Record<string, string>
+  >({});
+  const [customPlanDrafts, setCustomPlanDrafts] = useState<CustomPlanDraftMap>(
+    {},
+  );
+  const [editingCustomPlanId, setEditingCustomPlanId] = useState<string | null>(
+    null,
+  );
   const [customPlansError, setCustomPlansError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkActionType, setBulkActionType] = useState<BulkActionType>("under_review");
+  const [bulkActionType, setBulkActionType] =
+    useState<BulkActionType>("under_review");
   const [bulkComments, setBulkComments] = useState("");
   const [bulkCorrectionDetails, setBulkCorrectionDetails] = useState("");
   const [confirmBulkOpen, setConfirmBulkOpen] = useState(false);
@@ -290,7 +330,9 @@ export default function PrincipalAdmissionsDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [feeStructures, setFeeStructures] = useState<PrincipalFeeStructure[]>([]);
+  const [feeStructures, setFeeStructures] = useState<PrincipalFeeStructure[]>(
+    [],
+  );
   const [isLoadingFeeStructures, setIsLoadingFeeStructures] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [isCreatingClass, setIsCreatingClass] = useState(false);
@@ -302,14 +344,20 @@ export default function PrincipalAdmissionsDashboardPage() {
     capacity: "",
   });
   const [feeClassId, setFeeClassId] = useState("");
-  const [feeAcademicYear, setFeeAcademicYear] = useState(new Date().getFullYear().toString());
+  const [feeAcademicYear, setFeeAcademicYear] = useState(
+    new Date().getFullYear().toString(),
+  );
   const [admissionStartDate, setAdmissionStartDate] = useState("");
   const [installmentIntervalMonths, setInstallmentIntervalMonths] = useState(1);
-  const [feeComponentsDraft, setFeeComponentsDraft] = useState<FeeComponentInput[]>([
+  const [feeComponentsDraft, setFeeComponentsDraft] = useState<
+    FeeComponentInput[]
+  >([
     { name: "Tuition Fee", amount: 0, description: "", isMandatory: true },
     { name: "Lab Fee", amount: 0, description: "", isMandatory: false },
   ]);
-  const [installmentsDraft, setInstallmentsDraft] = useState<SettingsInstallmentDraft[]>([
+  const [installmentsDraft, setInstallmentsDraft] = useState<
+    SettingsInstallmentDraft[]
+  >([
     { name: "Installment 1", dueDate: "", percentage: 40 },
     { name: "Installment 2", dueDate: "", percentage: 30 },
     { name: "Installment 3", dueDate: "", percentage: 30 },
@@ -318,10 +366,15 @@ export default function PrincipalAdmissionsDashboardPage() {
   // Transition modal state
   const [transitionModal, setTransitionModal] = useState<TransitionModal>(null);
   const [transitionComments, setTransitionComments] = useState("");
-  const [transitionCorrectionDetails, setTransitionCorrectionDetails] = useState("");
+  const [transitionCorrectionDetails, setTransitionCorrectionDetails] =
+    useState("");
 
   const installmentPercentageTotal = useMemo(
-    () => installmentsDraft.reduce((sum, item) => sum + Number(item.percentage || 0), 0),
+    () =>
+      installmentsDraft.reduce(
+        (sum, item) => sum + Number(item.percentage || 0),
+        0,
+      ),
     [installmentsDraft],
   );
 
@@ -342,19 +395,28 @@ export default function PrincipalAdmissionsDashboardPage() {
       try {
         const [statsResult, appResult, classResult] = await Promise.all([
           getPrincipalDashboardStats(authToken),
-          listPrincipalApplications(authToken, { status: "all", page: 1, limit: 200 }),
+          listPrincipalApplications(authToken, {
+            status: "all",
+            page: 1,
+            limit: 200,
+          }),
           listClasses(authToken),
         ]);
         setStats(statsResult);
         setApplications(appResult.data);
         setClasses(classResult);
       } catch (err) {
-        if (err instanceof PrincipalApiError && (err.status === 401 || err.status === 403)) {
+        if (
+          err instanceof PrincipalApiError &&
+          (err.status === 401 || err.status === 403)
+        ) {
           clearPrincipalSession();
           router.replace("/principal/login?next=%2Fprincipal%2Fadmissions");
           return;
         }
-        setError(err instanceof Error ? err.message : "Failed to load dashboard");
+        setError(
+          err instanceof Error ? err.message : "Failed to load dashboard",
+        );
       } finally {
         setIsLoadingStats(false);
         setIsLoadingApps(false);
@@ -380,16 +442,23 @@ export default function PrincipalAdmissionsDashboardPage() {
           return next;
         });
         setEditingCustomPlanId((current) =>
-          current && customPlans.some((plan) => plan.id === current) ? current : null,
+          current && customPlans.some((plan) => plan.id === current)
+            ? current
+            : null,
         );
       } catch (err) {
-        if (err instanceof PrincipalApiError && (err.status === 401 || err.status === 403)) {
+        if (
+          err instanceof PrincipalApiError &&
+          (err.status === 401 || err.status === 403)
+        ) {
           clearPrincipalSession();
           router.replace("/principal/login?next=%2Fprincipal%2Fadmissions");
           return;
         }
         setCustomPlansError(
-          err instanceof Error ? err.message : "Failed to load custom payment requests.",
+          err instanceof Error
+            ? err.message
+            : "Failed to load custom payment requests.",
         );
       } finally {
         setIsLoadingCustomPlans(false);
@@ -406,12 +475,19 @@ export default function PrincipalAdmissionsDashboardPage() {
         const rows = await listFeeStructures(authToken);
         setFeeStructures(rows);
       } catch (err) {
-        if (err instanceof PrincipalApiError && (err.status === 401 || err.status === 403)) {
+        if (
+          err instanceof PrincipalApiError &&
+          (err.status === 401 || err.status === 403)
+        ) {
           clearPrincipalSession();
           router.replace("/principal/login?next=%2Fprincipal%2Fadmissions");
           return;
         }
-        setSettingsError(err instanceof Error ? err.message : "Failed to load admission settings.");
+        setSettingsError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load admission settings.",
+        );
       } finally {
         setIsLoadingFeeStructures(false);
       }
@@ -463,10 +539,12 @@ export default function PrincipalAdmissionsDashboardPage() {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     return applications.filter((app) => {
       if (app.status !== activePipelineStage) return false;
-      if (yearFilter !== "all" && app.admissionYear !== yearFilter) return false;
+      if (yearFilter !== "all" && app.admissionYear !== yearFilter)
+        return false;
       if (classFilter !== "all" && app.class?.id !== classFilter) return false;
       if (!normalizedSearch) return true;
-      const studentName = `${app.studentFirstName} ${app.studentLastName}`.toLowerCase();
+      const studentName =
+        `${app.studentFirstName} ${app.studentLastName}`.toLowerCase();
       return (
         app.applicationId.toLowerCase().includes(normalizedSearch) ||
         studentName.includes(normalizedSearch) ||
@@ -484,7 +562,10 @@ export default function PrincipalAdmissionsDashboardPage() {
     return counts;
   }, [applications]);
 
-  const totalPages = Math.max(1, Math.ceil(stageApplications.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(stageApplications.length / PAGE_SIZE),
+  );
   const paginatedApplications = useMemo(() => {
     const safePage = Math.min(page, totalPages);
     const start = (safePage - 1) * PAGE_SIZE;
@@ -508,7 +589,9 @@ export default function PrincipalAdmissionsDashboardPage() {
   const togglePageSelection = () => {
     if (isPageFullySelected) {
       setSelectedIds((prev) =>
-        prev.filter((id) => !paginatedApplications.some((app) => app.id === id)),
+        prev.filter(
+          (id) => !paginatedApplications.some((app) => app.id === id),
+        ),
       );
       return;
     }
@@ -529,7 +612,11 @@ export default function PrincipalAdmissionsDashboardPage() {
 
   const handleRefresh = async () => {
     if (!token) return;
-    await Promise.all([loadDashboard(token), loadCustomPlans(token), loadFeeStructures(token)]);
+    await Promise.all([
+      loadDashboard(token),
+      loadCustomPlans(token),
+      loadFeeStructures(token),
+    ]);
   };
 
   const handleSignOut = () => {
@@ -538,7 +625,11 @@ export default function PrincipalAdmissionsDashboardPage() {
   };
 
   // Open the transition modal for a single application
-  const openTransitionModal = (app: PrincipalApplication, toStatus: string, label: string) => {
+  const openTransitionModal = (
+    app: PrincipalApplication,
+    toStatus: string,
+    label: string,
+  ) => {
     const needsCorrection = toStatus === "needs_correction";
     // For "needs_correction" we actually send status="under_review" + needsCorrection=true
     setTransitionModal({ app, toStatus, label, needsCorrection });
@@ -575,7 +666,11 @@ export default function PrincipalAdmissionsDashboardPage() {
     setApplications((prev) =>
       prev.map((row) =>
         row.id === app.id
-          ? { ...row, status: needsCorrection ? "needs_correction" : toStatus, correctionNeeded: needsCorrection }
+          ? {
+              ...row,
+              status: needsCorrection ? "needs_correction" : toStatus,
+              correctionNeeded: needsCorrection,
+            }
           : row,
       ),
     );
@@ -585,23 +680,39 @@ export default function PrincipalAdmissionsDashboardPage() {
     try {
       await reviewPrincipalApplication(token, {
         applicationId: app.applicationId,
-        status: needsCorrection ? "under_review" : (toStatus as "under_review" | "approved" | "rejected" | "on_hold"),
-        comments: transitionComments.trim() || `Moved to ${toStatus} from principal pipeline.`,
+        status: needsCorrection
+          ? "under_review"
+          : (toStatus as "under_review" | "approved" | "rejected" | "on_hold"),
+        comments:
+          transitionComments.trim() ||
+          `Moved to ${toStatus} from principal pipeline.`,
         needsCorrection: needsCorrection || undefined,
-        correctionDetails: needsCorrection ? transitionCorrectionDetails.trim() : undefined,
+        correctionDetails: needsCorrection
+          ? transitionCorrectionDetails.trim()
+          : undefined,
       });
-      addToast("success", `${app.applicationId} moved to ${needsCorrection ? "needs correction" : toStatus.replace("_", " ")}.`);
+      addToast(
+        "success",
+        `${app.applicationId} moved to ${needsCorrection ? "needs correction" : toStatus.replace("_", " ")}.`,
+      );
       void loadDashboard(token);
     } catch (err) {
       // Rollback
       setApplications((prev) =>
         prev.map((row) =>
           row.id === app.id
-            ? { ...row, status: previousStatus, correctionNeeded: previousCorrection }
+            ? {
+                ...row,
+                status: previousStatus,
+                correctionNeeded: previousCorrection,
+              }
             : row,
         ),
       );
-      addToast("error", err instanceof Error ? err.message : "Failed to update application.");
+      addToast(
+        "error",
+        err instanceof Error ? err.message : "Failed to update application.",
+      );
     } finally {
       setActionLoadingFor(null);
     }
@@ -633,11 +744,20 @@ export default function PrincipalAdmissionsDashboardPage() {
       setApplications((prev) =>
         prev.map((row) =>
           row.id === app.id
-            ? { ...row, status: previousStatus, correctionNeeded: previousCorrection }
+            ? {
+                ...row,
+                status: previousStatus,
+                correctionNeeded: previousCorrection,
+              }
             : row,
         ),
       );
-      addToast("error", err instanceof Error ? err.message : "Failed to move application to under review");
+      addToast(
+        "error",
+        err instanceof Error
+          ? err.message
+          : "Failed to move application to under review",
+      );
     } finally {
       setActionLoadingFor(null);
     }
@@ -645,16 +765,30 @@ export default function PrincipalAdmissionsDashboardPage() {
 
   const handleReviewCustomPlan = async (planId: string, approved: boolean) => {
     if (!token) return;
+
+    if (editingCustomPlanId === planId) {
+      addToast(
+        "error",
+        "Save terms before approving or rejecting this custom plan.",
+      );
+      return;
+    }
+
     const comments = customPlanComments[planId]?.trim();
     if (!comments) {
-      addToast("error", "Comments are required before approving or rejecting a custom plan.");
+      addToast(
+        "error",
+        "Comments are required before approving or rejecting a custom plan.",
+      );
       return;
     }
 
     setCustomPlanActionLoadingFor(planId);
     try {
       await reviewCustomPaymentPlan(token, { planId, approved, comments });
-      setPendingCustomPlans((prev) => prev.filter((plan) => plan.id !== planId));
+      setPendingCustomPlans((prev) =>
+        prev.filter((plan) => plan.id !== planId),
+      );
       setCustomPlanComments((prev) => {
         const next = { ...prev };
         delete next[planId];
@@ -665,7 +799,9 @@ export default function PrincipalAdmissionsDashboardPage() {
         delete next[planId];
         return next;
       });
-      setEditingCustomPlanId((current) => (current === planId ? null : current));
+      setEditingCustomPlanId((current) =>
+        current === planId ? null : current,
+      );
       addToast(
         "success",
         `Custom installment request ${approved ? "approved" : "rejected"} successfully.`,
@@ -674,7 +810,9 @@ export default function PrincipalAdmissionsDashboardPage() {
     } catch (err) {
       addToast(
         "error",
-        err instanceof Error ? err.message : "Failed to review custom installment request.",
+        err instanceof Error
+          ? err.message
+          : "Failed to review custom installment request.",
       );
     } finally {
       setCustomPlanActionLoadingFor(null);
@@ -733,11 +871,17 @@ export default function PrincipalAdmissionsDashboardPage() {
         return;
       }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(installment.dueDate)) {
-        addToast("error", `Installment ${index + 1} due date must be in YYYY-MM-DD format.`);
+        addToast(
+          "error",
+          `Installment ${index + 1} due date must be in YYYY-MM-DD format.`,
+        );
         return;
       }
       if (!Number.isFinite(installment.amount) || installment.amount <= 0) {
-        addToast("error", `Installment ${index + 1} amount must be greater than 0.`);
+        addToast(
+          "error",
+          `Installment ${index + 1} amount must be greater than 0.`,
+        );
         return;
       }
     }
@@ -749,18 +893,27 @@ export default function PrincipalAdmissionsDashboardPage() {
         installments: draft,
         comments: customPlanComments[planId]?.trim() || undefined,
       });
-      setPendingCustomPlans((prev) => prev.map((plan) => (plan.id === planId ? updated : plan)));
-      setEditingCustomPlanId((current) => (current === planId ? null : current));
+      setPendingCustomPlans((prev) =>
+        prev.map((plan) => (plan.id === planId ? updated : plan)),
+      );
+      setEditingCustomPlanId((current) =>
+        current === planId ? null : current,
+      );
       setCustomPlanDrafts((prev) => {
         const next = { ...prev };
         delete next[planId];
         return next;
       });
-      addToast("success", "Custom plan updated. You can now approve/reject final terms.");
+      addToast(
+        "success",
+        "Custom plan updated. You can now approve/reject final terms.",
+      );
     } catch (err) {
       addToast(
         "error",
-        err instanceof Error ? err.message : "Failed to update custom payment plan.",
+        err instanceof Error
+          ? err.message
+          : "Failed to update custom payment plan.",
       );
     } finally {
       setCustomPlanSaveLoadingFor(null);
@@ -779,8 +932,11 @@ export default function PrincipalAdmissionsDashboardPage() {
     return null;
   };
 
-  const performBulkDecision = async (options?: { reasonOverride?: string }): Promise<BulkActionResult> => {
-    if (!token || actionableSelections.length === 0) return { ok: 0, failed: 0 };
+  const performBulkDecision = async (options?: {
+    reasonOverride?: string;
+  }): Promise<BulkActionResult> => {
+    if (!token || actionableSelections.length === 0)
+      return { ok: 0, failed: 0 };
     const validationError = getBulkValidationError();
     if (validationError) {
       addToast("error", validationError);
@@ -796,7 +952,10 @@ export default function PrincipalAdmissionsDashboardPage() {
       actionableSelections.map((app) =>
         reviewPrincipalApplication(token, {
           applicationId: app.applicationId,
-          status: bulkActionType === "needs_correction" ? "under_review" : bulkActionType,
+          status:
+            bulkActionType === "needs_correction"
+              ? "under_review"
+              : bulkActionType,
           comments:
             reasonOverride ||
             trimmedComments ||
@@ -805,19 +964,29 @@ export default function PrincipalAdmissionsDashboardPage() {
               : "Bulk principal decision applied from pipeline."),
           needsCorrection: bulkActionType === "needs_correction",
           correctionDetails:
-            bulkActionType === "needs_correction" ? trimmedCorrectionDetails : undefined,
+            bulkActionType === "needs_correction"
+              ? trimmedCorrectionDetails
+              : undefined,
         }),
       ),
     );
 
-    const successCount = results.filter((result) => result.status === "fulfilled").length;
+    const successCount = results.filter(
+      (result) => result.status === "fulfilled",
+    ).length;
     const failureCount = results.length - successCount;
 
     if (successCount > 0) {
-      addToast("success", `${successCount} application(s) updated successfully.`);
+      addToast(
+        "success",
+        `${successCount} application(s) updated successfully.`,
+      );
     }
     if (failureCount > 0) {
-      addToast("error", `${failureCount} application(s) could not be updated. Please retry individually.`);
+      addToast(
+        "error",
+        `${failureCount} application(s) could not be updated. Please retry individually.`,
+      );
     }
 
     setSelectedIds([]);
@@ -845,10 +1014,15 @@ export default function PrincipalAdmissionsDashboardPage() {
   const handleAuditConfirm = async () => {
     const reason = auditReason.trim();
     if (!reason) {
-      addToast("error", "Audit reason is required before confirming bulk decision.");
+      addToast(
+        "error",
+        "Audit reason is required before confirming bulk decision.",
+      );
       return;
     }
-    const applicationIds = actionableSelections.map((item) => item.applicationId);
+    const applicationIds = actionableSelections.map(
+      (item) => item.applicationId,
+    );
     const result = await performBulkDecision({ reasonOverride: reason });
     if (result) {
       const entry: AuditLogEntry = {
@@ -906,7 +1080,10 @@ export default function PrincipalAdmissionsDashboardPage() {
     link.download = `principal-admissions-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    addToast("success", `Exported ${selectedApplications.length} application(s).`);
+    addToast(
+      "success",
+      `Exported ${selectedApplications.length} application(s).`,
+    );
   };
 
   useEffect(() => {
@@ -921,15 +1098,30 @@ export default function PrincipalAdmissionsDashboardPage() {
       if (isTypingContext) return;
       if (!token) return;
 
-      if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === "r") {
+      if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        event.key.toLowerCase() === "r"
+      ) {
         event.preventDefault();
         void handleRefresh();
       }
-      if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === "e") {
+      if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        event.key.toLowerCase() === "e"
+      ) {
         event.preventDefault();
         handleExportSelectedCsv();
       }
-      if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === "u") {
+      if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        event.key.toLowerCase() === "u"
+      ) {
         event.preventDefault();
         setBulkActionType("under_review");
         void handleBulkApplyDecision();
@@ -956,7 +1148,10 @@ export default function PrincipalAdmissionsDashboardPage() {
 
   const autoScheduleInstallmentDates = () => {
     if (!admissionStartDate) {
-      addToast("error", "Set admission date first to auto-schedule installment dates.");
+      addToast(
+        "error",
+        "Set admission date first to auto-schedule installment dates.",
+      );
       return;
     }
     const interval = Math.max(1, Number(installmentIntervalMonths) || 1);
@@ -979,7 +1174,9 @@ export default function PrincipalAdmissionsDashboardPage() {
 
     setFeeAcademicYear(selectedClass.academicYear);
     const existingStructure = feeStructures.find(
-      (row) => row.classId === selectedClassId && row.academicYear === selectedClass.academicYear,
+      (row) =>
+        row.classId === selectedClassId &&
+        row.academicYear === selectedClass.academicYear,
     );
     if (!existingStructure) {
       resetFeeSetupForm();
@@ -996,16 +1193,21 @@ export default function PrincipalAdmissionsDashboardPage() {
     );
 
     const primaryInstallmentOption = existingStructure.installmentOptions[0];
-    if (!primaryInstallmentOption || primaryInstallmentOption.installments.length === 0) {
+    if (
+      !primaryInstallmentOption ||
+      primaryInstallmentOption.installments.length === 0
+    ) {
       resetFeeSetupForm();
       return;
     }
 
-    const mappedInstallments = primaryInstallmentOption.installments.map((installment) => ({
-      name: installment.name,
-      dueDate: normalizeDateForInput(installment.dueDate),
-      percentage: Number(installment.percentage),
-    }));
+    const mappedInstallments = primaryInstallmentOption.installments.map(
+      (installment) => ({
+        name: installment.name,
+        dueDate: normalizeDateForInput(installment.dueDate),
+        percentage: Number(installment.percentage),
+      }),
+    );
     setInstallmentsDraft(mappedInstallments);
     setAdmissionStartDate(mappedInstallments[0]?.dueDate ?? "");
   };
@@ -1021,7 +1223,10 @@ export default function PrincipalAdmissionsDashboardPage() {
       return;
     }
     const capacity = capacityValue ? Number(capacityValue) : undefined;
-    if (capacity !== undefined && (!Number.isFinite(capacity) || capacity <= 0)) {
+    if (
+      capacity !== undefined &&
+      (!Number.isFinite(capacity) || capacity <= 0)
+    ) {
       addToast("error", "Capacity must be a positive number.");
       return;
     }
@@ -1035,12 +1240,20 @@ export default function PrincipalAdmissionsDashboardPage() {
         capacity,
       });
       addToast("success", "Class created successfully.");
-      setClassForm((prev) => ({ ...prev, name: "", section: "", capacity: "" }));
+      setClassForm((prev) => ({
+        ...prev,
+        name: "",
+        section: "",
+        capacity: "",
+      }));
       setFeeAcademicYear(academicYear);
       setFeeClassId(created.id);
       await Promise.all([loadDashboard(token), loadFeeStructures(token)]);
     } catch (err) {
-      addToast("error", err instanceof Error ? err.message : "Failed to create class.");
+      addToast(
+        "error",
+        err instanceof Error ? err.message : "Failed to create class.",
+      );
     } finally {
       setIsCreatingClass(false);
     }
@@ -1053,7 +1266,10 @@ export default function PrincipalAdmissionsDashboardPage() {
       return;
     }
     if (!admissionStartDate) {
-      addToast("error", "Admission date is required. First installment is due on admission date.");
+      addToast(
+        "error",
+        "Admission date is required. First installment is due on admission date.",
+      );
       return;
     }
 
@@ -1069,8 +1285,15 @@ export default function PrincipalAdmissionsDashboardPage() {
       addToast("error", "Add at least one fee component.");
       return;
     }
-    if (normalizedComponents.some((item) => !Number.isFinite(item.amount) || item.amount <= 0)) {
-      addToast("error", "Every fee component amount must be greater than zero.");
+    if (
+      normalizedComponents.some(
+        (item) => !Number.isFinite(item.amount) || item.amount <= 0,
+      )
+    ) {
+      addToast(
+        "error",
+        "Every fee component amount must be greater than zero.",
+      );
       return;
     }
 
@@ -1084,13 +1307,20 @@ export default function PrincipalAdmissionsDashboardPage() {
     });
     if (
       normalizedInstallments.some(
-        (item) => !/^\d{4}-\d{2}-\d{2}$/.test(item.dueDate) || item.percentage <= 0,
+        (item) =>
+          !/^\d{4}-\d{2}-\d{2}$/.test(item.dueDate) || item.percentage <= 0,
       )
     ) {
-      addToast("error", "Installments need valid due date (YYYY-MM-DD) and percentage.");
+      addToast(
+        "error",
+        "Installments need valid due date (YYYY-MM-DD) and percentage.",
+      );
       return;
     }
-    const totalPercentage = normalizedInstallments.reduce((sum, item) => sum + item.percentage, 0);
+    const totalPercentage = normalizedInstallments.reduce(
+      (sum, item) => sum + item.percentage,
+      0,
+    );
     if (Math.abs(totalPercentage - 100) > 0.01) {
       addToast("error", "Installment percentages must add up to 100.");
       return;
@@ -1114,20 +1344,42 @@ export default function PrincipalAdmissionsDashboardPage() {
       resetFeeSetupForm();
       await Promise.all([loadDashboard(token), loadFeeStructures(token)]);
     } catch (err) {
-      addToast("error", err instanceof Error ? err.message : "Failed to configure fee structure.");
+      addToast(
+        "error",
+        err instanceof Error
+          ? err.message
+          : "Failed to configure fee structure.",
+      );
     } finally {
       setIsCreatingFeeStructure(false);
     }
   };
 
-  const currentStageConfig = PIPELINE_STAGES.find((s) => s.id === activePipelineStage)!;
+  const currentStageConfig = PIPELINE_STAGES.find(
+    (s) => s.id === activePipelineStage,
+  )!;
   const currentTransitions = STAGE_TRANSITIONS[activePipelineStage];
 
   const navItems = [
-    { id: "pipeline" as const, label: "Pipeline", icon: Files, badge: stats.pendingReview + stats.underReview },
-    { id: "custom_plans" as const, label: "Custom Plans", icon: BarChart3, badge: pendingCustomPlans.length },
+    {
+      id: "pipeline" as const,
+      label: "Pipeline",
+      icon: Files,
+      badge: stats.pendingReview + stats.underReview,
+    },
+    {
+      id: "custom_plans" as const,
+      label: "Custom Plans",
+      icon: BarChart3,
+      badge: pendingCustomPlans.length,
+    },
     { id: "settings" as const, label: "Setup", icon: Settings2, badge: 0 },
-    { id: "audit" as const, label: "Audit", icon: ClipboardCheck, badge: auditLogs.length },
+    {
+      id: "audit" as const,
+      label: "Audit",
+      icon: ClipboardCheck,
+      badge: auditLogs.length,
+    },
   ];
 
   return (
@@ -1159,8 +1411,12 @@ export default function PrincipalAdmissionsDashboardPage() {
         {/* Sidebar */}
         <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:fixed lg:inset-y-0 lg:flex lg:flex-col">
           <div className="border-b border-slate-100 px-4 py-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-royal">Principal</p>
-            <h1 className="mt-1 text-base font-bold text-slate-900">Admissions</h1>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-royal">
+              Principal
+            </p>
+            <h1 className="mt-1 text-base font-bold text-slate-900">
+              Admissions
+            </h1>
           </div>
           <nav className="flex-1 space-y-0.5 p-2">
             {navItems.map((item) => {
@@ -1182,7 +1438,9 @@ export default function PrincipalAdmissionsDashboardPage() {
                     <span className="text-sm font-medium">{item.label}</span>
                   </div>
                   {item.badge > 0 && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${isActive ? "bg-brand-royal text-white" : "bg-slate-100 text-slate-600"}`}>
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${isActive ? "bg-brand-royal text-white" : "bg-slate-100 text-slate-600"}`}
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -1196,7 +1454,9 @@ export default function PrincipalAdmissionsDashboardPage() {
             <div className="flex justify-between text-xs text-slate-500">
               <span>Collected</span>
               <span className="font-semibold text-emerald-700">
-                {isLoadingStats ? "..." : formatCurrency(stats.totalFeeCollected)}
+                {isLoadingStats
+                  ? "..."
+                  : formatCurrency(stats.totalFeeCollected)}
               </span>
             </div>
             <div className="flex justify-between text-xs text-slate-500">
@@ -1208,7 +1468,11 @@ export default function PrincipalAdmissionsDashboardPage() {
           </div>
 
           <div className="border-t border-slate-100 p-2">
-            <Button variant="secondary" className="h-8 w-full justify-center text-xs" onClick={handleSignOut}>
+            <Button
+              variant="secondary"
+              className="h-8 w-full justify-center text-xs"
+              onClick={handleSignOut}
+            >
               Sign Out
             </Button>
           </div>
@@ -1225,9 +1489,13 @@ export default function PrincipalAdmissionsDashboardPage() {
                 </div>
                 <div className="hidden lg:block">
                   <p className="text-sm font-semibold text-slate-900">
-                    {activeSection === "pipeline" ? "Admission Pipeline" :
-                     activeSection === "custom_plans" ? "Custom Payment Plans" :
-                     activeSection === "settings" ? "Setup — Classes & Fees" : "Audit Logs"}
+                    {activeSection === "pipeline"
+                      ? "Admission Pipeline"
+                      : activeSection === "custom_plans"
+                        ? "Custom Payment Plans"
+                        : activeSection === "settings"
+                          ? "Setup — Classes & Fees"
+                          : "Audit Logs"}
                   </p>
                 </div>
               </div>
@@ -1245,7 +1513,11 @@ export default function PrincipalAdmissionsDashboardPage() {
                   )}
                   Refresh
                 </Button>
-                <Button variant="ghost" className="h-8 px-3 text-xs lg:hidden" onClick={handleSignOut}>
+                <Button
+                  variant="ghost"
+                  className="h-8 px-3 text-xs lg:hidden"
+                  onClick={handleSignOut}
+                >
                   Sign Out
                 </Button>
               </div>
@@ -1274,7 +1546,9 @@ export default function PrincipalAdmissionsDashboardPage() {
           <main className="px-4 py-5 sm:px-6">
             {error ? (
               <div className="mb-4 rounded-md border border-rose-200 bg-rose-50 p-3">
-                <p className="text-sm font-semibold text-rose-700">Unable to load dashboard</p>
+                <p className="text-sm font-semibold text-rose-700">
+                  Unable to load dashboard
+                </p>
                 <p className="mt-1 text-sm text-rose-600">{error}</p>
               </div>
             ) : null}
@@ -1298,10 +1572,14 @@ export default function PrincipalAdmissionsDashboardPage() {
                             : "border-slate-200 bg-white hover:border-slate-300"
                         }`}
                       >
-                        <div className={`text-xl font-bold ${isActive ? stage.textColor : "text-slate-800"}`}>
+                        <div
+                          className={`text-xl font-bold ${isActive ? stage.textColor : "text-slate-800"}`}
+                        >
                           {isLoadingStats ? "…" : count}
                         </div>
-                        <div className={`mt-0.5 text-[11px] font-medium leading-tight ${isActive ? stage.textColor : "text-slate-500"}`}>
+                        <div
+                          className={`mt-0.5 text-[11px] font-medium leading-tight ${isActive ? stage.textColor : "text-slate-500"}`}
+                        >
                           {stage.label}
                         </div>
                       </button>
@@ -1312,9 +1590,15 @@ export default function PrincipalAdmissionsDashboardPage() {
                 {/* Active stage panel */}
                 <Card className="border border-surface-border">
                   {/* Stage header */}
-                  <div className={`flex items-center gap-3 rounded-t-lg border-b border-slate-200 px-4 py-3 ${currentStageConfig.bgColor}`}>
-                    <div className={`h-2.5 w-2.5 rounded-full ${currentStageConfig.color}`} />
-                    <h2 className={`text-sm font-bold ${currentStageConfig.textColor}`}>
+                  <div
+                    className={`flex items-center gap-3 rounded-t-lg border-b border-slate-200 px-4 py-3 ${currentStageConfig.bgColor}`}
+                  >
+                    <div
+                      className={`h-2.5 w-2.5 rounded-full ${currentStageConfig.color}`}
+                    />
+                    <h2
+                      className={`text-sm font-bold ${currentStageConfig.textColor}`}
+                    >
                       {currentStageConfig.label}
                     </h2>
                     <Badge>{stageApplications.length}</Badge>
@@ -1336,17 +1620,28 @@ export default function PrincipalAdmissionsDashboardPage() {
                       placeholder="Search by ID, name, or contact"
                       className="h-8 w-52 text-xs"
                     />
-                    <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="h-8 text-xs">
+                    <Select
+                      value={yearFilter}
+                      onChange={(e) => setYearFilter(e.target.value)}
+                      className="h-8 text-xs"
+                    >
                       <option value="all">All Years</option>
                       {yearOptions.map((year) => (
-                        <option key={year} value={year}>{year}</option>
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
                       ))}
                     </Select>
-                    <Select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="h-8 text-xs">
+                    <Select
+                      value={classFilter}
+                      onChange={(e) => setClassFilter(e.target.value)}
+                      className="h-8 text-xs"
+                    >
                       <option value="all">All Classes</option>
                       {classes.map((item) => (
                         <option key={item.id} value={item.id}>
-                          {item.name}{item.section ? ` - ${item.section}` : ""}
+                          {item.name}
+                          {item.section ? ` - ${item.section}` : ""}
                         </option>
                       ))}
                     </Select>
@@ -1373,19 +1668,31 @@ export default function PrincipalAdmissionsDashboardPage() {
                         <div>
                           <Select
                             value={bulkActionType}
-                            onChange={(e) => setBulkActionType(e.target.value as BulkActionType)}
+                            onChange={(e) =>
+                              setBulkActionType(
+                                e.target.value as BulkActionType,
+                              )
+                            }
                             className="h-8 text-xs"
                           >
-                            <option value="under_review">Move to Under Review</option>
+                            <option value="under_review">
+                              Move to Under Review
+                            </option>
                             <option value="on_hold">Mark On Hold</option>
-                            <option value="needs_correction">Request Correction</option>
+                            <option value="needs_correction">
+                              Request Correction
+                            </option>
                           </Select>
                         </div>
                         <div className="flex-1 min-w-40">
                           <Textarea
                             value={bulkComments}
                             onChange={(e) => setBulkComments(e.target.value)}
-                            placeholder={bulkActionType === "under_review" ? "Optional comments" : "Required comments"}
+                            placeholder={
+                              bulkActionType === "under_review"
+                                ? "Optional comments"
+                                : "Required comments"
+                            }
                             className="min-h-[34px] text-xs"
                           />
                         </div>
@@ -1393,7 +1700,9 @@ export default function PrincipalAdmissionsDashboardPage() {
                           <div className="flex-1 min-w-40">
                             <Textarea
                               value={bulkCorrectionDetails}
-                              onChange={(e) => setBulkCorrectionDetails(e.target.value)}
+                              onChange={(e) =>
+                                setBulkCorrectionDetails(e.target.value)
+                              }
                               placeholder="Required: correction details"
                               className="min-h-[34px] text-xs"
                             />
@@ -1430,10 +1739,14 @@ export default function PrincipalAdmissionsDashboardPage() {
                       </div>
                     ) : (
                       paginatedApplications.map((app) => {
-                        const transitions = STAGE_TRANSITIONS[app.status as PipelineStage] ?? [];
+                        const transitions =
+                          STAGE_TRANSITIONS[app.status as PipelineStage] ?? [];
                         const isLoading = actionLoadingFor === app.id;
                         return (
-                          <div key={app.id} className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50">
+                          <div
+                            key={app.id}
+                            className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50"
+                          >
                             {/* Select checkbox */}
                             <div className="mt-0.5 flex items-center">
                               <input
@@ -1449,24 +1762,38 @@ export default function PrincipalAdmissionsDashboardPage() {
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                <span className="font-semibold text-slate-900 text-sm">{app.applicationId}</span>
+                                <span className="font-semibold text-slate-900 text-sm">
+                                  {app.applicationId}
+                                </span>
                                 <span className="text-sm text-slate-600">
                                   {app.studentFirstName} {app.studentLastName}
                                 </span>
                                 {app.correctionNeeded && (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700">
-                                    <AlertTriangle className="h-2.5 w-2.5" /> Correction needed
+                                    <AlertTriangle className="h-2.5 w-2.5" />{" "}
+                                    Correction needed
                                   </span>
                                 )}
                               </div>
                               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
                                 {app.class ? (
-                                  <span>{app.class.name}{app.class.section ? ` - ${app.class.section}` : ""}</span>
+                                  <span>
+                                    {app.class.name}
+                                    {app.class.section
+                                      ? ` - ${app.class.section}`
+                                      : ""}
+                                  </span>
                                 ) : (
-                                  <span className="text-slate-400">No class</span>
+                                  <span className="text-slate-400">
+                                    No class
+                                  </span>
                                 )}
                                 <span>{app.admissionYear}</span>
-                                <Badge variant={paymentBadgeVariant(app.payment?.status)}>
+                                <Badge
+                                  variant={paymentBadgeVariant(
+                                    app.payment?.status,
+                                  )}
+                                >
                                   {app.payment?.status ?? "no payment"}
                                 </Badge>
                               </div>
@@ -1485,13 +1812,15 @@ export default function PrincipalAdmissionsDashboardPage() {
                                   key={t.status}
                                   type="button"
                                   disabled={isLoading}
-                                  onClick={() => openTransitionModal(app, t.status, t.label)}
+                                  onClick={() =>
+                                    openTransitionModal(app, t.status, t.label)
+                                  }
                                   className={`flex items-center gap-1 rounded border px-2 py-1 text-xs font-semibold transition disabled:opacity-50 ${
                                     t.direction === "forward"
                                       ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                                       : t.direction === "terminal"
-                                      ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
-                                      : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                        ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                                        : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
                                   }`}
                                 >
                                   {isLoading ? (
@@ -1518,10 +1847,22 @@ export default function PrincipalAdmissionsDashboardPage() {
                         Page {Math.min(page, totalPages)} of {totalPages}
                       </p>
                       <div className="flex gap-1.5">
-                        <Button variant="secondary" className="h-7 px-2.5 text-xs" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                        <Button
+                          variant="secondary"
+                          className="h-7 px-2.5 text-xs"
+                          disabled={page <= 1}
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        >
                           Prev
                         </Button>
-                        <Button variant="secondary" className="h-7 px-2.5 text-xs" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+                        <Button
+                          variant="secondary"
+                          className="h-7 px-2.5 text-xs"
+                          disabled={page >= totalPages}
+                          onClick={() =>
+                            setPage((p) => Math.min(totalPages, p + 1))
+                          }
+                        >
                           Next
                         </Button>
                       </div>
@@ -1539,11 +1880,16 @@ export default function PrincipalAdmissionsDashboardPage() {
                         className="h-4 w-4 rounded border-slate-300"
                       />
                       <span className="text-xs text-slate-500">
-                        {isPageFullySelected ? "Deselect all on page" : "Select all on page"}
+                        {isPageFullySelected
+                          ? "Deselect all on page"
+                          : "Select all on page"}
                       </span>
                       <div className="ml-auto flex items-center gap-2 text-xs text-slate-400">
                         <Keyboard className="h-3.5 w-3.5" />
-                        <span><b>R</b> refresh · <b>E</b> export · <b>U</b> bulk under review</span>
+                        <span>
+                          <b>R</b> refresh · <b>E</b> export · <b>U</b> bulk
+                          under review
+                        </span>
                       </div>
                     </div>
                   )}
@@ -1556,14 +1902,22 @@ export default function PrincipalAdmissionsDashboardPage() {
               <Card className="border border-surface-border p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h2 className="text-base font-bold text-slate-900">Custom Installment Requests</h2>
+                    <h2 className="text-base font-bold text-slate-900">
+                      Custom Installment Requests
+                    </h2>
                     <p className="mt-0.5 text-sm text-slate-500">
-                      Review and approve or reject requested custom payment plans.
+                      Review and approve or reject requested custom payment
+                      plans.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge>{pendingCustomPlans.length} pending</Badge>
-                    <Button variant="secondary" className={UI.queueActionBtn} disabled={isLoadingCustomPlans} onClick={() => token && void loadCustomPlans(token)}>
+                    <Button
+                      variant="secondary"
+                      className={UI.queueActionBtn}
+                      disabled={isLoadingCustomPlans}
+                      onClick={() => token && void loadCustomPlans(token)}
+                    >
                       Refresh
                     </Button>
                   </div>
@@ -1577,7 +1931,9 @@ export default function PrincipalAdmissionsDashboardPage() {
 
                 <div className="mt-4 space-y-3">
                   {isLoadingCustomPlans ? (
-                    <p className="text-sm text-slate-500">Loading custom requests…</p>
+                    <p className="text-sm text-slate-500">
+                      Loading custom requests…
+                    </p>
                   ) : pendingCustomPlans.length === 0 ? (
                     <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
                       No pending custom payment plan requests.
@@ -1585,25 +1941,41 @@ export default function PrincipalAdmissionsDashboardPage() {
                   ) : (
                     pendingCustomPlans.map((plan) => {
                       const isEditing = editingCustomPlanId === plan.id;
-                      const editableInstallments = customPlanDrafts[plan.id] ?? plan.installments;
+                      const editableInstallments =
+                        customPlanDrafts[plan.id] ?? plan.installments;
                       return (
-                        <div key={plan.id} className="rounded-lg border border-slate-200 bg-white p-4">
-                          <p className="text-sm font-semibold text-slate-900">{plan.studentName}</p>
-                          <p className="text-xs text-slate-500">Application: {plan.applicationId}</p>
+                        <div
+                          key={plan.id}
+                          className="rounded-lg border border-slate-200 bg-white p-4"
+                        >
+                          <p className="text-sm font-semibold text-slate-900">
+                            {plan.studentName}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Application: {plan.applicationId}
+                          </p>
                           <p className="mt-1 text-xs text-slate-500">
-                            Requested: {formatCurrency(plan.totalAmount)} · {plan.installments.length} installments
+                            Requested: {formatCurrency(plan.totalAmount)} ·{" "}
+                            {plan.installments.length} installments
                           </p>
                           {plan.customPlanReason ? (
-                            <p className="mt-1 text-xs text-slate-500">Reason: {plan.customPlanReason}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              Reason: {plan.customPlanReason}
+                            </p>
                           ) : null}
 
                           <div className="mt-3">
-                            <Label htmlFor={`plan-comments-${plan.id}`}>Review comments (required)</Label>
+                            <Label htmlFor={`plan-comments-${plan.id}`}>
+                              Review comments (required)
+                            </Label>
                             <Textarea
                               id={`plan-comments-${plan.id}`}
                               value={customPlanComments[plan.id] ?? ""}
                               onChange={(e) =>
-                                setCustomPlanComments((prev) => ({ ...prev, [plan.id]: e.target.value }))
+                                setCustomPlanComments((prev) => ({
+                                  ...prev,
+                                  [plan.id]: e.target.value,
+                                }))
                               }
                               placeholder="Comments for approve/reject decision"
                               className="min-h-[60px]"
@@ -1612,44 +1984,118 @@ export default function PrincipalAdmissionsDashboardPage() {
 
                           <div className="mt-3 rounded-md border border-slate-100 bg-slate-50 p-3">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Installments</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                Installments
+                              </p>
                               {isEditing ? (
                                 <div className="flex gap-1">
-                                  <Button variant="secondary" className={UI.queueActionBtn} disabled={customPlanSaveLoadingFor === plan.id} onClick={() => cancelEditCustomPlan(plan.id)}>
+                                  <Button
+                                    variant="secondary"
+                                    className={UI.queueActionBtn}
+                                    disabled={
+                                      customPlanSaveLoadingFor === plan.id
+                                    }
+                                    onClick={() =>
+                                      cancelEditCustomPlan(plan.id)
+                                    }
+                                  >
                                     Cancel
                                   </Button>
-                                  <Button className={UI.queueActionBtn} disabled={customPlanSaveLoadingFor === plan.id} onClick={() => void handleSaveCustomPlanDraft(plan.id)}>
-                                    {customPlanSaveLoadingFor === plan.id ? "Saving…" : "Save Terms"}
+                                  <Button
+                                    className={UI.queueActionBtn}
+                                    disabled={
+                                      customPlanSaveLoadingFor === plan.id
+                                    }
+                                    onClick={() =>
+                                      void handleSaveCustomPlanDraft(plan.id)
+                                    }
+                                  >
+                                    {customPlanSaveLoadingFor === plan.id
+                                      ? "Saving…"
+                                      : "Save Terms"}
                                   </Button>
                                 </div>
                               ) : (
-                                <Button variant="secondary" className={UI.queueActionBtn} disabled={customPlanActionLoadingFor === plan.id} onClick={() => beginEditCustomPlan(plan)}>
+                                <Button
+                                  variant="secondary"
+                                  className={UI.queueActionBtn}
+                                  disabled={
+                                    customPlanActionLoadingFor === plan.id
+                                  }
+                                  onClick={() => beginEditCustomPlan(plan)}
+                                >
                                   Edit Terms
                                 </Button>
                               )}
                             </div>
                             <div className="mt-2 space-y-2">
                               {editableInstallments.map((installment) => (
-                                <div key={installment.id} className="grid grid-cols-12 gap-2 text-xs">
+                                <div
+                                  key={installment.id}
+                                  className="grid grid-cols-12 gap-2 text-xs"
+                                >
                                   <div className="col-span-5">
                                     {isEditing ? (
-                                      <Input value={installment.name} onChange={(e) => updateCustomDraftInstallment(plan.id, installment.id, { name: e.target.value })} className="h-8" />
+                                      <Input
+                                        value={installment.name}
+                                        onChange={(e) =>
+                                          updateCustomDraftInstallment(
+                                            plan.id,
+                                            installment.id,
+                                            { name: e.target.value },
+                                          )
+                                        }
+                                        className="h-8"
+                                      />
                                     ) : (
-                                      <p className="truncate text-slate-800">{installment.name}</p>
+                                      <p className="truncate text-slate-800">
+                                        {installment.name}
+                                      </p>
                                     )}
                                   </div>
                                   <div className="col-span-4">
                                     {isEditing ? (
-                                      <Input type="date" value={installment.dueDate} onChange={(e) => updateCustomDraftInstallment(plan.id, installment.id, { dueDate: e.target.value })} className="h-8" />
+                                      <Input
+                                        type="date"
+                                        value={installment.dueDate}
+                                        onChange={(e) =>
+                                          updateCustomDraftInstallment(
+                                            plan.id,
+                                            installment.id,
+                                            { dueDate: e.target.value },
+                                          )
+                                        }
+                                        className="h-8"
+                                      />
                                     ) : (
-                                      <p className="text-slate-500">{installment.dueDate}</p>
+                                      <p className="text-slate-500">
+                                        {installment.dueDate}
+                                      </p>
                                     )}
                                   </div>
                                   <div className="col-span-3">
                                     {isEditing ? (
-                                      <Input type="number" min={1} value={installment.amount} onChange={(e) => updateCustomDraftInstallment(plan.id, installment.id, { amount: Number(e.target.value || 0) })} className="h-8 text-right" />
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        value={installment.amount}
+                                        onChange={(e) =>
+                                          updateCustomDraftInstallment(
+                                            plan.id,
+                                            installment.id,
+                                            {
+                                              amount: Number(
+                                                e.target.value || 0,
+                                              ),
+                                            },
+                                          )
+                                        }
+                                        className="h-8 text-right"
+                                      />
                                     ) : (
-                                      <p className="text-right font-semibold text-slate-600">{formatCurrency(installment.amount)}</p>
+                                      <p className="text-right font-semibold text-slate-600">
+                                        {formatCurrency(installment.amount)}
+                                      </p>
                                     )}
                                   </div>
                                 </div>
@@ -1660,16 +2106,28 @@ export default function PrincipalAdmissionsDashboardPage() {
                           <div className="mt-3 flex gap-2">
                             <Button
                               className={UI.queueActionBtn}
-                              disabled={customPlanActionLoadingFor === plan.id || customPlanSaveLoadingFor === plan.id || isEditing || !(customPlanComments[plan.id] ?? "").trim()}
-                              onClick={() => void handleReviewCustomPlan(plan.id, true)}
+                              disabled={
+                                customPlanActionLoadingFor === plan.id ||
+                                customPlanSaveLoadingFor === plan.id
+                              }
+                              onClick={() =>
+                                void handleReviewCustomPlan(plan.id, true)
+                              }
                             >
-                              {customPlanActionLoadingFor === plan.id ? "Processing…" : "Approve"}
+                              {customPlanActionLoadingFor === plan.id
+                                ? "Processing…"
+                                : "Approve"}
                             </Button>
                             <Button
                               variant="secondary"
                               className={UI.queueActionBtn}
-                              disabled={customPlanActionLoadingFor === plan.id || customPlanSaveLoadingFor === plan.id || isEditing || !(customPlanComments[plan.id] ?? "").trim()}
-                              onClick={() => void handleReviewCustomPlan(plan.id, false)}
+                              disabled={
+                                customPlanActionLoadingFor === plan.id ||
+                                customPlanSaveLoadingFor === plan.id
+                              }
+                              onClick={() =>
+                                void handleReviewCustomPlan(plan.id, false)
+                              }
                             >
                               Reject
                             </Button>
@@ -1686,28 +2144,72 @@ export default function PrincipalAdmissionsDashboardPage() {
             {activeSection === "settings" ? (
               <div className="grid gap-5 xl:grid-cols-[1.1fr_1.4fr]">
                 <Card className="border border-surface-border p-4 sm:p-5">
-                  <h2 className="text-base font-bold text-slate-900">Create Class</h2>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Create Class
+                  </h2>
                   <p className="mt-0.5 text-sm text-slate-500">
                     Add admission classes before configuring fee structures.
                   </p>
                   <div className="mt-4 grid gap-3">
                     <div>
                       <Label>Class Name</Label>
-                      <Input value={classForm.name} onChange={(e) => setClassForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="Class 1" />
+                      <Input
+                        value={classForm.name}
+                        onChange={(e) =>
+                          setClassForm((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                        placeholder="Class 1"
+                      />
                     </div>
                     <div>
                       <Label>Section (optional)</Label>
-                      <Input value={classForm.section} onChange={(e) => setClassForm((prev) => ({ ...prev, section: e.target.value }))} placeholder="A" />
+                      <Input
+                        value={classForm.section}
+                        onChange={(e) =>
+                          setClassForm((prev) => ({
+                            ...prev,
+                            section: e.target.value,
+                          }))
+                        }
+                        placeholder="A"
+                      />
                     </div>
                     <div>
                       <Label>Academic Year</Label>
-                      <Input value={classForm.academicYear} onChange={(e) => setClassForm((prev) => ({ ...prev, academicYear: e.target.value }))} placeholder="2026" />
+                      <Input
+                        value={classForm.academicYear}
+                        onChange={(e) =>
+                          setClassForm((prev) => ({
+                            ...prev,
+                            academicYear: e.target.value,
+                          }))
+                        }
+                        placeholder="2026"
+                      />
                     </div>
                     <div>
                       <Label>Capacity (optional)</Label>
-                      <Input type="number" min={1} value={classForm.capacity} onChange={(e) => setClassForm((prev) => ({ ...prev, capacity: e.target.value }))} placeholder="40" />
+                      <Input
+                        type="number"
+                        min={1}
+                        value={classForm.capacity}
+                        onChange={(e) =>
+                          setClassForm((prev) => ({
+                            ...prev,
+                            capacity: e.target.value,
+                          }))
+                        }
+                        placeholder="40"
+                      />
                     </div>
-                    <Button className="mt-1" disabled={isCreatingClass} onClick={() => void handleCreateClass()}>
+                    <Button
+                      className="mt-1"
+                      disabled={isCreatingClass}
+                      onClick={() => void handleCreateClass()}
+                    >
                       {isCreatingClass ? "Creating…" : "Create Class"}
                     </Button>
                   </div>
@@ -1716,51 +2218,128 @@ export default function PrincipalAdmissionsDashboardPage() {
                 <Card className="border border-surface-border p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-base font-bold text-slate-900">Fee Configuration</h2>
+                      <h2 className="text-base font-bold text-slate-900">
+                        Fee Configuration
+                      </h2>
                       <p className="mt-0.5 text-sm text-slate-500">
                         Define fee components and installment split.
                       </p>
                     </div>
-                    <Button variant="secondary" className={UI.queueActionBtn} disabled={!token || isLoadingFeeStructures} onClick={() => token && void loadFeeStructures(token)}>
+                    <Button
+                      variant="secondary"
+                      className={UI.queueActionBtn}
+                      disabled={!token || isLoadingFeeStructures}
+                      onClick={() => token && void loadFeeStructures(token)}
+                    >
                       {isLoadingFeeStructures ? "Refreshing…" : "Refresh"}
                     </Button>
                   </div>
 
                   {settingsError ? (
-                    <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{settingsError}</div>
+                    <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                      {settingsError}
+                    </div>
                   ) : null}
 
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <div>
                       <Label>Class</Label>
-                      <Select value={feeClassId} onChange={(e) => handleFeeClassSelection(e.target.value)}>
+                      <Select
+                        value={feeClassId}
+                        onChange={(e) =>
+                          handleFeeClassSelection(e.target.value)
+                        }
+                      >
                         <option value="">Select class</option>
                         {classes.map((item) => (
                           <option key={item.id} value={item.id}>
-                            {item.name}{item.section ? ` - ${item.section}` : ""} ({item.academicYear})
+                            {item.name}
+                            {item.section ? ` - ${item.section}` : ""} (
+                            {item.academicYear})
                           </option>
                         ))}
                       </Select>
                     </div>
                     <div>
                       <Label>Academic Year</Label>
-                      <Input value={feeAcademicYear} onChange={(e) => setFeeAcademicYear(e.target.value)} placeholder="2026" />
+                      <Input
+                        value={feeAcademicYear}
+                        onChange={(e) => setFeeAcademicYear(e.target.value)}
+                        placeholder="2026"
+                      />
                     </div>
                   </div>
 
                   <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-800">Fee Components</p>
-                      <Button variant="secondary" className={UI.queueActionBtn} onClick={() => setFeeComponentsDraft((prev) => [...prev, { name: "", amount: 0, description: "", isMandatory: true }])}>
+                      <p className="text-sm font-semibold text-slate-800">
+                        Fee Components
+                      </p>
+                      <Button
+                        variant="secondary"
+                        className={UI.queueActionBtn}
+                        onClick={() =>
+                          setFeeComponentsDraft((prev) => [
+                            ...prev,
+                            {
+                              name: "",
+                              amount: 0,
+                              description: "",
+                              isMandatory: true,
+                            },
+                          ])
+                        }
+                      >
                         Add
                       </Button>
                     </div>
                     <div className="space-y-2">
                       {feeComponentsDraft.map((component, index) => (
-                        <div key={`component-${index}`} className="grid gap-2 md:grid-cols-[2fr_1fr_auto]">
-                          <Input value={component.name} onChange={(e) => setFeeComponentsDraft((prev) => prev.map((item, idx) => idx === index ? { ...item, name: e.target.value } : item))} placeholder="Component name" />
-                          <Input type="number" min={1} value={component.amount} onChange={(e) => setFeeComponentsDraft((prev) => prev.map((item, idx) => idx === index ? { ...item, amount: Number(e.target.value || 0) } : item))} placeholder="Amount" />
-                          <Button variant="ghost" className={UI.queueActionBtn} disabled={feeComponentsDraft.length <= 1} onClick={() => setFeeComponentsDraft((prev) => prev.filter((_, idx) => idx !== index))}>
+                        <div
+                          key={`component-${index}`}
+                          className="grid gap-2 md:grid-cols-[2fr_1fr_auto]"
+                        >
+                          <Input
+                            value={component.name}
+                            onChange={(e) =>
+                              setFeeComponentsDraft((prev) =>
+                                prev.map((item, idx) =>
+                                  idx === index
+                                    ? { ...item, name: e.target.value }
+                                    : item,
+                                ),
+                              )
+                            }
+                            placeholder="Component name"
+                          />
+                          <Input
+                            type="number"
+                            min={1}
+                            value={component.amount}
+                            onChange={(e) =>
+                              setFeeComponentsDraft((prev) =>
+                                prev.map((item, idx) =>
+                                  idx === index
+                                    ? {
+                                        ...item,
+                                        amount: Number(e.target.value || 0),
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                            placeholder="Amount"
+                          />
+                          <Button
+                            variant="ghost"
+                            className={UI.queueActionBtn}
+                            disabled={feeComponentsDraft.length <= 1}
+                            onClick={() =>
+                              setFeeComponentsDraft((prev) =>
+                                prev.filter((_, idx) => idx !== index),
+                              )
+                            }
+                          >
                             Remove
                           </Button>
                         </div>
@@ -1770,33 +2349,130 @@ export default function PrincipalAdmissionsDashboardPage() {
 
                   <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-800">Standard Installments</p>
-                      <Button variant="secondary" className={UI.queueActionBtn} onClick={() => setInstallmentsDraft((prev) => [...prev, { name: `Installment ${prev.length + 1}`, dueDate: admissionStartDate ? addMonthsToDate(admissionStartDate, Math.max(1, Number(installmentIntervalMonths) || 1) * prev.length) : "", percentage: 0 }])}>
+                      <p className="text-sm font-semibold text-slate-800">
+                        Standard Installments
+                      </p>
+                      <Button
+                        variant="secondary"
+                        className={UI.queueActionBtn}
+                        onClick={() =>
+                          setInstallmentsDraft((prev) => [
+                            ...prev,
+                            {
+                              name: `Installment ${prev.length + 1}`,
+                              dueDate: admissionStartDate
+                                ? addMonthsToDate(
+                                    admissionStartDate,
+                                    Math.max(
+                                      1,
+                                      Number(installmentIntervalMonths) || 1,
+                                    ) * prev.length,
+                                  )
+                                : "",
+                              percentage: 0,
+                            },
+                          ])
+                        }
+                      >
                         Add
                       </Button>
                     </div>
                     <div className="mb-3 grid gap-2 md:grid-cols-[1.5fr_1fr_1fr]">
                       <div>
                         <Label>Admission Date (Installment 1)</Label>
-                        <Input type="date" value={admissionStartDate} onChange={(e) => setAdmissionStartDate(e.target.value)} />
+                        <Input
+                          type="date"
+                          value={admissionStartDate}
+                          onChange={(e) =>
+                            setAdmissionStartDate(e.target.value)
+                          }
+                        />
                       </div>
                       <div>
                         <Label>Interval (months)</Label>
-                        <Input type="number" min={1} value={installmentIntervalMonths} onChange={(e) => setInstallmentIntervalMonths(Number(e.target.value || 1))} />
+                        <Input
+                          type="number"
+                          min={1}
+                          value={installmentIntervalMonths}
+                          onChange={(e) =>
+                            setInstallmentIntervalMonths(
+                              Number(e.target.value || 1),
+                            )
+                          }
+                        />
                       </div>
                       <div className="flex items-end">
-                        <Button variant="secondary" className="w-full" onClick={autoScheduleInstallmentDates}>
+                        <Button
+                          variant="secondary"
+                          className="w-full"
+                          onClick={autoScheduleInstallmentDates}
+                        >
                           Auto-fill Dates
                         </Button>
                       </div>
                     </div>
                     <div className="space-y-2">
                       {installmentsDraft.map((installment, index) => (
-                        <div key={`installment-${index}`} className="grid gap-2 md:grid-cols-[1.5fr_1.3fr_1fr_auto]">
-                          <Input value={installment.name} onChange={(e) => setInstallmentsDraft((prev) => prev.map((item, idx) => idx === index ? { ...item, name: e.target.value } : item))} placeholder="Installment name" />
-                          <Input type="date" value={installment.dueDate} disabled={index === 0} onChange={(e) => setInstallmentsDraft((prev) => prev.map((item, idx) => idx === index ? { ...item, dueDate: e.target.value } : item))} />
-                          <Input type="number" min={1} max={100} value={installment.percentage} onChange={(e) => setInstallmentsDraft((prev) => prev.map((item, idx) => idx === index ? { ...item, percentage: Number(e.target.value || 0) } : item))} placeholder="%" />
-                          <Button variant="ghost" className={UI.queueActionBtn} disabled={installmentsDraft.length <= 1} onClick={() => setInstallmentsDraft((prev) => prev.filter((_, idx) => idx !== index))}>
+                        <div
+                          key={`installment-${index}`}
+                          className="grid gap-2 md:grid-cols-[1.5fr_1.3fr_1fr_auto]"
+                        >
+                          <Input
+                            value={installment.name}
+                            onChange={(e) =>
+                              setInstallmentsDraft((prev) =>
+                                prev.map((item, idx) =>
+                                  idx === index
+                                    ? { ...item, name: e.target.value }
+                                    : item,
+                                ),
+                              )
+                            }
+                            placeholder="Installment name"
+                          />
+                          <Input
+                            type="date"
+                            value={installment.dueDate}
+                            disabled={index === 0}
+                            onChange={(e) =>
+                              setInstallmentsDraft((prev) =>
+                                prev.map((item, idx) =>
+                                  idx === index
+                                    ? { ...item, dueDate: e.target.value }
+                                    : item,
+                                ),
+                              )
+                            }
+                          />
+                          <Input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={installment.percentage}
+                            onChange={(e) =>
+                              setInstallmentsDraft((prev) =>
+                                prev.map((item, idx) =>
+                                  idx === index
+                                    ? {
+                                        ...item,
+                                        percentage: Number(e.target.value || 0),
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                            placeholder="%"
+                          />
+                          <Button
+                            variant="ghost"
+                            className={UI.queueActionBtn}
+                            disabled={installmentsDraft.length <= 1}
+                            onClick={() =>
+                              setInstallmentsDraft((prev) =>
+                                prev.filter((_, idx) => idx !== index),
+                              )
+                            }
+                          >
                             Remove
                           </Button>
                         </div>
@@ -1804,29 +2480,49 @@ export default function PrincipalAdmissionsDashboardPage() {
                     </div>
                     <p className="mt-2 text-xs text-slate-500">
                       Total: {installmentPercentageTotal}%{" "}
-                      {Math.abs(installmentPercentageTotal - 100) <= 0.01 ? "(valid ✓)" : "(must be 100%)"}
+                      {Math.abs(installmentPercentageTotal - 100) <= 0.01
+                        ? "(valid ✓)"
+                        : "(must be 100%)"}
                     </p>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Button disabled={isCreatingFeeStructure} onClick={() => void handleCreateFeeStructure()}>
-                      {isCreatingFeeStructure ? "Saving…" : "Save Fee Structure"}
+                    <Button
+                      disabled={isCreatingFeeStructure}
+                      onClick={() => void handleCreateFeeStructure()}
+                    >
+                      {isCreatingFeeStructure
+                        ? "Saving…"
+                        : "Save Fee Structure"}
                     </Button>
-                    <Button variant="secondary" onClick={resetFeeSetupForm}>Reset Draft</Button>
+                    <Button variant="secondary" onClick={resetFeeSetupForm}>
+                      Reset Draft
+                    </Button>
                   </div>
 
                   <div className="mt-5 rounded-md border border-slate-200 bg-white p-3">
-                    <p className="text-sm font-semibold text-slate-800">Existing Fee Structures ({feeStructures.length})</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      Existing Fee Structures ({feeStructures.length})
+                    </p>
                     {isLoadingFeeStructures ? (
                       <p className="mt-2 text-sm text-slate-500">Loading…</p>
                     ) : feeStructures.length === 0 ? (
-                      <p className="mt-2 text-sm text-slate-500">None configured yet.</p>
+                      <p className="mt-2 text-sm text-slate-500">
+                        None configured yet.
+                      </p>
                     ) : (
                       <div className="mt-3 space-y-2">
                         {feeStructures.map((row) => (
-                          <div key={row.id} className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                          <div
+                            key={row.id}
+                            className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50 px-3 py-2"
+                          >
                             <p className="text-sm font-medium text-slate-800">
-                              {row.class.name}{row.class.section ? ` - ${row.class.section}` : ""} · {row.academicYear}
+                              {row.class.name}
+                              {row.class.section
+                                ? ` - ${row.class.section}`
+                                : ""}{" "}
+                              · {row.academicYear}
                             </p>
                             <Badge>{formatCurrency(row.totalAmount)}</Badge>
                           </div>
@@ -1842,28 +2538,47 @@ export default function PrincipalAdmissionsDashboardPage() {
             {activeSection === "audit" ? (
               <div className="grid gap-5 xl:grid-cols-[1.3fr_1fr]">
                 <Card className="border border-surface-border p-4 sm:p-5">
-                  <h2 className="text-base font-bold text-slate-900">Recent Action Logs</h2>
-                  <p className="mt-0.5 text-sm text-slate-500">Session-local bulk decision trail.</p>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Recent Action Logs
+                  </h2>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    Session-local bulk decision trail.
+                  </p>
                   <div className="mt-4 space-y-2">
                     {auditLogs.length === 0 ? (
-                      <p className="text-sm text-slate-500">No audit entries yet.</p>
+                      <p className="text-sm text-slate-500">
+                        No audit entries yet.
+                      </p>
                     ) : (
                       auditLogs.map((entry) => (
-                        <div key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                        <div
+                          key={entry.id}
+                          className="rounded-md border border-slate-200 bg-slate-50 p-3"
+                        >
                           <p className="text-sm font-semibold text-slate-900">
-                            {entry.action.replace("_", " ")} ({entry.successCount} ok / {entry.failureCount} failed)
+                            {entry.action.replace("_", " ")} (
+                            {entry.successCount} ok / {entry.failureCount}{" "}
+                            failed)
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">{new Date(entry.timestamp).toLocaleString("en-IN")}</p>
-                          <p className="mt-1 text-xs text-slate-500">Reason: {entry.reason}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {new Date(entry.timestamp).toLocaleString("en-IN")}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Reason: {entry.reason}
+                          </p>
                         </div>
                       ))
                     )}
                   </div>
                 </Card>
                 <Card className="border border-surface-border p-4 sm:p-5">
-                  <h2 className="text-base font-bold text-slate-900">Guidance</h2>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Guidance
+                  </h2>
                   <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                    <p className="font-semibold">Before confirming bulk actions:</p>
+                    <p className="font-semibold">
+                      Before confirming bulk actions:
+                    </p>
                     <ul className="mt-2 list-disc space-y-1 pl-4">
                       <li>Only reviewable rows will be affected.</li>
                       <li>Write clear reason and correction notes.</li>
@@ -1871,7 +2586,13 @@ export default function PrincipalAdmissionsDashboardPage() {
                     </ul>
                   </div>
                   <div className="mt-4">
-                    <Button variant="secondary" disabled={actionableSelections.length === 0 || isBulkActionLoading} onClick={() => setAuditDrawerOpen(true)}>
+                    <Button
+                      variant="secondary"
+                      disabled={
+                        actionableSelections.length === 0 || isBulkActionLoading
+                      }
+                      onClick={() => setAuditDrawerOpen(true)}
+                    >
                       Open Audit Preview ({actionableSelections.length})
                     </Button>
                   </div>
@@ -1886,21 +2607,34 @@ export default function PrincipalAdmissionsDashboardPage() {
       {transitionModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <Card className="w-full max-w-md p-5">
-            <h3 className="text-base font-bold text-slate-900">{transitionModal.label}</h3>
+            <h3 className="text-base font-bold text-slate-900">
+              {transitionModal.label}
+            </h3>
             <div className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
-              <p className="font-semibold text-slate-800">{transitionModal.app.applicationId}</p>
-              <p className="text-slate-500">{transitionModal.app.studentFirstName} {transitionModal.app.studentLastName}</p>
+              <p className="font-semibold text-slate-800">
+                {transitionModal.app.applicationId}
+              </p>
+              <p className="text-slate-500">
+                {transitionModal.app.studentFirstName}{" "}
+                {transitionModal.app.studentLastName}
+              </p>
               <p className="mt-1 text-xs text-slate-400">
-                Current stage: <span className="font-semibold text-slate-600">{transitionModal.app.status.replace(/_/g, " ")}</span>
+                Current stage:{" "}
+                <span className="font-semibold text-slate-600">
+                  {transitionModal.app.status.replace(/_/g, " ")}
+                </span>
                 {" → "}
-                <span className="font-semibold text-slate-800">{transitionModal.toStatus.replace(/_/g, " ")}</span>
+                <span className="font-semibold text-slate-800">
+                  {transitionModal.toStatus.replace(/_/g, " ")}
+                </span>
               </p>
             </div>
 
             <div className="mt-3">
               <Label>
                 Comments
-                {transitionModal.toStatus !== "under_review" || transitionModal.needsCorrection
+                {transitionModal.toStatus !== "under_review" ||
+                transitionModal.needsCorrection
                   ? " (required)"
                   : " (optional)"}
               </Label>
@@ -1918,7 +2652,9 @@ export default function PrincipalAdmissionsDashboardPage() {
                 <Label>Correction Details (required)</Label>
                 <Textarea
                   value={transitionCorrectionDetails}
-                  onChange={(e) => setTransitionCorrectionDetails(e.target.value)}
+                  onChange={(e) =>
+                    setTransitionCorrectionDetails(e.target.value)
+                  }
                   placeholder="What exactly needs to be corrected?"
                   className="min-h-[80px]"
                 />
@@ -1926,11 +2662,20 @@ export default function PrincipalAdmissionsDashboardPage() {
             )}
 
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="secondary" onClick={closeTransitionModal} disabled={actionLoadingFor === transitionModal.app.id}>
+              <Button
+                variant="secondary"
+                onClick={closeTransitionModal}
+                disabled={actionLoadingFor === transitionModal.app.id}
+              >
                 Cancel
               </Button>
-              <Button onClick={() => void handleConfirmTransition()} disabled={actionLoadingFor === transitionModal.app.id}>
-                {actionLoadingFor === transitionModal.app.id ? "Updating…" : "Confirm"}
+              <Button
+                onClick={() => void handleConfirmTransition()}
+                disabled={actionLoadingFor === transitionModal.app.id}
+              >
+                {actionLoadingFor === transitionModal.app.id
+                  ? "Updating…"
+                  : "Confirm"}
               </Button>
             </div>
           </Card>
@@ -1941,7 +2686,9 @@ export default function PrincipalAdmissionsDashboardPage() {
       {confirmBulkOpen ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
           <Card className="w-full max-w-lg p-5">
-            <h3 className="text-base font-bold text-slate-900">Confirm Bulk Decision</h3>
+            <h3 className="text-base font-bold text-slate-900">
+              Confirm Bulk Decision
+            </h3>
             <p className="mt-2 text-sm text-slate-600">
               You are about to apply{" "}
               <span className="font-semibold text-slate-900">
@@ -1950,10 +2697,20 @@ export default function PrincipalAdmissionsDashboardPage() {
               to {actionableSelections.length} application(s).
             </p>
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setConfirmBulkOpen(false)} disabled={isBulkActionLoading}>
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmBulkOpen(false)}
+                disabled={isBulkActionLoading}
+              >
                 Cancel
               </Button>
-              <Button onClick={async () => { setConfirmBulkOpen(false); await performBulkDecision(); }} disabled={isBulkActionLoading}>
+              <Button
+                onClick={async () => {
+                  setConfirmBulkOpen(false);
+                  await performBulkDecision();
+                }}
+                disabled={isBulkActionLoading}
+              >
                 Confirm
               </Button>
             </div>
@@ -1967,24 +2724,44 @@ export default function PrincipalAdmissionsDashboardPage() {
           <div className="h-full w-full max-w-xl overflow-y-auto bg-white p-5 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Bulk Audit Preview</h3>
-                <p className="mt-0.5 text-sm text-slate-500">Review exact impact before applying.</p>
+                <h3 className="text-base font-bold text-slate-900">
+                  Bulk Audit Preview
+                </h3>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Review exact impact before applying.
+                </p>
               </div>
-              <Button variant="ghost" onClick={() => setAuditDrawerOpen(false)}>Close</Button>
+              <Button variant="ghost" onClick={() => setAuditDrawerOpen(false)}>
+                Close
+              </Button>
             </div>
 
             <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-              <p className="text-sm font-semibold text-slate-900">Action: {bulkActionType.replace("_", " ")}</p>
-              <p className="mt-1 text-xs text-slate-500">Actionable: {actionableSelections.length}</p>
+              <p className="text-sm font-semibold text-slate-900">
+                Action: {bulkActionType.replace("_", " ")}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Actionable: {actionableSelections.length}
+              </p>
             </div>
 
             <div className="mt-4 space-y-2">
               {actionableSelections.map((app) => (
-                <div key={app.id} className="rounded-md border border-slate-200 px-3 py-2 text-sm">
-                  <p className="font-semibold text-slate-900">{app.applicationId}</p>
-                  <p className="text-slate-500">{app.studentFirstName} {app.studentLastName}</p>
+                <div
+                  key={app.id}
+                  className="rounded-md border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <p className="font-semibold text-slate-900">
+                    {app.applicationId}
+                  </p>
+                  <p className="text-slate-500">
+                    {app.studentFirstName} {app.studentLastName}
+                  </p>
                   <p className="mt-0.5 text-xs text-slate-400">
-                    {app.status} → {bulkActionType === "needs_correction" ? "needs_correction" : bulkActionType}
+                    {app.status} →{" "}
+                    {bulkActionType === "needs_correction"
+                      ? "needs_correction"
+                      : bulkActionType}
                   </p>
                 </div>
               ))}
@@ -2003,10 +2780,19 @@ export default function PrincipalAdmissionsDashboardPage() {
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setAuditDrawerOpen(false)} disabled={isBulkActionLoading}>
+              <Button
+                variant="secondary"
+                onClick={() => setAuditDrawerOpen(false)}
+                disabled={isBulkActionLoading}
+              >
                 Cancel
               </Button>
-              <Button onClick={() => void handleAuditConfirm()} disabled={isBulkActionLoading || actionableSelections.length === 0}>
+              <Button
+                onClick={() => void handleAuditConfirm()}
+                disabled={
+                  isBulkActionLoading || actionableSelections.length === 0
+                }
+              >
                 {isBulkActionLoading ? "Applying…" : "Confirm with Audit"}
               </Button>
             </div>

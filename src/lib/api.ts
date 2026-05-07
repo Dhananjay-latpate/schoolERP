@@ -4,7 +4,7 @@ const API_BASE_URL =
 type ApiResponse<T> = {
   success: boolean;
   message?: string;
-  data: T;
+  data?: T;
 };
 
 export type AdmissionStatus =
@@ -67,7 +67,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(body.message || "Request failed");
   }
 
-  return body.data;
+  if (body.data !== undefined) {
+    return body.data;
+  }
+
+  const topLevelPayload = { ...body } as Record<string, unknown>;
+  delete topLevelPayload.success;
+  delete topLevelPayload.message;
+  return topLevelPayload as T;
 }
 
 export async function submitAdmission(data: AdmissionSubmission) {
@@ -218,13 +225,13 @@ export type CustomPlanStatus =
   | "completed";
 
 export type CustomPlanStatusResponse = {
-  id: string;
-  status: CustomPlanStatus;
-  totalAmount: number;
-  requestedAmount: number;
-  comments?: string | null;
-  approvedByName?: string | null;
-  approvedAt?: string | null;
+  hasPlan: boolean;
+  hasPendingPlan: boolean;
+  hasApprovedPlan: boolean;
+  status?: CustomPlanStatus | "completed";
+  isCustomPlan?: boolean;
+  feeStructureId?: string;
+  totalAmount?: number;
 };
 
 /**
@@ -262,4 +269,88 @@ export async function getCustomPlanStatus(applicationId: string) {
   return request<CustomPlanStatusResponse>(
     `/api/fees/payment-plan-status/${encodeURIComponent(applicationId)}`,
   );
+}
+
+export type PaymentInstallmentRecord = {
+  id: string;
+  name: string;
+  dueDate: string;
+  amount: number;
+  isPaid: boolean;
+  paidAmount?: number | null;
+  paidDate?: string | null;
+  transactionId?: string | null;
+};
+
+export type PaymentPlanRecord = {
+  id: string;
+  applicationId: string;
+  studentName: string;
+  academicYear: string;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  isCustomPlan: boolean;
+  status: CustomPlanStatus | "completed";
+  comments?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  installments: PaymentInstallmentRecord[];
+};
+
+export async function createStandardPlan(
+  applicationId: string,
+  installmentOptionIndex: number,
+) {
+  return request<PaymentPlanRecord>("/api/fees/create-standard-plan", {
+    method: "POST",
+    body: JSON.stringify({ applicationId, installmentOptionIndex }),
+  });
+}
+
+export async function getPaymentPlan(applicationId: string) {
+  return request<PaymentPlanRecord>(
+    `/api/fees/payment-plan/${encodeURIComponent(applicationId)}`,
+  );
+}
+
+export type InstallmentOrderResponse = {
+  message: string;
+  order: {
+    id: string;
+    amount: number;
+    currency: string;
+  };
+  key_id: string;
+  installmentDetails: {
+    name: string;
+    amount: number;
+    dueDate: string;
+  };
+};
+
+export async function createInstallmentPaymentOrder(
+  applicationId: string,
+  installmentIndex: number,
+) {
+  return request<InstallmentOrderResponse>(
+    "/api/fees/create-installment-payment",
+    {
+      method: "POST",
+      body: JSON.stringify({ applicationId, installmentIndex }),
+    },
+  );
+}
+
+export async function verifyInstallmentPayment(payload: {
+  applicationId: string;
+  installmentIndex: number;
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}) {
+  return request<{ message: string }>("/api/fees/verify-installment-payment", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
