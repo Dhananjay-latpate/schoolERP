@@ -1,0 +1,11 @@
+# node module
+node_modules/
+.env
+dist/
+build/
+coverage/
+logs/
+*.log
+.next/
+out/
+.env
