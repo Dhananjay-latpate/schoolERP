@@ -313,12 +313,12 @@ export default function PrincipalAdmissionDetailPage() {
 
       {/* Hero */}
       <Card
-        className={`overflow-hidden border bg-gradient-to-br ${heroAccentClass} shadow-sm`}
+        className={`overflow-hidden border bg-linear-to-br ${heroAccentClass} shadow-sm`}
       >
         <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-7">
           {/* Avatar */}
           <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-royal to-blue-700 text-2xl font-bold text-white shadow-md shadow-blue-200/50"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-royal to-blue-700 text-2xl font-bold text-white shadow-md shadow-blue-200/50"
             aria-hidden="true"
           >
             {studentInitials || "?"}
@@ -331,7 +331,9 @@ export default function PrincipalAdmissionDetailPage() {
             </p>
             <h1 className="mt-0.5 truncate text-2xl font-bold text-slate-900 sm:text-3xl">
               {application.studentFirstName}{" "}
-              {application.studentMiddleName ? `${application.studentMiddleName} ` : ""}
+              {application.studentMiddleName
+                ? `${application.studentMiddleName} `
+                : ""}
               {application.studentLastName}
             </h1>
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
@@ -441,7 +443,7 @@ export default function PrincipalAdmissionDetailPage() {
           successMessage={decisionSuccess}
           approvedSlot={
             statusKey === "approved" ? (
-              <div className="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-50/30 p-4 sm:flex-row sm:items-center">
+              <div className="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-linear-to-r from-emerald-50 to-emerald-50/30 p-4 sm:flex-row sm:items-center">
                 <div className="flex shrink-0 items-center gap-2">
                   <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white">
                     <Sparkles className="h-4 w-4" />
@@ -498,10 +500,7 @@ export default function PrincipalAdmissionDetailPage() {
                 "rejected",
                 "on_hold",
               ];
-              if (
-                action === "needs_correction" ||
-                action === "cancelled"
-              ) {
+              if (action === "needs_correction" || action === "cancelled") {
                 // Use the generic status PATCH so we don't get blocked by
                 // reviewApplication's narrower whitelist.
                 const res = await fetch(
@@ -522,14 +521,9 @@ export default function PrincipalAdmissionDetailPage() {
                 );
                 if (!res.ok) {
                   const body = await res.json().catch(() => ({}));
-                  throw new Error(
-                    body?.message || "Failed to apply action.",
-                  );
+                  throw new Error(body?.message || "Failed to apply action.");
                 }
-                if (
-                  action === "needs_correction" &&
-                  correctionDetails
-                ) {
+                if (action === "needs_correction" && correctionDetails) {
                   // Persist the correction details payload via the review
                   // endpoint so the parent sees them in their portal.
                   await reviewPrincipalApplication(token, {
@@ -540,9 +534,7 @@ export default function PrincipalAdmissionDetailPage() {
                     correctionDetails,
                   });
                 }
-              } else if (
-                reviewActions.includes(action as ApplicationStatus)
-              ) {
+              } else if (reviewActions.includes(action as ApplicationStatus)) {
                 await reviewPrincipalApplication(token, {
                   applicationId: application.applicationId,
                   status: action as

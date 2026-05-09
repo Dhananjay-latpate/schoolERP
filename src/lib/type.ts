@@ -27,6 +27,7 @@ export type PrincipalApplication = {
   submittedAt: string;
   lastUpdatedAt: string;
   studentFirstName: string;
+  studentMiddleName?: string | null;
   studentLastName: string;
   emergencyContact: string;
   class: {
