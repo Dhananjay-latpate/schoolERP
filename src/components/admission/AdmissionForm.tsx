@@ -19,6 +19,7 @@ import { z } from "zod";
 import {
   submitAdmission,
   createCustomPlan,
+  getActiveAdmissionSessionPublic,
   type AdmissionRecord,
 } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
@@ -29,6 +30,7 @@ import { PaymentPanel } from "./PaymentPanel";
 import { AcademicStep } from "./steps/AcademicStep";
 import { AdditionalInfoStep } from "./steps/AdditionalInfoStep";
 import { DocumentsStep } from "./steps/DocumentsStep";
+import { FeeStep } from "./steps/FeeStep";
 import { ParentInfoStep } from "./steps/ParentInfoStep";
 import { ReviewStep } from "./steps/ReviewStep";
 import { StudentInfoStep } from "./steps/StudentInfoStep";
@@ -93,15 +95,17 @@ const STEPS = [
   "Additional Details",
   "Documents",
   "Review",
+  "Fees & Payment",
 ] as const;
 
 const STEP_DESCRIPTIONS = [
   "Enter the student's personal and identification details.",
   "Provide parent or guardian names and contact information.",
-  "Select the class for admission and review the fee structure.",
+  "Select the class for admission. Fees are confirmed in the final step.",
   "Optional details such as religion, caste, and Aadhaar number.",
   "Upload required supporting documents.",
-  "Review all information carefully before submitting.",
+  "Review all information carefully before moving to fees.",
+  "Choose how you'd like to pay — full payment, standard installments, or request a custom arrangement.",
 ];
 
 const STEP_FIELDS: Record<number, Array<keyof AdmissionFormValues>> = {
@@ -111,6 +115,7 @@ const STEP_FIELDS: Record<number, Array<keyof AdmissionFormValues>> = {
   3: [],
   4: [],
   5: [],
+  6: ["paymentMethod"],
 };
 
 const FIELD_TO_STEP: Partial<Record<keyof AdmissionFormValues, number>> = {
@@ -124,9 +129,6 @@ const FIELD_TO_STEP: Partial<Record<keyof AdmissionFormValues, number>> = {
   address: 1,
   emergencyContact: 1,
   classAdmitted: 2,
-  paymentMethod: 2,
-  customPaymentAmount: 2,
-  customPaymentReason: 2,
   placeOfBirth: 3,
   nationality: 3,
   religion: 3,
@@ -134,6 +136,9 @@ const FIELD_TO_STEP: Partial<Record<keyof AdmissionFormValues, number>> = {
   subCaste: 3,
   adharNumber: 3,
   motherTongue: 3,
+  paymentMethod: 6,
+  customPaymentAmount: 6,
+  customPaymentReason: 6,
 };
 
 type Phase = "form" | "payment" | "done";
@@ -156,6 +161,15 @@ export function AdmissionForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [draftNotification, setDraftNotification] =
     useState<DraftNotification | null>(null);
+  const [activeSessionCode, setActiveSessionCode] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    getActiveAdmissionSessionPublic()
+      .then((s) => setActiveSessionCode(s?.sessionCode ?? null))
+      .catch(() => setActiveSessionCode(null));
+  }, []);
 
   const {
     register,
@@ -335,8 +349,10 @@ export function AdmissionForm() {
       case 4:
         return <DocumentsStep />;
       case 5:
-      default:
         return <ReviewStep values={getValues()} />;
+      case 6:
+      default:
+        return <FeeStep register={register} errors={errors} watch={watch} />;
     }
   };
 
@@ -377,7 +393,8 @@ export function AdmissionForm() {
             {/* Horizontal stepper header */}
             <div className="border-b border-surface-border bg-surface-muted px-6 pt-6 pb-5">
               <p className="mb-5 text-center text-[11px] font-bold uppercase tracking-widest text-text-secondary">
-                Admission Application 2025–26
+                Admission Application
+                {activeSessionCode ? ` ${activeSessionCode}` : ""}
               </p>
               <FormStepper currentStep={step} />
             </div>
@@ -553,7 +570,10 @@ export function AdmissionForm() {
                             Proceed to Payment
                           </>
                         ) : (
-                          "Submit Application"
+                          <>
+                            <CreditCard size={15} />
+                            Submit & Continue to Payment
+                          </>
                         )}
                       </Button>
                     )}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ActiveSessionBadge } from "@/components/admission/ActiveSessionBadge";
 
 export default function AdmissionsLayout({
   children,
@@ -48,9 +49,7 @@ export default function AdmissionsLayout({
           </Link>
 
           <div className="flex items-center gap-3">
-            <span className="hidden rounded-full bg-brand-emerald-light px-2.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wider text-brand-emerald sm:inline-flex">
-              2025–26
-            </span>
+            <ActiveSessionBadge />
             <Link
               href="/admissions/apply"
               className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-white px-3 py-1.5 text-xs font-semibold text-text-secondary shadow-xs transition-all duration-150 hover:border-brand-royal hover:bg-brand-sky-light hover:text-brand-royal"

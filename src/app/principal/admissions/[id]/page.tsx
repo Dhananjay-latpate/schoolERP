@@ -3,24 +3,57 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CircleDot, FileText, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  CreditCard,
+  FileText,
+  Files,
+  Loader2,
+  Mail,
+  Phone,
+  Sparkles,
+  User,
+} from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Label } from "@/components/ui/Label";
-import { Textarea } from "@/components/ui/Textarea";
 import {
   PrincipalApiError,
+  buildAdmissionLetterUrls,
   getPrincipalApplicationById,
   getStudentFeeAccount,
   reviewPrincipalApplication,
   type PrincipalApplicationDetail,
   type StudentFeeAccount,
 } from "@/lib/principalApi";
-import { clearPrincipalSession, getPrincipalToken } from "@/lib/principalSession";
+import { DecisionCard } from "@/components/admission/DecisionCard";
+import { StatusTimeline } from "@/components/admission/StatusTimeline";
+import { WorkflowStepper } from "@/components/admission/WorkflowStepper";
+import {
+  STATUS_LABELS,
+  type ActionContext,
+  type ApplicationStatus,
+} from "@/lib/admissionWorkflow";
+import {
+  clearPrincipalSession,
+  getPrincipalToken,
+} from "@/lib/principalSession";
+import { FeeAccountSummary } from "@/components/fees/FeeAccountSummary";
+import { FeeChargesTab } from "@/components/fees/FeeChargesTab";
+import { FeeLedgerTab } from "@/components/fees/FeeLedgerTab";
+import { FeeApprovalsTab } from "@/components/fees/FeeApprovalsTab";
+import { RecordPaymentModal } from "@/components/fees/RecordPaymentModal";
+import { type FeeAccount } from "@/lib/principalApi";
 
-type Tab = "overview" | "documents" | "payment" | "history";
-type QuickDecision = "under_review" | "approved" | "rejected" | "on_hold" | "needs_correction";
+type Tab =
+  | "overview"
+  | "documents"
+  | "payment"
+  | "history"
+  | "charges"
+  | "ledger"
+  | "fee_approvals";
 type WorkflowStatus =
   | "payment_completed"
   | "under_review"
@@ -28,15 +61,6 @@ type WorkflowStatus =
   | "needs_correction"
   | "approved"
   | "rejected";
-
-type DecisionConfig = {
-  label: string;
-  targetStatus: "under_review" | "approved" | "rejected" | "on_hold";
-  needsCorrection: boolean;
-  requiresComments: boolean;
-  requiresCorrectionDetails: boolean;
-  variant: "primary" | "secondary" | "ghost";
-};
 
 const UI = {
   heroPad: "p-5 sm:p-6",
@@ -47,66 +71,20 @@ const UI = {
   actionBtn: "h-9 px-4 text-sm",
 };
 
-const DECISION_CONFIG: Record<QuickDecision, DecisionConfig> = {
-  under_review: {
-    label: "Move Under Review",
-    targetStatus: "under_review",
-    needsCorrection: false,
-    requiresComments: false,
-    requiresCorrectionDetails: false,
-    variant: "secondary",
-  },
-  approved: {
-    label: "Approve",
-    targetStatus: "approved",
-    needsCorrection: false,
-    requiresComments: true,
-    requiresCorrectionDetails: false,
-    variant: "primary",
-  },
-  rejected: {
-    label: "Reject",
-    targetStatus: "rejected",
-    needsCorrection: false,
-    requiresComments: true,
-    requiresCorrectionDetails: false,
-    variant: "ghost",
-  },
-  on_hold: {
-    label: "Put On Hold",
-    targetStatus: "on_hold",
-    needsCorrection: false,
-    requiresComments: true,
-    requiresCorrectionDetails: false,
-    variant: "secondary",
-  },
-  needs_correction: {
-    label: "Needs Correction",
-    targetStatus: "under_review",
-    needsCorrection: true,
-    requiresComments: true,
-    requiresCorrectionDetails: true,
-    variant: "secondary",
-  },
-};
-
-const WORKFLOW_TRANSITIONS: Record<WorkflowStatus, QuickDecision[]> = {
-  payment_completed: ["under_review", "on_hold", "needs_correction", "approved", "rejected"],
-  under_review: ["on_hold", "needs_correction", "approved", "rejected"],
-  on_hold: ["under_review", "needs_correction", "rejected"],
-  needs_correction: ["under_review", "on_hold", "rejected"],
-  rejected: ["under_review"],
-  approved: [],
-};
-
 function toStatusLabel(status: string): string {
   return status.replace(/_/g, " ");
 }
 
-function statusVariant(status: string): "default" | "success" | "warning" | "error" {
+function statusVariant(
+  status: string,
+): "default" | "success" | "warning" | "error" {
   if (["approved", "payment_completed"].includes(status)) return "success";
   if (status === "rejected") return "error";
-  if (["under_review", "on_hold", "needs_correction", "payment_pending"].includes(status)) {
+  if (
+    ["under_review", "on_hold", "needs_correction", "payment_pending"].includes(
+      status,
+    )
+  ) {
     return "warning";
   }
   return "default";
@@ -139,18 +117,24 @@ export default function PrincipalAdmissionDetailPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [application, setApplication] = useState<PrincipalApplicationDetail | null>(null);
+  const [application, setApplication] =
+    useState<PrincipalApplicationDetail | null>(null);
   const [feeAccount, setFeeAccount] = useState<StudentFeeAccount | null>(null);
   const [decisionLoading, setDecisionLoading] = useState(false);
   const [decisionError, setDecisionError] = useState<string | null>(null);
   const [decisionSuccess, setDecisionSuccess] = useState<string | null>(null);
-  const [decisionComments, setDecisionComments] = useState("");
-  const [decisionCorrectionDetails, setDecisionCorrectionDetails] = useState("");
+  const [feeData, setFeeData] = useState<FeeAccount | null>(null);
+  const [feeDataLoaded, setFeeDataLoaded] = useState(false);
+  const [feeLoading, setFeeLoading] = useState(false);
+  const [feeError, setFeeError] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     const token = getPrincipalToken();
     if (!token) {
-      router.replace(`/principal/login?next=${encodeURIComponent(`/principal/admissions/${params.id}`)}`);
+      router.replace(
+        `/principal/login?next=${encodeURIComponent(`/principal/admissions/${params.id}`)}`,
+      );
       return;
     }
 
@@ -165,12 +149,21 @@ export default function PrincipalAdmissionDetailPage() {
         setApplication(applicationData);
         setFeeAccount(feeData);
       } catch (err) {
-        if (err instanceof PrincipalApiError && (err.status === 401 || err.status === 403)) {
+        if (
+          err instanceof PrincipalApiError &&
+          (err.status === 401 || err.status === 403)
+        ) {
           clearPrincipalSession();
-          router.replace(`/principal/login?next=${encodeURIComponent(`/principal/admissions/${params.id}`)}`);
+          router.replace(
+            `/principal/login?next=${encodeURIComponent(`/principal/admissions/${params.id}`)}`,
+          );
           return;
         }
-        setError(err instanceof Error ? err.message : "Failed to load application details");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load application details",
+        );
       } finally {
         setLoading(false);
       }
@@ -179,7 +172,20 @@ export default function PrincipalAdmissionDetailPage() {
     void load();
   }, [params.id, router]);
 
-  const allTransactions = useMemo(() => feeAccount?.transactions ?? [], [feeAccount]);
+  useEffect(() => {
+    if (
+      (tab === "charges" || tab === "ledger" || tab === "fee_approvals") &&
+      !feeDataLoaded
+    ) {
+      void loadFeeData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, feeDataLoaded]);
+
+  const allTransactions = useMemo(
+    () => feeAccount?.transactions ?? [],
+    [feeAccount],
+  );
   const workflowStatus = useMemo<WorkflowStatus>(() => {
     if (!application) return "under_review";
     if (application.correctionNeeded) return "needs_correction";
@@ -195,61 +201,36 @@ export default function PrincipalAdmissionDetailPage() {
     return "under_review";
   }, [application]);
 
-  const allowedDecisions = useMemo(
-    () => WORKFLOW_TRANSITIONS[workflowStatus] ?? [],
-    [workflowStatus],
-  );
-
-  const executeDecision = async (decision: QuickDecision) => {
-    if (!application) return;
-    const token = getPrincipalToken();
-    if (!token) {
-      router.replace(`/principal/login?next=${encodeURIComponent(`/principal/admissions/${params.id}`)}`);
+  const loadFeeData = async () => {
+    const t = getPrincipalToken();
+    if (!t) {
+      router.replace(
+        `/principal/login?next=${encodeURIComponent(`/principal/admissions/${params.id}`)}`,
+      );
       return;
     }
-
-    const comments = decisionComments.trim();
-    const correctionDetails = decisionCorrectionDetails.trim();
-
-    const rule = DECISION_CONFIG[decision];
-    if (!allowedDecisions.includes(decision)) {
-      setDecisionError(`Transition to ${toStatusLabel(decision)} is not allowed from current state.`);
-      return;
-    }
-    if (rule.requiresComments && !comments) {
-      setDecisionError("Comments are required for this decision.");
-      return;
-    }
-    if (rule.requiresCorrectionDetails && !correctionDetails) {
-      setDecisionError("Comments and correction details are required for needs correction.");
-      return;
-    }
-
-    setDecisionLoading(true);
-    setDecisionError(null);
-    setDecisionSuccess(null);
+    setFeeLoading(true);
+    setFeeError(null);
     try {
-      await reviewPrincipalApplication(token, {
-        applicationId: application.applicationId,
-        status: rule.targetStatus,
-        comments: comments || `Moved to ${toStatusLabel(decision)} from detail workspace`,
-        needsCorrection: rule.needsCorrection,
-        correctionDetails: rule.needsCorrection ? correctionDetails : undefined,
-      });
-
-      const [applicationData, feeData] = await Promise.all([
-        getPrincipalApplicationById(token, params.id),
-        getStudentFeeAccount(token, params.id),
-      ]);
-      setApplication(applicationData);
-      setFeeAccount(feeData);
-      setDecisionSuccess(`Application updated to ${toStatusLabel(decision)}.`);
-      setDecisionComments("");
-      setDecisionCorrectionDetails("");
+      const acct = await getStudentFeeAccount(t, params.id);
+      setFeeData(acct?.feeAccount ?? null);
+      setFeeDataLoaded(true);
     } catch (err) {
-      setDecisionError(err instanceof Error ? err.message : "Failed to process decision.");
+      if (
+        err instanceof PrincipalApiError &&
+        (err.status === 401 || err.status === 403)
+      ) {
+        clearPrincipalSession();
+        router.replace(
+          `/principal/login?next=${encodeURIComponent(`/principal/admissions/${params.id}`)}`,
+        );
+        return;
+      }
+      setFeeError(
+        err instanceof Error ? err.message : "Failed to load fee data",
+      );
     } finally {
-      setDecisionLoading(false);
+      setFeeLoading(false);
     }
   };
 
@@ -273,7 +254,10 @@ export default function PrincipalAdmissionDetailPage() {
           <p className="text-sm font-semibold text-rose-700">
             {error || "Application not found"}
           </p>
-          <Link href="/principal/admissions" className="mt-3 inline-block text-sm font-semibold text-brand-royal">
+          <Link
+            href="/principal/admissions"
+            className="mt-3 inline-block text-sm font-semibold text-brand-royal"
+          >
             Back to queue
           </Link>
         </Card>
@@ -281,142 +265,335 @@ export default function PrincipalAdmissionDetailPage() {
     );
   }
 
+  const studentInitials = `${application.studentFirstName?.[0] ?? ""}${
+    application.studentLastName?.[0] ?? ""
+  }`.toUpperCase();
+  const classDisplay = application.class
+    ? `${application.class.name}${application.class.section ? ` - ${application.class.section}` : ""}`
+    : "—";
+  const statusKey = application.status as ApplicationStatus;
+  const statusLabel = STATUS_LABELS[statusKey] ?? application.status;
+  const heroAccentClass =
+    statusKey === "approved"
+      ? "from-emerald-50 via-emerald-50/40 to-white border-emerald-200"
+      : statusKey === "rejected"
+        ? "from-rose-50 via-rose-50/40 to-white border-rose-200"
+        : statusKey === "cancelled"
+          ? "from-slate-100 via-slate-50/40 to-white border-slate-300"
+          : statusKey === "on_hold"
+            ? "from-amber-50 via-amber-50/40 to-white border-amber-200"
+            : statusKey === "needs_correction"
+              ? "from-orange-50 via-orange-50/40 to-white border-orange-200"
+              : statusKey === "under_review"
+                ? "from-violet-50 via-violet-50/40 to-white border-violet-200"
+                : "from-blue-50 via-blue-50/40 to-white border-blue-200";
+
+  const letterUrls = buildAdmissionLetterUrls(application.applicationId);
+
+  const decisionContext: ActionContext = {
+    status: statusKey,
+    paymentCompleted: application.payment?.status === "completed",
+    // The server enforces the documents-required check using
+    // ADMISSION_REQUIRED_DOCUMENTS env var. The client doesn't know that
+    // list, so we default to permissive — the server returns a clean 400
+    // with the missing-document names if any are actually required, and
+    // the DecisionCard surfaces that as the action error.
+    hasRequiredDocuments: true,
+  };
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <Card className={`card-accent mb-5 ${UI.heroPad}`}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <Link
-              href="/principal/admissions"
-              className="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-brand-royal hover:underline"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Admissions Queue
-            </Link>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-royal">
-              Principal Detail Workspace
+      <Link
+        href="/principal/admissions"
+        className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-royal hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Admissions Queue
+      </Link>
+
+      {/* Hero */}
+      <Card
+        className={`overflow-hidden border bg-gradient-to-br ${heroAccentClass} shadow-sm`}
+      >
+        <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-7">
+          {/* Avatar */}
+          <div
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-royal to-blue-700 text-2xl font-bold text-white shadow-md shadow-blue-200/50"
+            aria-hidden="true"
+          >
+            {studentInitials || "?"}
+          </div>
+
+          {/* Identity */}
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-royal">
+              Principal · Application Workspace
             </p>
-            <h1 className={`mt-1 ${UI.heading} text-text-primary`}>{application.applicationId}</h1>
-            <p className="mt-1 text-sm text-text-secondary">
-              {application.studentFirstName} {application.studentLastName}
+            <h1 className="mt-0.5 truncate text-2xl font-bold text-slate-900 sm:text-3xl">
+              {application.studentFirstName}{" "}
+              {application.studentMiddleName ? `${application.studentMiddleName} ` : ""}
+              {application.studentLastName}
+            </h1>
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
+              <span className="font-mono text-xs font-semibold tracking-wide text-slate-700">
+                {application.applicationId}
+              </span>
+              {application.grNumber ? (
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span>
+                    GR{" "}
+                    <span className="font-semibold text-slate-700">
+                      {application.grNumber}
+                    </span>
+                  </span>
+                </>
+              ) : null}
+              <span className="text-slate-300">·</span>
+              <span>
+                Class{" "}
+                <span className="font-semibold text-slate-700">
+                  {classDisplay}
+                </span>
+              </span>
+              <span className="text-slate-300">·</span>
+              <span>
+                Session{" "}
+                <span className="font-semibold text-slate-700">
+                  {application.admissionYear}
+                </span>
+              </span>
             </p>
           </div>
-          <Badge variant={statusVariant(application.status)}>{toStatusLabel(workflowStatus)}</Badge>
+
+          {/* Status pill */}
+          <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+            <Badge variant={statusVariant(application.status)}>
+              {statusLabel}
+            </Badge>
+            <p className="text-[11px] text-slate-500">
+              Updated {formatDate(application.lastUpdatedAt)}
+            </p>
+          </div>
+        </div>
+
+        {/* Stepper strip */}
+        <div className="border-t border-slate-200/80 bg-white/50 px-6 py-5 sm:px-7">
+          <WorkflowStepper status={statusKey} />
         </div>
       </Card>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* KPI strip — compact, info-rich */}
+      <section className="mt-4 grid gap-3 md:grid-cols-3">
         <Card className="border border-surface-border p-4">
-          <p className="text-xs uppercase text-text-muted">Admission Year</p>
-          <p className="mt-2 text-lg font-semibold text-text-primary">{application.admissionYear}</p>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <CreditCard className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Payment
+              </p>
+              <p className="mt-0.5 text-sm font-bold capitalize text-slate-900">
+                {application.payment?.status ?? "Not started"}
+              </p>
+            </div>
+          </div>
         </Card>
         <Card className="border border-surface-border p-4">
-          <p className="text-xs uppercase text-text-muted">Payment</p>
-          <p className="mt-2 text-lg font-semibold text-text-primary">{application.payment?.status ?? "none"}</p>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+              <Files className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Documents
+              </p>
+              <p className="mt-0.5 text-sm font-bold text-slate-900">
+                {application.documents.length} uploaded
+              </p>
+            </div>
+          </div>
         </Card>
         <Card className="border border-surface-border p-4">
-          <p className="text-xs uppercase text-text-muted">Documents</p>
-          <p className="mt-2 text-lg font-semibold text-text-primary">{application.documents.length}</p>
-        </Card>
-        <Card className="border border-surface-border p-4">
-          <p className="text-xs uppercase text-text-muted">Last Updated</p>
-          <p className="mt-2 text-sm font-semibold text-text-primary">{formatDate(application.lastUpdatedAt)}</p>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <Calendar className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Submitted
+              </p>
+              <p className="mt-0.5 text-sm font-bold text-slate-900">
+                {formatDate(application.submittedAt)}
+              </p>
+            </div>
+          </div>
         </Card>
       </section>
 
+      {/* Decision Card with letter slot inline when approved */}
       <section className="mt-4">
-        <Card className={`border border-surface-border ${UI.cardPad}`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className={`${UI.sectionTitle} text-text-primary`}>Principal Quick Decisions</h2>
-            <p className="text-xs text-text-muted">Controlled workflow transitions</p>
-          </div>
-          <div className="mt-3 rounded-md border border-surface-border bg-surface-muted p-3">
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-semibold text-text-primary">Current stage:</span>
-              <Badge variant={statusVariant(workflowStatus)}>{toStatusLabel(workflowStatus)}</Badge>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-1 text-xs text-text-secondary">
-              {allowedDecisions.length === 0 ? (
-                <span>No further transitions allowed from this state.</span>
-              ) : (
-                allowedDecisions.map((step, index) => (
-                  <div key={step} className="inline-flex items-center gap-1">
-                    <span className="rounded bg-white px-2 py-1 font-medium text-text-primary">
-                      {toStatusLabel(step)}
-                    </span>
-                    {index < allowedDecisions.length - 1 ? (
-                      <ArrowRight className="h-3 w-3 text-text-muted" />
-                    ) : null}
+        <DecisionCard
+          context={decisionContext}
+          isSubmitting={decisionLoading}
+          errorMessage={decisionError}
+          successMessage={decisionSuccess}
+          approvedSlot={
+            statusKey === "approved" ? (
+              <div className="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-50/30 p-4 sm:flex-row sm:items-center">
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                    <Sparkles className="h-4 w-4" />
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-          {decisionError ? (
-            <p className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-              {decisionError}
-            </p>
-          ) : null}
-          {decisionSuccess ? (
-            <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              {decisionSuccess}
-            </p>
-          ) : null}
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <div>
-              <Label>Decision comments</Label>
-              <Textarea
-                value={decisionComments}
-                onChange={(e) => setDecisionComments(e.target.value)}
-                placeholder="Required for approve/reject/on hold/correction"
-                className="min-h-[72px]"
-              />
-            </div>
-            <div>
-              <Label>Correction details</Label>
-              <Textarea
-                value={decisionCorrectionDetails}
-                onChange={(e) => setDecisionCorrectionDetails(e.target.value)}
-                placeholder="Required only for needs correction"
-                className="min-h-[72px]"
-              />
-            </div>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {allowedDecisions.map((decision) => {
-              const rule = DECISION_CONFIG[decision];
-              return (
-                <Button
-                  key={decision}
-                  variant={rule.variant}
-                  className={UI.actionBtn}
-                  disabled={decisionLoading}
-                  onClick={() => void executeDecision(decision)}
-                >
-                  {rule.label}
-                </Button>
+                  <div>
+                    <p className="text-sm font-bold text-emerald-900">
+                      Confirmation letter ready
+                    </p>
+                    <p className="text-[11px] text-emerald-800">
+                      Pre-filled with school branding from settings.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-wrap justify-end gap-2">
+                  <a
+                    href={letterUrls.htmlUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-emerald-700 bg-white px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Preview Letter
+                  </a>
+                  <a
+                    href={letterUrls.pdfUrl}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Download PDF
+                  </a>
+                </div>
+              </div>
+            ) : null
+          }
+          onSubmit={async ({ action, comments, correctionDetails }) => {
+            const token = getPrincipalToken();
+            if (!token) {
+              router.replace(
+                `/principal/login?next=${encodeURIComponent(`/principal/admissions/${params.id}`)}`,
               );
-            })}
-            {allowedDecisions.length === 0 ? (
-              <span className="inline-flex items-center gap-1 rounded-md border border-surface-border bg-surface-muted px-3 py-2 text-sm text-text-secondary">
-                <CircleDot className="h-3.5 w-3.5" />
-                Application is in terminal state.
-              </span>
-            ) : null}
-          </div>
-        </Card>
+              return;
+            }
+            setDecisionLoading(true);
+            setDecisionError(null);
+            setDecisionSuccess(null);
+            try {
+              // Map the canonical action onto the principal review payload.
+              // The review endpoint accepts a tighter set of statuses, so we
+              // route `needs_correction` and `cancelled` through the generic
+              // status patch endpoint instead.
+              const reviewActions: ApplicationStatus[] = [
+                "under_review",
+                "approved",
+                "rejected",
+                "on_hold",
+              ];
+              if (
+                action === "needs_correction" ||
+                action === "cancelled"
+              ) {
+                // Use the generic status PATCH so we don't get blocked by
+                // reviewApplication's narrower whitelist.
+                const res = await fetch(
+                  `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}/api/admissions/${encodeURIComponent(application.applicationId)}/status`,
+                  {
+                    method: "PATCH",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      status: action,
+                      comments,
+                      changedBy: "Principal",
+                      changedByRole: "PRINCIPAL",
+                    }),
+                  },
+                );
+                if (!res.ok) {
+                  const body = await res.json().catch(() => ({}));
+                  throw new Error(
+                    body?.message || "Failed to apply action.",
+                  );
+                }
+                if (
+                  action === "needs_correction" &&
+                  correctionDetails
+                ) {
+                  // Persist the correction details payload via the review
+                  // endpoint so the parent sees them in their portal.
+                  await reviewPrincipalApplication(token, {
+                    applicationId: application.applicationId,
+                    status: "under_review",
+                    comments,
+                    needsCorrection: true,
+                    correctionDetails,
+                  });
+                }
+              } else if (
+                reviewActions.includes(action as ApplicationStatus)
+              ) {
+                await reviewPrincipalApplication(token, {
+                  applicationId: application.applicationId,
+                  status: action as
+                    | "under_review"
+                    | "approved"
+                    | "rejected"
+                    | "on_hold",
+                  comments,
+                  needsCorrection: false,
+                });
+              }
+              const [applicationData, feeData] = await Promise.all([
+                getPrincipalApplicationById(token, params.id),
+                getStudentFeeAccount(token, params.id),
+              ]);
+              setApplication(applicationData);
+              setFeeAccount(feeData);
+              setDecisionSuccess(
+                `Application updated — ${STATUS_LABELS[action] ?? action.replace(/_/g, " ")}.`,
+              );
+            } catch (err) {
+              setDecisionError(
+                err instanceof Error ? err.message : "Failed to apply action.",
+              );
+            } finally {
+              setDecisionLoading(false);
+            }
+          }}
+        />
       </section>
 
       <div className="sticky top-2 z-20 mt-6 rounded-md border border-surface-border bg-white/95 p-2 backdrop-blur">
         <div className="flex flex-wrap gap-2">
-          {(["overview", "documents", "payment", "history"] as Tab[]).map((item) => (
+          {(
+            [
+              "overview",
+              "documents",
+              "payment",
+              "history",
+              "charges",
+              "ledger",
+              "fee_approvals",
+            ] as Tab[]
+          ).map((item) => (
             <Button
               key={item}
               variant={tab === item ? "primary" : "secondary"}
               className="h-9 px-4 text-sm capitalize"
               onClick={() => setTab(item)}
             >
-              {item}
+              {item === "fee_approvals" ? "Fee Approvals" : item}
             </Button>
           ))}
         </div>
@@ -425,36 +602,53 @@ export default function PrincipalAdmissionDetailPage() {
       <section className="mt-4">
         {tab === "overview" ? (
           <Card className={`border border-surface-border ${UI.cardPad}`}>
-            <h2 className={`${UI.sectionTitle} text-text-primary`}>Student & Parent Overview</h2>
+            <h2 className={`${UI.sectionTitle} text-text-primary`}>
+              Student & Parent Overview
+            </h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div className="rounded-md border border-surface-border bg-surface-muted p-4">
                 <p className="text-xs uppercase text-text-muted">Student</p>
                 <p className="mt-2 text-sm text-text-primary">
                   {application.studentFirstName} {application.studentLastName}
                 </p>
-                <p className="mt-1 text-sm text-text-secondary">Contact: {application.emergencyContact}</p>
+                <p className="mt-1 text-sm text-text-secondary">
+                  Contact: {application.emergencyContact}
+                </p>
               </div>
               <div className="rounded-md border border-surface-border bg-surface-muted p-4">
                 <p className="text-xs uppercase text-text-muted">Parents</p>
-                <p className="mt-2 text-sm text-text-primary">Father: {application.fatherName}</p>
-                <p className="mt-1 text-sm text-text-primary">Mother: {application.motherName}</p>
+                <p className="mt-2 text-sm text-text-primary">
+                  Father: {application.fatherName}
+                </p>
+                <p className="mt-1 text-sm text-text-primary">
+                  Mother: {application.motherName}
+                </p>
               </div>
               <div className="rounded-md border border-surface-border bg-surface-muted p-4 md:col-span-2">
                 <p className="text-xs uppercase text-text-muted">Address</p>
-                <p className="mt-2 text-sm text-text-primary">{application.address}</p>
+                <p className="mt-2 text-sm text-text-primary">
+                  {application.address}
+                </p>
               </div>
               {application.correctionDetails ? (
                 <div className="rounded-md border border-amber-200 bg-amber-50 p-4 md:col-span-2">
-                  <p className="text-xs uppercase text-amber-700">Correction Notes</p>
-                  <p className="mt-2 text-sm text-amber-800">{application.correctionDetails}</p>
+                  <p className="text-xs uppercase text-amber-700">
+                    Correction Notes
+                  </p>
+                  <p className="mt-2 text-sm text-amber-800">
+                    {application.correctionDetails}
+                  </p>
                 </div>
               ) : null}
               <div className="rounded-md border border-surface-border bg-white p-4 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase text-text-muted">Printable Review Summary</p>
+                    <p className="text-xs uppercase text-text-muted">
+                      Printable Review Summary
+                    </p>
                     <p className="mt-1 text-sm text-text-secondary">
-                      Use this as a quick principal summary for approvals and records.
+                      Use this as a quick principal summary for approvals and
+                      records.
                     </p>
                   </div>
                   <Button variant="secondary" onClick={() => window.print()}>
@@ -463,20 +657,24 @@ export default function PrincipalAdmissionDetailPage() {
                 </div>
                 <div className="mt-3 grid gap-2 text-sm text-text-primary">
                   <p>
-                    <span className="font-semibold">Application:</span> {application.applicationId}
+                    <span className="font-semibold">Application:</span>{" "}
+                    {application.applicationId}
                   </p>
                   <p>
-                    <span className="font-semibold">Student:</span> {application.studentFirstName}{" "}
-                    {application.studentLastName}
+                    <span className="font-semibold">Student:</span>{" "}
+                    {application.studentFirstName} {application.studentLastName}
                   </p>
                   <p>
-                    <span className="font-semibold">Status:</span> {application.status}
+                    <span className="font-semibold">Status:</span>{" "}
+                    {application.status}
                   </p>
                   <p>
-                    <span className="font-semibold">Payment:</span> {application.payment?.status ?? "none"}
+                    <span className="font-semibold">Payment:</span>{" "}
+                    {application.payment?.status ?? "none"}
                   </p>
                   <p>
-                    <span className="font-semibold">Documents:</span> {application.documents.length}
+                    <span className="font-semibold">Documents:</span>{" "}
+                    {application.documents.length}
                   </p>
                 </div>
               </div>
@@ -486,9 +684,13 @@ export default function PrincipalAdmissionDetailPage() {
 
         {tab === "documents" ? (
           <Card className={`border border-surface-border ${UI.cardPad}`}>
-            <h2 className={`${UI.sectionTitle} text-text-primary`}>Documents</h2>
+            <h2 className={`${UI.sectionTitle} text-text-primary`}>
+              Documents
+            </h2>
             {application.documents.length === 0 ? (
-              <p className="mt-3 text-sm text-text-secondary">No documents uploaded yet.</p>
+              <p className="mt-3 text-sm text-text-secondary">
+                No documents uploaded yet.
+              </p>
             ) : (
               <div className="mt-4 space-y-3">
                 {application.documents.map((doc) => (
@@ -497,9 +699,12 @@ export default function PrincipalAdmissionDetailPage() {
                     className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-surface-border bg-surface-muted p-3"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-text-primary">{doc.name}</p>
+                      <p className="text-sm font-semibold text-text-primary">
+                        {doc.name}
+                      </p>
                       <p className="text-xs text-text-secondary">
-                        Uploaded: {formatDate(doc.uploadedAt)} | Type: {doc.fileType || "unknown"}
+                        Uploaded: {formatDate(doc.uploadedAt)} | Type:{" "}
+                        {doc.fileType || "unknown"}
                       </p>
                     </div>
                     <a
@@ -520,7 +725,9 @@ export default function PrincipalAdmissionDetailPage() {
 
         {tab === "payment" ? (
           <Card className={`border border-surface-border ${UI.cardPad}`}>
-            <h2 className={`${UI.sectionTitle} text-text-primary`}>Payment Workspace</h2>
+            <h2 className={`${UI.sectionTitle} text-text-primary`}>
+              Payment Workspace
+            </h2>
             {!feeAccount ? (
               <p className="mt-3 text-sm text-text-secondary">
                 No fee account/payment plan found for this application yet.
@@ -546,13 +753,19 @@ export default function PrincipalAdmissionDetailPage() {
                   </p>
                 </div>
                 <div className="rounded-md border border-surface-border bg-surface-muted p-4 md:col-span-3">
-                  <p className="text-xs uppercase text-text-muted">Installments</p>
+                  <p className="text-xs uppercase text-text-muted">
+                    Installments
+                  </p>
                   <div className="mt-2 grid gap-2">
                     {feeAccount.installments.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between text-sm">
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between text-sm"
+                      >
                         <span className="text-text-primary">{item.name}</span>
                         <span className="text-text-secondary">
-                          {formatMoney(item.amount)} - {item.isPaid ? "Paid" : "Pending"}
+                          {formatMoney(item.amount)} -{" "}
+                          {item.isPaid ? "Paid" : "Pending"}
                         </span>
                       </div>
                     ))}
@@ -564,56 +777,127 @@ export default function PrincipalAdmissionDetailPage() {
         ) : null}
 
         {tab === "history" ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <StatusTimeline
+              entries={(application.statusHistory ?? []).map((item) => ({
+                id: item.id,
+                status: item.status,
+                changedAt:
+                  typeof item.changedAt === "string"
+                    ? item.changedAt
+                    : new Date(item.changedAt).toISOString(),
+                changedByName: item.changedByName ?? "system",
+                comments: item.comments ?? null,
+              }))}
+            />
+            <Card className={`border border-surface-border ${UI.cardPad}`}>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-brand-royal">
+                Reviews & Transactions
+              </h3>
+              <div className="mt-3 space-y-2">
+                {application.reviews.length === 0 &&
+                allTransactions.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    No reviews or payments yet.
+                  </p>
+                ) : null}
+                {application.reviews.map((review) => (
+                  <div
+                    key={review.id}
+                    className="rounded-md border border-surface-border p-3"
+                  >
+                    <p className="text-sm font-semibold text-text-primary">
+                      {review.reviewerRole} - {review.status}
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      {formatDate(review.reviewedAt)}
+                    </p>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {review.comments}
+                    </p>
+                  </div>
+                ))}
+                {allTransactions.slice(0, 5).map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="rounded-md border border-surface-border bg-surface-muted p-3"
+                  >
+                    <p className="text-sm font-semibold text-text-primary">
+                      {tx.installmentName || "Installment payment"} -{" "}
+                      {formatMoney(tx.amount)}
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      {formatDate(tx.paidAt)} | {tx.method}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        ) : null}
+
+        {tab === "charges" || tab === "ledger" || tab === "fee_approvals" ? (
           <Card className={`border border-surface-border ${UI.cardPad}`}>
-            <h2 className={`${UI.sectionTitle} text-text-primary`}>Status & Review History</h2>
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              <div>
-                <p className="text-sm font-semibold text-text-primary">Status Timeline</p>
-                <div className="mt-2 space-y-2">
-                  {application.statusHistory.length === 0 ? (
-                    <p className="text-sm text-text-secondary">No status history available.</p>
-                  ) : (
-                    application.statusHistory.map((item) => (
-                      <div key={item.id} className="rounded-md border border-surface-border p-3">
-                        <p className="text-sm font-semibold text-text-primary">{item.status}</p>
-                        <p className="text-xs text-text-secondary">
-                          {formatDate(item.changedAt)} by {item.changedByName || "system"}
-                        </p>
-                        {item.comments ? (
-                          <p className="mt-1 text-xs text-text-secondary">{item.comments}</p>
-                        ) : null}
-                      </div>
-                    ))
-                  )}
+            {feeLoading && (
+              <p className="flex items-center gap-2 text-sm text-text-secondary">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading fee data...
+              </p>
+            )}
+            {feeError && (
+              <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {feeError}
+              </p>
+            )}
+            {feeData && !feeLoading && (
+              <>
+                <FeeAccountSummary feeAccount={feeData} />
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button
+                    variant="secondary"
+                    className={UI.actionBtn}
+                    onClick={() => setFeeDataLoaded(false)}
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className={UI.actionBtn}
+                    onClick={() => setShowPaymentModal(true)}
+                  >
+                    Record Payment
+                  </Button>
                 </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-text-primary">Reviews & Transactions</p>
-                <div className="mt-2 space-y-2">
-                  {application.reviews.map((review) => (
-                    <div key={review.id} className="rounded-md border border-surface-border p-3">
-                      <p className="text-sm font-semibold text-text-primary">
-                        {review.reviewerRole} - {review.status}
-                      </p>
-                      <p className="text-xs text-text-secondary">{formatDate(review.reviewedAt)}</p>
-                      <p className="mt-1 text-xs text-text-secondary">{review.comments}</p>
-                    </div>
-                  ))}
-                  {allTransactions.slice(0, 5).map((tx) => (
-                    <div key={tx.id} className="rounded-md border border-surface-border bg-surface-muted p-3">
-                      <p className="text-sm font-semibold text-text-primary">
-                        {tx.installmentName || "Installment payment"} - {formatMoney(tx.amount)}
-                      </p>
-                      <p className="text-xs text-text-secondary">
-                        {formatDate(tx.paidAt)} | {tx.method}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+              </>
+            )}
+            {tab === "charges" && feeData && !feeLoading && (
+              <FeeChargesTab
+                charges={feeData.charges}
+                accountId={feeData.id}
+                token={getPrincipalToken() ?? ""}
+                onCharged={() => setFeeDataLoaded(false)}
+              />
+            )}
+            {tab === "ledger" && feeData && !feeLoading && (
+              <FeeLedgerTab entries={feeData.ledgerEntries} />
+            )}
+            {tab === "fee_approvals" && !feeLoading && (
+              <FeeApprovalsTab approvals={[]} />
+            )}
           </Card>
         ) : null}
+
+        {showPaymentModal && (
+          <RecordPaymentModal
+            applicationId={params.id}
+            token={getPrincipalToken() ?? ""}
+            onClose={() => setShowPaymentModal(false)}
+            onSuccess={() => {
+              setShowPaymentModal(false);
+              setFeeDataLoaded(false);
+            }}
+          />
+        )}
       </section>
     </main>
   );

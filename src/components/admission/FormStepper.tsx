@@ -9,6 +9,7 @@ const STEP_LABELS = [
   "Additional",
   "Documents",
   "Review",
+  "Fees",
 ];
 
 interface FormStepperProps {

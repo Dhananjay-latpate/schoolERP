@@ -59,6 +59,7 @@ import {
   clearPrincipalSession,
   getPrincipalToken,
 } from "@/lib/principalSession";
+import { MASTER_GRADES, SECTION_LETTERS } from "@/lib/grades";
 
 const PAGE_SIZE = 10;
 const TOAST_TTL_MS = 3500;
@@ -91,6 +92,19 @@ type PipelineStage =
   | "needs_correction"
   | "approved"
   | "rejected";
+
+// Each pipeline bucket can match more than one canonical status. The
+// "Awaiting Review" bucket includes both `payment_completed` (briefly) and
+// `submitted` (the steady-state) so the principal sees every application
+// that is ready for them to act on, in one place.
+const STAGE_MATCHES: Record<PipelineStage, string[]> = {
+  payment_completed: ["payment_completed", "submitted"],
+  under_review: ["under_review"],
+  on_hold: ["on_hold"],
+  needs_correction: ["needs_correction"],
+  approved: ["approved"],
+  rejected: ["rejected"],
+};
 
 const PIPELINE_STAGES: {
   id: PipelineStage;
@@ -263,7 +277,10 @@ type AuditLogEntry = {
 type CustomPlanDraftMap = Record<string, EditableCustomInstallment[]>;
 type SettingsInstallmentDraft = {
   name: string;
-  dueDate: string;
+  // Days from enrollment when this installment is due. 0 = on enrollment day.
+  // Calendar dates are not configured here — the system computes them per
+  // student so the schedule is always relative to the actual enrollment date.
+  dueOffsetDays: number;
   percentage: number;
 };
 
@@ -347,8 +364,7 @@ export default function PrincipalAdmissionsDashboardPage() {
   const [feeAcademicYear, setFeeAcademicYear] = useState(
     new Date().getFullYear().toString(),
   );
-  const [admissionStartDate, setAdmissionStartDate] = useState("");
-  const [installmentIntervalMonths, setInstallmentIntervalMonths] = useState(1);
+  const [installmentIntervalDays, setInstallmentIntervalDays] = useState(30);
   const [feeComponentsDraft, setFeeComponentsDraft] = useState<
     FeeComponentInput[]
   >([
@@ -358,9 +374,9 @@ export default function PrincipalAdmissionsDashboardPage() {
   const [installmentsDraft, setInstallmentsDraft] = useState<
     SettingsInstallmentDraft[]
   >([
-    { name: "Installment 1", dueDate: "", percentage: 40 },
-    { name: "Installment 2", dueDate: "", percentage: 30 },
-    { name: "Installment 3", dueDate: "", percentage: 30 },
+    { name: "Installment 1", dueOffsetDays: 0, percentage: 40 },
+    { name: "Installment 2", dueOffsetDays: 30, percentage: 30 },
+    { name: "Installment 3", dueOffsetDays: 60, percentage: 30 },
   ]);
 
   // Transition modal state
@@ -519,14 +535,6 @@ export default function PrincipalAdmissionsDashboardPage() {
     }
   }, [classes, feeClassId]);
 
-  useEffect(() => {
-    if (!admissionStartDate) return;
-    setInstallmentsDraft((prev) =>
-      prev.map((item, index) =>
-        index === 0 ? { ...item, dueDate: admissionStartDate } : item,
-      ),
-    );
-  }, [admissionStartDate]);
 
   const yearOptions = useMemo(() => {
     const years = new Set<string>();
@@ -537,8 +545,9 @@ export default function PrincipalAdmissionsDashboardPage() {
   // Applications in the currently active pipeline stage
   const stageApplications = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
+    const acceptedStatuses = new Set(STAGE_MATCHES[activePipelineStage] ?? []);
     return applications.filter((app) => {
-      if (app.status !== activePipelineStage) return false;
+      if (!acceptedStatuses.has(app.status)) return false;
       if (yearFilter !== "all" && app.admissionYear !== yearFilter)
         return false;
       if (classFilter !== "all" && app.class?.id !== classFilter) return false;
@@ -553,11 +562,15 @@ export default function PrincipalAdmissionsDashboardPage() {
     });
   }, [applications, activePipelineStage, yearFilter, classFilter, searchTerm]);
 
-  // Counts per pipeline stage for the header
+  // Counts per pipeline stage for the header — each bucket aggregates the
+  // canonical statuses listed in STAGE_MATCHES so "Awaiting Review" surfaces
+  // both payment_completed and submitted applications, etc.
   const stageCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const app of applications) {
-      counts[app.status] = (counts[app.status] ?? 0) + 1;
+    for (const stage of PIPELINE_STAGES) {
+      counts[stage.id] = applications.filter((app) =>
+        STAGE_MATCHES[stage.id].includes(app.status),
+      ).length;
     }
     return counts;
   }, [applications]);
@@ -1133,32 +1146,24 @@ export default function PrincipalAdmissionsDashboardPage() {
   });
 
   const resetFeeSetupForm = () => {
-    setAdmissionStartDate("");
-    setInstallmentIntervalMonths(1);
+    setInstallmentIntervalDays(30);
     setFeeComponentsDraft([
       { name: "Tuition Fee", amount: 0, description: "", isMandatory: true },
       { name: "Lab Fee", amount: 0, description: "", isMandatory: false },
     ]);
     setInstallmentsDraft([
-      { name: "Installment 1", dueDate: "", percentage: 40 },
-      { name: "Installment 2", dueDate: "", percentage: 30 },
-      { name: "Installment 3", dueDate: "", percentage: 30 },
+      { name: "Installment 1", dueOffsetDays: 0, percentage: 40 },
+      { name: "Installment 2", dueOffsetDays: 30, percentage: 30 },
+      { name: "Installment 3", dueOffsetDays: 60, percentage: 30 },
     ]);
   };
 
-  const autoScheduleInstallmentDates = () => {
-    if (!admissionStartDate) {
-      addToast(
-        "error",
-        "Set admission date first to auto-schedule installment dates.",
-      );
-      return;
-    }
-    const interval = Math.max(1, Number(installmentIntervalMonths) || 1);
+  const autoScheduleInstallmentOffsets = () => {
+    const interval = Math.max(1, Number(installmentIntervalDays) || 1);
     setInstallmentsDraft((prev) =>
       prev.map((item, index) => ({
         ...item,
-        dueDate: addMonthsToDate(admissionStartDate, interval * index),
+        dueOffsetDays: index * interval,
       })),
     );
   };
@@ -1202,14 +1207,16 @@ export default function PrincipalAdmissionsDashboardPage() {
     }
 
     const mappedInstallments = primaryInstallmentOption.installments.map(
-      (installment) => ({
+      (installment, index) => ({
         name: installment.name,
-        dueDate: normalizeDateForInput(installment.dueDate),
+        dueOffsetDays:
+          typeof installment.dueOffsetDays === "number"
+            ? installment.dueOffsetDays
+            : index * 30,
         percentage: Number(installment.percentage),
       }),
     );
     setInstallmentsDraft(mappedInstallments);
-    setAdmissionStartDate(mappedInstallments[0]?.dueDate ?? "");
   };
 
   const handleCreateClass = async () => {
@@ -1265,13 +1272,6 @@ export default function PrincipalAdmissionsDashboardPage() {
       addToast("error", "Select a class before creating fee structure.");
       return;
     }
-    if (!admissionStartDate) {
-      addToast(
-        "error",
-        "Admission date is required. First installment is due on admission date.",
-      );
-      return;
-    }
 
     const normalizedComponents = feeComponentsDraft
       .map((item) => ({
@@ -1298,22 +1298,39 @@ export default function PrincipalAdmissionsDashboardPage() {
     }
 
     const normalizedInstallments = installmentsDraft.map((item, index) => {
-      const dueDate = index === 0 ? admissionStartDate : item.dueDate.trim();
+      const offset = Math.max(0, Math.trunc(Number(item.dueOffsetDays)));
       return {
         name: item.name.trim() || `Installment ${index + 1}`,
-        dueDate,
+        dueOffsetDays: Number.isFinite(offset) ? offset : index * 30,
         percentage: Number(item.percentage),
       };
     });
     if (
       normalizedInstallments.some(
         (item) =>
-          !/^\d{4}-\d{2}-\d{2}$/.test(item.dueDate) || item.percentage <= 0,
+          !Number.isFinite(item.dueOffsetDays) ||
+          item.dueOffsetDays < 0 ||
+          item.percentage <= 0,
       )
     ) {
       addToast(
         "error",
-        "Installments need valid due date (YYYY-MM-DD) and percentage.",
+        "Each installment needs a valid 'days after enrollment' value (0 or more) and a percentage greater than 0.",
+      );
+      return;
+    }
+    const sortedOffsets = normalizedInstallments
+      .map((item) => item.dueOffsetDays)
+      .slice()
+      .sort((a, b) => a - b);
+    if (
+      sortedOffsets.some((offset, idx) =>
+        idx === 0 ? false : offset === sortedOffsets[idx - 1],
+      )
+    ) {
+      addToast(
+        "error",
+        "Installment offsets must be unique (no two installments can fall on the same day).",
       );
       return;
     }
@@ -2152,8 +2169,8 @@ export default function PrincipalAdmissionsDashboardPage() {
                   </p>
                   <div className="mt-4 grid gap-3">
                     <div>
-                      <Label>Class Name</Label>
-                      <Input
+                      <Label>Grade</Label>
+                      <Select
                         value={classForm.name}
                         onChange={(e) =>
                           setClassForm((prev) => ({
@@ -2161,12 +2178,22 @@ export default function PrincipalAdmissionsDashboardPage() {
                             name: e.target.value,
                           }))
                         }
-                        placeholder="Class 1"
-                      />
+                      >
+                        <option value="">Select grade</option>
+                        {MASTER_GRADES.map((grade) => (
+                          <option key={grade} value={grade}>
+                            {grade}
+                          </option>
+                        ))}
+                      </Select>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Standard grades only. Free-text class names are no
+                        longer accepted.
+                      </p>
                     </div>
                     <div>
                       <Label>Section (optional)</Label>
-                      <Input
+                      <Select
                         value={classForm.section}
                         onChange={(e) =>
                           setClassForm((prev) => ({
@@ -2174,8 +2201,14 @@ export default function PrincipalAdmissionsDashboardPage() {
                             section: e.target.value,
                           }))
                         }
-                        placeholder="A"
-                      />
+                      >
+                        <option value="">No section</option>
+                        {SECTION_LETTERS.map((letter) => (
+                          <option key={letter} value={letter}>
+                            {letter}
+                          </option>
+                        ))}
+                      </Select>
                     </div>
                     <div>
                       <Label>Academic Year</Label>
@@ -2360,15 +2393,12 @@ export default function PrincipalAdmissionsDashboardPage() {
                             ...prev,
                             {
                               name: `Installment ${prev.length + 1}`,
-                              dueDate: admissionStartDate
-                                ? addMonthsToDate(
-                                    admissionStartDate,
-                                    Math.max(
-                                      1,
-                                      Number(installmentIntervalMonths) || 1,
-                                    ) * prev.length,
-                                  )
-                                : "",
+                              dueOffsetDays:
+                                prev.length *
+                                Math.max(
+                                  1,
+                                  Number(installmentIntervalDays) || 30,
+                                ),
                               percentage: 0,
                             },
                           ])
@@ -2377,26 +2407,19 @@ export default function PrincipalAdmissionsDashboardPage() {
                         Add
                       </Button>
                     </div>
-                    <div className="mb-3 grid gap-2 md:grid-cols-[1.5fr_1fr_1fr]">
+                    <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                      Installment due dates are configured as <span className="font-semibold">days after the student's enrollment</span>, not calendar dates. The system computes the actual due date for each student when their plan is created — so installments stay correct no matter when the parent enrolls during the admission window.
+                    </div>
+                    <div className="mb-3 grid gap-2 md:grid-cols-[1fr_auto]">
                       <div>
-                        <Label>Admission Date (Installment 1)</Label>
-                        <Input
-                          type="date"
-                          value={admissionStartDate}
-                          onChange={(e) =>
-                            setAdmissionStartDate(e.target.value)
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label>Interval (months)</Label>
+                        <Label>Spacing between installments (days)</Label>
                         <Input
                           type="number"
                           min={1}
-                          value={installmentIntervalMonths}
+                          value={installmentIntervalDays}
                           onChange={(e) =>
-                            setInstallmentIntervalMonths(
-                              Number(e.target.value || 1),
+                            setInstallmentIntervalDays(
+                              Number(e.target.value || 30),
                             )
                           }
                         />
@@ -2405,9 +2428,9 @@ export default function PrincipalAdmissionsDashboardPage() {
                         <Button
                           variant="secondary"
                           className="w-full"
-                          onClick={autoScheduleInstallmentDates}
+                          onClick={autoScheduleInstallmentOffsets}
                         >
-                          Auto-fill Dates
+                          Auto-fill Offsets
                         </Button>
                       </div>
                     </div>
@@ -2430,20 +2453,36 @@ export default function PrincipalAdmissionsDashboardPage() {
                             }
                             placeholder="Installment name"
                           />
-                          <Input
-                            type="date"
-                            value={installment.dueDate}
-                            disabled={index === 0}
-                            onChange={(e) =>
-                              setInstallmentsDraft((prev) =>
-                                prev.map((item, idx) =>
-                                  idx === index
-                                    ? { ...item, dueDate: e.target.value }
-                                    : item,
-                                ),
-                              )
-                            }
-                          />
+                          <div>
+                            <Input
+                              type="number"
+                              min={0}
+                              value={installment.dueOffsetDays}
+                              onChange={(e) =>
+                                setInstallmentsDraft((prev) =>
+                                  prev.map((item, idx) =>
+                                    idx === index
+                                      ? {
+                                          ...item,
+                                          dueOffsetDays: Math.max(
+                                            0,
+                                            Math.trunc(
+                                              Number(e.target.value || 0),
+                                            ),
+                                          ),
+                                        }
+                                      : item,
+                                  ),
+                                )
+                              }
+                              placeholder="Days after enrollment"
+                            />
+                            <p className="mt-1 text-[11px] text-slate-500">
+                              {installment.dueOffsetDays === 0
+                                ? "Due on enrollment day"
+                                : `Due ${installment.dueOffsetDays} day${installment.dueOffsetDays === 1 ? "" : "s"} after enrollment`}
+                            </p>
+                          </div>
                           <Input
                             type="number"
                             min={1}

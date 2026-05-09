@@ -1,3 +1,4 @@
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
 
@@ -113,6 +114,11 @@ export type Installment = {
   name: string;
   percentage: number;
   amount: number;
+  // Days from enrollment when this installment is due. Resolved to a real
+  // calendar date per student at plan creation; primary schedule semantics.
+  dueOffsetDays?: number | null;
+  // Legacy fixed-calendar fallback. Optional, only used when an offset is
+  // not present on a legacy fee structure.
   dueDate?: string | null;
 };
 
@@ -146,12 +152,36 @@ export async function getPublicClasses(
   return request<PublicClass[]>(`/api/classes/public${params}`);
 }
 
+export type ActiveAdmissionSession = {
+  id: string;
+  sessionCode: string;
+  startYear: number;
+  endYear: number;
+  status: string;
+};
+
+// Public read of the currently-commenced admission session. Used in the
+// parent form header so the academic year shown matches reality.
+export async function getActiveAdmissionSessionPublic(): Promise<ActiveAdmissionSession | null> {
+  try {
+    return await request<ActiveAdmissionSession>(
+      "/api/admissions/session/active",
+    );
+  } catch {
+    return null;
+  }
+}
+
 export async function getFeeStructure(
   className: string,
   academicYear: string,
 ): Promise<FeeStructure> {
+  // Public mirror under /api/admissions so unauthenticated parents can
+  // render fees on the admission form. The fee-management endpoints under
+  // /api/fees/* require authentication (financial data) and are reserved
+  // for the principal/admin dashboards.
   return request<FeeStructure>(
-    `/api/fees/structure/class/${encodeURIComponent(className)}/year/${encodeURIComponent(academicYear)}`,
+    `/api/admissions/public/fees/${encodeURIComponent(className)}/${encodeURIComponent(academicYear)}`,
   );
 }
 

@@ -286,6 +286,37 @@ export default function AdmissionStatusPage() {
         Keep this page bookmarked to track updates from school administration.
       </div>
 
+      {data.status === "approved" && (
+        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
+            Admission Confirmed
+          </p>
+          <h2 className="mt-1 text-lg font-bold text-emerald-900">
+            Your admission letter is ready
+          </h2>
+          <p className="mt-1 text-sm text-emerald-800">
+            Welcome to the school. Preview your confirmation letter or
+            download the PDF for your records.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}/api/admissions/${encodeURIComponent(data.applicationId)}/letter`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-emerald-700 bg-white px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+            >
+              Preview Letter
+            </a>
+            <a
+              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}/api/admissions/${encodeURIComponent(data.applicationId)}/letter/pdf`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              Download PDF
+            </a>
+          </div>
+        </div>
+      )}
+
       {planStatus?.hasPlan && planStatus.status === "pending_approval" && (
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-800">

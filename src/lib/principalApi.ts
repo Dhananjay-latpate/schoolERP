@@ -1,5 +1,20 @@
+import type {
+  FeeHead,
+  FeeInstallmentTemplate,
+  TemplateLine,
+  LateFeeRule,
+} from "../types/fees";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+
+export const buildAdmissionLetterUrls = (applicationId: string) => {
+  const encoded = encodeURIComponent(applicationId);
+  return {
+    htmlUrl: `${API_BASE_URL}/api/admissions/${encoded}/letter`,
+    pdfUrl: `${API_BASE_URL}/api/admissions/${encoded}/letter/pdf`,
+  };
+};
 
 export class PrincipalApiError extends Error {
   status: number;
@@ -63,11 +78,7 @@ export type PrincipalClass = {
   isActive?: boolean;
 };
 
-export type AdmissionSessionStatus =
-  | "draft"
-  | "ready"
-  | "commenced"
-  | "closed";
+export type AdmissionSessionStatus = "draft" | "ready" | "commenced" | "closed";
 
 export type PrincipalAdmissionSession = {
   id: string;
@@ -104,7 +115,11 @@ export type FeeComponentInput = {
 
 export type InstallmentInput = {
   name: string;
-  dueDate: string;
+  // Canonical schedule semantics — days from enrollment when this
+  // installment falls due. Resolved to a real calendar date per student.
+  dueOffsetDays: number;
+  // Optional fallback for legacy fixed-calendar templates only.
+  dueDate?: string;
   percentage: number;
   amount?: number;
 };
@@ -142,7 +157,8 @@ export type PrincipalFeeStructure = {
     installments: Array<{
       id: string;
       name: string;
-      dueDate: string;
+      dueDate: string | null;
+      dueOffsetDays?: number | null;
       percentage: number;
       amount?: number | null;
     }>;
@@ -187,6 +203,68 @@ export type PrincipalApplicationDetail = PrincipalApplication & {
   }>;
 };
 
+export type FeeAccountCharge = {
+  id: string;
+  name: string;
+  source: string;
+  amount: number; // RUPEES
+  paid: number; // RUPEES
+  due: number; // RUPEES
+  dueDate: string | Date | null;
+  status: string;
+  paymentInstallmentId: string | null;
+};
+
+export type FeeAccountLedgerEntry = {
+  id: string;
+  entryType: string;
+  debit: number; // RUPEES
+  credit: number; // RUPEES
+  referenceType: string | null;
+  referenceId: string | null;
+  postedAt: string | Date;
+  description: string | null;
+};
+
+export type FeeAccount = {
+  id: string;
+  status: string;
+  totalCharged: number; // RUPEES
+  totalConcession: number; // RUPEES
+  totalPaid: number; // RUPEES
+  totalDue: number; // RUPEES
+  charges: FeeAccountCharge[];
+  ledgerEntries: FeeAccountLedgerEntry[];
+} | null;
+
+export type PendingFeeApproval = {
+  id: string;
+  type: "custom_installment" | "concession" | "late_fee_waiver";
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  reason: string;
+  comments?: string | null;
+  accountId?: string | null;
+  paymentPlanId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt?: string | null;
+  requestedBy?: { id: string; name: string; role: string } | null;
+  reviewedBy?: { id: string; name: string; role: string } | null;
+  documents: Array<{
+    id: string;
+    name: string;
+    url: string;
+    fileType?: string | null;
+    fileSize?: number | null;
+  }>;
+  concession?: {
+    id: string;
+    type: string;
+    amountInPaise: string | number;
+  } | null;
+  lateFeeWaiver?: { id: string; amountInPaise: string | number } | null;
+};
+
 export type StudentFeeAccount = {
   planId: string;
   applicationId: string;
@@ -197,6 +275,7 @@ export type StudentFeeAccount = {
   remainingAmount: number;
   status: string;
   isCustomPlan: boolean;
+  feeAccount?: FeeAccount;
   installments: Array<{
     id: string;
     name: string;
@@ -294,7 +373,9 @@ async function request<T>(
     cache: "no-store",
   });
 
-  const rawBody = (await parseErrorBody(response)) as ApiEnvelope<T> | undefined;
+  const rawBody = (await parseErrorBody(response)) as
+    | ApiEnvelope<T>
+    | undefined;
 
   if (!response.ok) {
     const message =
@@ -329,7 +410,10 @@ async function request<T>(
 export async function getPrincipalDashboardStats(
   token: string,
 ): Promise<PrincipalDashboardStats> {
-  return request<PrincipalDashboardStats>("/api/principal/dashboard/stats", token);
+  return request<PrincipalDashboardStats>(
+    "/api/principal/dashboard/stats",
+    token,
+  );
 }
 
 export async function listPrincipalApplications(
@@ -456,10 +540,14 @@ export async function initializeAdmissionSession(
     session: PrincipalAdmissionSession;
     classesCreated: number;
     feeStructuresCreated: number;
-  }>(`/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}/initialize`, token, {
-    method: "POST",
-    body: JSON.stringify(payload ?? {}),
-  });
+  }>(
+    `/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}/initialize`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    },
+  );
 }
 
 export async function getAdmissionSessionReadiness(
@@ -494,7 +582,9 @@ export async function closeAdmissionSession(
   );
 }
 
-export async function listFeeStructures(token: string): Promise<PrincipalFeeStructure[]> {
+export async function listFeeStructures(
+  token: string,
+): Promise<PrincipalFeeStructure[]> {
   return request<PrincipalFeeStructure[]>("/api/fees/structure", token);
 }
 
@@ -517,10 +607,14 @@ export async function reviewPrincipalApplication(
   token: string,
   payload: ReviewPrincipalApplicationInput,
 ): Promise<{ message: string }> {
-  return request<{ message: string }>("/api/principal/review-application", token, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  return request<{ message: string }>(
+    "/api/principal/review-application",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
 }
 
 export async function getPrincipalApplicationById(
@@ -536,7 +630,11 @@ export async function getPrincipalApplicationById(
   );
 
   const body = (await parseErrorBody(response)) as
-    | { success: boolean; message?: string; application?: PrincipalApplicationDetail }
+    | {
+        success: boolean;
+        message?: string;
+        application?: PrincipalApplicationDetail;
+      }
     | undefined;
 
   if (!response.ok || !body?.success || !body.application) {
@@ -591,8 +689,222 @@ export async function updatePendingCustomPaymentPlan(
     comments?: string;
   },
 ): Promise<PendingCustomPaymentPlan> {
-  return request<PendingCustomPaymentPlan>("/api/fees/payment-plan/custom/update", token, {
-    method: "PUT",
+  return request<PendingCustomPaymentPlan>(
+    "/api/fees/payment-plan/custom/update",
+    token,
+    {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+// ─── Installment Templates ────────────────────────────────────────────────────
+
+export async function listInstallmentTemplates(
+  token: string,
+  academicYear?: string,
+): Promise<FeeInstallmentTemplate[]> {
+  const qs = academicYear
+    ? `?academicYear=${encodeURIComponent(academicYear)}`
+    : "";
+  return request<FeeInstallmentTemplate[]>(
+    `/api/fees/installment-templates${qs}`,
+    token,
+  );
+}
+
+export async function createInstallmentTemplate(
+  token: string,
+  payload: { name: string; academicYear: string; lines: TemplateLine[] },
+): Promise<FeeInstallmentTemplate> {
+  return request<FeeInstallmentTemplate>(
+    "/api/fees/installment-templates",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function deleteInstallmentTemplate(
+  token: string,
+  id: string,
+): Promise<void> {
+  await request<unknown>(
+    `/api/fees/installment-templates/${encodeURIComponent(id)}`,
+    token,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+// ─── Approvals Queue ──────────────────────────────────────────────────────────
+
+export async function listPendingApprovals(
+  token: string,
+): Promise<PendingFeeApproval[]> {
+  return request<PendingFeeApproval[]>("/api/fees/approvals/pending", token);
+}
+
+export async function reviewConcession(
+  token: string,
+  payload: { id: string; approved: boolean; reviewerNotes?: string },
+): Promise<PendingFeeApproval> {
+  return request<PendingFeeApproval>("/api/fees/concessions/review", token, {
+    method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function reviewLateFeeWaiver(
+  token: string,
+  payload: { id: string; approved: boolean; reviewerNotes?: string },
+): Promise<PendingFeeApproval> {
+  return request<PendingFeeApproval>(
+    "/api/fees/late-fee-waivers/review",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+// ─── Fee Heads ────────────────────────────────────────────────────────────────
+
+export async function listFeeHeads(token: string): Promise<FeeHead[]> {
+  return request<FeeHead[]>("/api/fees/fee-heads", token);
+}
+
+export async function upsertFeeHead(
+  token: string,
+  payload: { code: string; name: string; category: string; isActive?: boolean },
+): Promise<FeeHead> {
+  return request<FeeHead>("/api/fees/fee-heads", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function archiveFeeHead(token: string, id: string): Promise<void> {
+  await request<unknown>(
+    `/api/fees/fee-heads/${encodeURIComponent(id)}`,
+    token,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+// ─── Late Fee Rules ───────────────────────────────────────────────────────────
+
+export async function listLateFeeRules(
+  token: string,
+  academicYear?: string,
+): Promise<LateFeeRule[]> {
+  const qs = academicYear
+    ? `?academicYear=${encodeURIComponent(academicYear)}`
+    : "";
+  return request<LateFeeRule[]>(`/api/fees/late-fees/rules${qs}`, token);
+}
+
+export async function createLateFeeRule(
+  token: string,
+  payload: {
+    name: string;
+    academicYear: string;
+    graceDays: number;
+    frequency: string;
+    fixedAmount?: number;
+    percentage?: number;
+    maxAmount?: number;
+  },
+): Promise<LateFeeRule> {
+  return request<LateFeeRule>("/api/fees/late-fees/rules", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function applyLateFees(
+  token: string,
+  payload: { academicYear: string; asOf?: string },
+): Promise<{ applied: number }> {
+  return request<{ applied: number }>("/api/fees/late-fees/apply", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ─── Fee Assignments ──────────────────────────────────────────────────────────
+
+export async function assignFeeCharge(
+  token: string,
+  payload: {
+    accountId: string;
+    type: string;
+    name: string;
+    amountInPaise: number;
+    dueDate?: string;
+    feeHeadId?: string;
+  },
+): Promise<unknown> {
+  return request<unknown>("/api/fees/assignments", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ─── Manual Payment ───────────────────────────────────────────────────────────
+// amount is in RUPEES (legacy Float), NOT paise
+
+export async function recordManualPayment(
+  token: string,
+  payload: {
+    installmentId: string;
+    amount: number; // RUPEES — NOT paise
+    method: string;
+    transactionId?: string;
+    notes?: string;
+  },
+): Promise<unknown> {
+  return request<unknown>("/api/fees/record-payment", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ─── Concession Request ───────────────────────────────────────────────────────
+
+export async function requestConcession(
+  token: string,
+  payload: {
+    accountId: string;
+    type: string;
+    amountInPaise: number;
+    reason: string;
+  },
+): Promise<PendingFeeApproval> {
+  return request<PendingFeeApproval>("/api/fees/concessions/request", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ─── Tally Export (returns XML) ───────────────────────────────────────────────
+
+export async function exportTallyDaybook(
+  token: string,
+  params: { from: string; to: string },
+): Promise<string> {
+  const qs = `?from=${encodeURIComponent(params.from)}&to=${encodeURIComponent(params.to)}`;
+  const res = await fetch(
+    `${API_BASE_URL}/api/fees/exports/tally-daybook${qs}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) throw new PrincipalApiError(`Tally export failed`, res.status);
+  return res.text();
 }
