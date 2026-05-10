@@ -36,7 +36,7 @@ export function FeeChargesTab({ charges, accountId, token, onCharged }: Props) {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-700">Fee Charges</h3>
-        <Button size="sm" onClick={() => setShowModal(true)}>
+        <Button onClick={() => setShowModal(true)}>
           <Plus className="mr-1.5 h-4 w-4" />
           Add Charge
         </Button>

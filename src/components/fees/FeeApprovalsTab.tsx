@@ -12,6 +12,7 @@ const STATUS_ICONS = {
   pending: <Clock className="h-4 w-4 text-amber-500" />,
   approved: <CheckCircle2 className="h-4 w-4 text-green-600" />,
   rejected: <XCircle className="h-4 w-4 text-red-500" />,
+  cancelled: <XCircle className="h-4 w-4 text-gray-400" />,
 };
 
 const TYPE_LABELS: Record<string, string> = {

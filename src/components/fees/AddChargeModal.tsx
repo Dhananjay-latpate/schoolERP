@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { assignFeeCharge, PrincipalApiError } from "@/lib/principalApi";
 import { rupeesToPaise } from "@/lib/money";
+import type { FeeAssignmentType } from "@/types/fees";
 
 interface Props {
   accountId: string;
@@ -22,6 +23,7 @@ export function AddChargeModal({
   onSuccess,
 }: Props) {
   const [name, setName] = useState("");
+  const [type, setType] = useState<FeeAssignmentType>("misc");
   const [feeHeadId, setFeeHeadId] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -41,7 +43,8 @@ export function AddChargeModal({
     setLoading(true);
     try {
       await assignFeeCharge(token, {
-        feeAccountId: accountId,
+        accountId,
+        type,
         feeHeadId: feeHeadId || undefined,
         name: name.trim(),
         amountInPaise: rupeesToPaise(rupees), // convert rupees → paise for backend
@@ -71,6 +74,22 @@ export function AddChargeModal({
         </div>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="p-5 space-y-4">
+          <div>
+            <Label htmlFor="charge-type">Type *</Label>
+            <select
+              id="charge-type"
+              value={type}
+              onChange={(e) => setType(e.target.value as FeeAssignmentType)}
+              disabled={loading}
+              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="misc">Miscellaneous</option>
+              <option value="transport">Transport</option>
+              <option value="hostel">Hostel</option>
+              <option value="exam">Exam</option>
+              <option value="activity">Activity</option>
+            </select>
+          </div>
           <div>
             <Label htmlFor="charge-name">Charge Name *</Label>
             <Input
@@ -110,7 +129,7 @@ export function AddChargeModal({
           <div className="flex justify-end gap-3 pt-1">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={onClose}
               disabled={loading}
             >

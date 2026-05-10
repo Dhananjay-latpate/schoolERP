@@ -51,13 +51,13 @@ export function FeeLedgerTab({ entries }: Props) {
               className="border-b border-gray-100 last:border-0"
             >
               <td className="py-2.5 pr-4 text-gray-500">
-                {formatDate(entry.date)}
+                {formatDate(entry.postedAt)}
               </td>
               <td className="py-2.5 pr-4">
                 <span
-                  className={`capitalize font-medium ${TYPE_COLORS[entry.type] ?? "text-gray-700"}`}
+                  className={`capitalize font-medium ${TYPE_COLORS[entry.entryType] ?? "text-gray-700"}`}
                 >
-                  {entry.type.replace(/_/g, " ")}
+                  {entry.entryType.replace(/_/g, " ")}
                 </span>
               </td>
               <td className="py-2.5 pr-4 text-gray-700">
@@ -67,21 +67,18 @@ export function FeeLedgerTab({ entries }: Props) {
                 {entry.method ?? "—"}
               </td>
               <td
-                className={`py-2.5 pr-4 text-right font-medium ${TYPE_COLORS[entry.type] ?? "text-gray-700"}`}
+                className={`py-2.5 pr-4 text-right font-medium ${TYPE_COLORS[entry.entryType] ?? "text-gray-700"}`}
               >
-                {entry.type === "charge" || entry.type === "late_fee"
-                  ? "-"
-                  : "+"}
+                {entry.debit > 0 ? "-" : "+"}
                 ₹
-                {entry.amount.toLocaleString("en-IN", {
+                {(entry.debit || entry.credit).toLocaleString("en-IN", {
                   minimumFractionDigits: 2,
                 })}
               </td>
               <td className="py-2.5 text-right text-gray-700">
-                ₹
-                {entry.runningBalance.toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                })}
+                {entry.runningBalance != null
+                  ? `₹${entry.runningBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+                  : "—"}
               </td>
             </tr>
           ))}

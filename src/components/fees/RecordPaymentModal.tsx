@@ -47,7 +47,7 @@ export function RecordPaymentModal({
         applicationId,
         amount: rupees,
         method,
-        referenceNumber: reference || undefined,
+        transactionId: reference || undefined,
         notes: notes || undefined,
       });
       onSuccess();
@@ -135,7 +135,7 @@ export function RecordPaymentModal({
           <div className="flex justify-end gap-3 pt-1">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={onClose}
               disabled={loading}
             >

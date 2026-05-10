@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +19,7 @@ const UI = {
   secondaryBtn: "h-10 px-4 text-sm",
 };
 
-export default function PrincipalLoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [token, setToken] = useState("");
@@ -129,5 +129,13 @@ export default function PrincipalLoginPage() {
         </div>
       </Card>
     </main>
+  );
+}
+
+export default function PrincipalLoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

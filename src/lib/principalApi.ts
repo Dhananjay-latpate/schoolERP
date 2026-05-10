@@ -226,6 +226,8 @@ export type FeeAccountLedgerEntry = {
   referenceId: string | null;
   postedAt: string | Date;
   description: string | null;
+  method?: string | null;
+  runningBalance?: number;
 };
 
 export type FeeAccount = {
@@ -866,10 +868,12 @@ export async function assignFeeCharge(
 export async function recordManualPayment(
   token: string,
   payload: {
-    installmentId: string;
+    applicationId?: string;
+    installmentId?: string;
     amount: number; // RUPEES — NOT paise
     method: string;
     transactionId?: string;
+    receiptNumber?: string;
     notes?: string;
   },
 ): Promise<unknown> {
