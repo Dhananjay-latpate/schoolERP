@@ -20,11 +20,14 @@ import {
   submitAdmission,
   createCustomPlan,
   getActiveAdmissionSessionPublic,
+  getAdmissionSetupStatus,
   type AdmissionRecord,
+  type AdmissionSetupStatus,
 } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
+import { AdmissionsClosedNotice } from "./AdmissionsClosedNotice";
 import { FormStepper } from "./FormStepper";
 import { PaymentPanel } from "./PaymentPanel";
 import { AcademicStep } from "./steps/AcademicStep";
@@ -40,6 +43,51 @@ import type { AdmissionFormValues } from "./types";
 const NAME_PATTERN = /^[A-Za-z][A-Za-z\s'.\-]*$/;
 const INDIAN_MOBILE_PATTERN = /^[6-9]\d{9}$/;
 const AADHAAR_PATTERN = /^\d{12}$/;
+
+// Map raw API error strings into human, action-oriented messages so parents
+// don't see "Network request failed" / "500 Internal Server Error" / "Class
+// is required" without context.
+function humanizeSubmitError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : "";
+  if (!raw) {
+    return "Something went wrong while submitting. Please try again.";
+  }
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower.includes("network request failed")
+  ) {
+    return "Couldn't reach the admissions service. Check your internet connection and try again.";
+  }
+  if (lower.includes("fee structure")) {
+    return "Fees aren't fully configured for this class yet. Please contact the school admissions office.";
+  }
+  if (lower.includes("class") && lower.includes("not available")) {
+    return "The selected class is not available for the current admission session. Please pick a different class on the Academic Details step.";
+  }
+  if (lower.includes("not commenced") || lower.includes("not yet open")) {
+    return "Admissions are not open yet. Please come back when the school announces the start date.";
+  }
+  if (lower.startsWith("error submitting application")) {
+    return "The admissions service couldn't process this application. Please try again in a minute, or contact the school if it persists.";
+  }
+  return raw;
+}
+
+function humanizeDraftError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : "";
+  if (!raw) return "Failed to save draft. Please try again.";
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower.includes("network request failed")
+  ) {
+    return "Couldn't save your draft — we lost the connection. Please try again.";
+  }
+  return `Couldn't save your draft. ${raw}`;
+}
 
 function isAgeWithin(value: string, minYears: number, maxYears: number) {
   const dob = new Date(value);
@@ -270,11 +318,46 @@ export function AdmissionForm() {
   const [activeSessionCode, setActiveSessionCode] = useState<string | null>(
     null,
   );
+  const [setupStatus, setSetupStatus] = useState<AdmissionSetupStatus | null>(
+    null,
+  );
+  const [setupLoading, setSetupLoading] = useState(true);
 
   useEffect(() => {
     getActiveAdmissionSessionPublic()
       .then((s) => setActiveSessionCode(s?.sessionCode ?? null))
       .catch(() => setActiveSessionCode(null));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSetupLoading(true);
+    getAdmissionSetupStatus()
+      .then((status) => {
+        if (cancelled) return;
+        setSetupStatus(status);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // If the status endpoint is unreachable we fail-closed — never show
+        // the form when we can't confirm the school has set up admissions.
+        setSetupStatus({
+          isOpen: false,
+          reason: "no_session",
+          sessionCode: null,
+          totalClasses: 0,
+          classesWithFeeStructures: 0,
+          message:
+            "We couldn't reach the admissions service. Please refresh in a moment.",
+        });
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setSetupLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const {
@@ -383,11 +466,7 @@ export function AdmissionForm() {
 
         setPhase("payment");
       } catch (error) {
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while submitting. Please try again.",
-        );
+        setErrorMessage(humanizeSubmitError(error));
       } finally {
         setIsSubmitting(false);
         submitLockRef.current = false;
@@ -440,11 +519,7 @@ export function AdmissionForm() {
       setSubmittedApp(response);
       setDraftNotification({ applicationId: response.applicationId });
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to save draft. Please try again.",
-      );
+      setErrorMessage(humanizeDraftError(error));
     } finally {
       setIsSavingDraft(false);
       draftLockRef.current = false;
@@ -474,6 +549,17 @@ export function AdmissionForm() {
   };
 
   const isAlreadySubmitted = !!submittedApp && submittedApp.status !== "draft";
+
+  // ── Closed / Loading Phase ─────────────────────────────────
+  // Show the closed notice while we're confirming setup status, and stay on
+  // it whenever the school hasn't fully configured admissions. This is the
+  // single gate keeping parents off a half-configured form.
+  if (setupLoading) {
+    return <AdmissionsClosedNotice status={null} loading />;
+  }
+  if (!setupStatus?.isOpen) {
+    return <AdmissionsClosedNotice status={setupStatus} />;
+  }
 
   // ── Payment Phase ──────────────────────────────────────────
   if (phase === "payment" && submittedApp) {

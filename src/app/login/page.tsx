@@ -22,6 +22,7 @@ import {
   defaultLandingForRole,
   setAuthSession,
 } from "@/lib/authSession";
+import { setPrincipalSession } from "@/lib/principalSession";
 
 const SAFE_REDIRECT_PREFIXES = [
   "/principal",
@@ -86,6 +87,13 @@ function LoginInner() {
 
       const { user, accessToken } = await login(trimmedEmail, password);
       setAuthSession(accessToken, user);
+
+      // Principal/admin users also seed the principal session cookie so the
+      // /principal/* pages (which read from a separate session store) work
+      // without a second login.
+      if (user.role === "PRINCIPAL" || user.role === "ADMIN") {
+        setPrincipalSession(accessToken);
+      }
 
       const dest = redirectTo ?? defaultLandingForRole(user.role);
       router.replace(dest);

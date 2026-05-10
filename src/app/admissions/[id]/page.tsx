@@ -244,8 +244,49 @@ export default function AdmissionStatusPage() {
     }
   };
 
+  const showSuccessBanner = ["submitted", "payment_completed"].includes(
+    data.status,
+  );
+
   return (
     <Card className="mx-auto max-w-3xl p-6 sm:p-8">
+      {showSuccessBanner && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              aria-hidden="true"
+            >
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-emerald-900">
+              {data.status === "payment_completed"
+                ? "Payment received — application submitted"
+                : "Application submitted successfully"}
+            </p>
+            <p className="mt-0.5 text-xs text-emerald-800">
+              Save your application ID{" "}
+              <span className="rounded bg-white/80 px-1.5 py-0.5 font-mono font-bold">
+                {data.applicationId}
+              </span>{" "}
+              to track status. The principal will review your application and
+              you'll receive an admission decision soon.
+            </p>
+            <p className="mt-2 text-xs text-emerald-700">
+              You'll be able to upload required documents once the school
+              admission office contacts you.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-royal">

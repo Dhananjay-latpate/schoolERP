@@ -172,6 +172,23 @@ export async function getActiveAdmissionSessionPublic(): Promise<ActiveAdmission
   }
 }
 
+export type AdmissionSetupStatus = {
+  isOpen: boolean;
+  reason: "ready" | "no_session" | "no_classes" | "missing_fee_structures";
+  sessionCode: string | null;
+  totalClasses: number;
+  classesWithFeeStructures: number;
+  message: string;
+};
+
+// Public read of whether the admission portal is fully configured and open
+// for new applications. The apply page uses this to gate access — if the
+// school hasn't created an active session, classes, or fee structures yet,
+// the form is hidden behind a "coming soon" panel.
+export async function getAdmissionSetupStatus(): Promise<AdmissionSetupStatus> {
+  return request<AdmissionSetupStatus>("/api/admissions/public/setup-status");
+}
+
 export async function getFeeStructure(
   className: string,
   academicYear: string,
