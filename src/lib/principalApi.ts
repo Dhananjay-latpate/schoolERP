@@ -481,9 +481,11 @@ export async function listPrincipalApplications(
 export async function listClasses(
   token: string,
   academicYear?: string,
+  includeAllYears?: boolean,
 ): Promise<PrincipalClass[]> {
   const query = new URLSearchParams();
   if (academicYear) query.set("academicYear", academicYear);
+  if (includeAllYears) query.set("includeAllYears", "true");
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return request<PrincipalClass[]>(`/api/classes${suffix}`, token);
 }

@@ -310,6 +310,7 @@ export default function PrincipalAdmissionsDashboardPage() {
   const [stats, setStats] = useState<PrincipalDashboardStats>(DEFAULT_STATS);
   const [applications, setApplications] = useState<PrincipalApplication[]>([]);
   const [classes, setClasses] = useState<PrincipalClass[]>([]);
+  const [allClasses, setAllClasses] = useState<PrincipalClass[]>([]);
   const [pendingCustomPlans, setPendingCustomPlans] = useState<
     PendingCustomPaymentPlan[]
   >([]);
@@ -511,6 +512,24 @@ export default function PrincipalAdmissionsDashboardPage() {
     [router],
   );
 
+  const loadAllClasses = useCallback(
+    async (authToken: string) => {
+      try {
+        const rows = await listClasses(authToken, undefined, true);
+        setAllClasses(rows);
+      } catch (err) {
+        if (
+          err instanceof PrincipalApiError &&
+          (err.status === 401 || err.status === 403)
+        ) {
+          clearPrincipalSession();
+          router.replace("/principal/login?next=%2Fprincipal%2Fadmissions");
+        }
+      }
+    },
+    [router],
+  );
+
   useEffect(() => {
     const existingToken = getPrincipalToken();
     if (!existingToken) {
@@ -521,7 +540,8 @@ export default function PrincipalAdmissionsDashboardPage() {
     void loadDashboard(existingToken);
     void loadCustomPlans(existingToken);
     void loadFeeStructures(existingToken);
-  }, [loadDashboard, loadCustomPlans, loadFeeStructures, router]);
+    void loadAllClasses(existingToken);
+  }, [loadDashboard, loadCustomPlans, loadFeeStructures, loadAllClasses, router]);
 
   useEffect(() => {
     setPage(1);
@@ -529,11 +549,11 @@ export default function PrincipalAdmissionsDashboardPage() {
   }, [activePipelineStage, yearFilter, classFilter, searchTerm]);
 
   useEffect(() => {
-    if (!feeClassId && classes.length > 0) {
-      setFeeClassId(classes[0].id);
-      setFeeAcademicYear(classes[0].academicYear);
+    if (!feeClassId && allClasses.length > 0) {
+      setFeeClassId(allClasses[0].id);
+      setFeeAcademicYear(allClasses[0].academicYear);
     }
-  }, [classes, feeClassId]);
+  }, [allClasses, feeClassId]);
 
 
   const yearOptions = useMemo(() => {
@@ -1170,7 +1190,7 @@ export default function PrincipalAdmissionsDashboardPage() {
 
   const handleFeeClassSelection = (selectedClassId: string) => {
     setFeeClassId(selectedClassId);
-    const selectedClass = classes.find((item) => item.id === selectedClassId);
+    const selectedClass = allClasses.find((item) => item.id === selectedClassId);
     if (!selectedClass) {
       setFeeAcademicYear("");
       resetFeeSetupForm();
@@ -1255,7 +1275,7 @@ export default function PrincipalAdmissionsDashboardPage() {
       }));
       setFeeAcademicYear(academicYear);
       setFeeClassId(created.id);
-      await Promise.all([loadDashboard(token), loadFeeStructures(token)]);
+      await Promise.all([loadDashboard(token), loadFeeStructures(token), loadAllClasses(token)]);
     } catch (err) {
       addToast(
         "error",
@@ -2284,7 +2304,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                         }
                       >
                         <option value="">Select class</option>
-                        {classes.map((item) => (
+                        {allClasses.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.name}
                             {item.section ? ` - ${item.section}` : ""} (
