@@ -245,6 +245,58 @@ export async function verifyRazorpayPayment(payload: PaymentVerifyPayload) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Cashfree Payments
+   ───────────────────────────────────────────────────────────── */
+
+export type PaymentGateway = "razorpay" | "cashfree";
+
+export type PaymentConfigResponse = {
+  gateway: PaymentGateway;
+  cashfreeEnv: "sandbox" | "production";
+  configured: boolean;
+};
+
+export async function getPaymentConfig() {
+  return request<PaymentConfigResponse>("/api/admissions/payment/config");
+}
+
+export type CashfreeOrderResponse = {
+  orderId: string;
+  paymentSessionId: string;
+  cashfreeEnv: "sandbox" | "production";
+  applicationId: string;
+  amount: number;
+  currency: string;
+};
+
+export async function createCashfreeOrder(
+  applicationId: string,
+  amount: number,
+  customer: { customerEmail?: string; customerPhone?: string },
+) {
+  return request<CashfreeOrderResponse>(
+    "/api/admissions/create-cashfree-order",
+    {
+      method: "POST",
+      body: JSON.stringify({ applicationId, amount, ...customer }),
+    },
+  );
+}
+
+export async function verifyCashfreePayment(payload: {
+  applicationId: string;
+  orderId: string;
+}) {
+  return request<{ message: string }>(
+    "/api/admissions/verify-cashfree-payment",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    Custom Payment Plans (applicant-facing)
    ───────────────────────────────────────────────────────────── */
 
