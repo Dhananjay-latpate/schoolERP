@@ -1,6 +1,17 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ActiveSessionBadge } from "@/components/admission/ActiveSessionBadge";
+import { NewApplicationButton } from "@/components/admission/NewApplicationButton";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s — Resillix Admissions",
+    default: "Resillix Admissions",
+  },
+  description:
+    "Apply for admission at Resillix Public School — a fast, parent-friendly admission experience.",
+};
 
 export default function AdmissionsLayout({
   children,
@@ -27,7 +38,6 @@ export default function AdmissionsLayout({
         />
         <div className="mx-auto flex h-[60px] w-full max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/admissions/apply" className="flex items-center gap-3">
-            {/* Logo mark */}
             <span
               className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black tracking-tight text-white shadow-sm"
               style={{
@@ -50,23 +60,7 @@ export default function AdmissionsLayout({
 
           <div className="flex items-center gap-3">
             <ActiveSessionBadge />
-            <Link
-              href="/admissions/apply"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-white px-3 py-1.5 text-xs font-semibold text-text-secondary shadow-xs transition-all duration-150 hover:border-brand-royal hover:bg-brand-sky-light hover:text-brand-royal"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              >
-                <path d="M6 1v10M1 6h10" />
-              </svg>
-              New Application
-            </Link>
+            <NewApplicationButton />
           </div>
         </div>
       </header>

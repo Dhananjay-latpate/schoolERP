@@ -568,3 +568,23 @@
     color: var(--color-brand-royal);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   PRODUCTION TOOLBAR / DEV-WIDGET HIDING
+   Hide any auto-injected Vercel toolbar / live feedback widgets
+   from end users. The actual recommended fix is to disable the
+   Vercel Toolbar in the Vercel project dashboard:
+     Project Settings → Toolbar → uncheck "Show toolbar in
+     Production". This CSS rule is a defence-in-depth backstop.
+   ───────────────────────────────────────────────────────────── */
+[data-vercel-toolbar],
+#__vercel-toolbar,
+#__vercel-live-feedback,
+iframe[src*="vercel.live"],
+iframe[src*="vercel-toolbar"],
+[data-vercel-live] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+

@@ -11,11 +11,19 @@ export function ParentInfoStep({ register, errors }: StepProps) {
         <Input
           id="fatherName"
           placeholder="Rohit Sharma"
+          autoComplete="off"
+          aria-required="true"
+          aria-invalid={errors.fatherName ? "true" : "false"}
+          aria-describedby={errors.fatherName ? "fatherName-error" : undefined}
           {...register("fatherName")}
           className={errors.fatherName ? "input-error" : ""}
         />
         {errors.fatherName && (
-          <p className="mt-1 text-xs text-[#e11d48]">
+          <p
+            id="fatherName-error"
+            className="mt-1 text-xs text-[#e11d48]"
+            role="alert"
+          >
             {errors.fatherName.message}
           </p>
         )}
@@ -25,11 +33,19 @@ export function ParentInfoStep({ register, errors }: StepProps) {
         <Input
           id="motherName"
           placeholder="Priya Sharma"
+          autoComplete="off"
+          aria-required="true"
+          aria-invalid={errors.motherName ? "true" : "false"}
+          aria-describedby={errors.motherName ? "motherName-error" : undefined}
           {...register("motherName")}
           className={errors.motherName ? "input-error" : ""}
         />
         {errors.motherName && (
-          <p className="mt-1 text-xs text-[#e11d48]">
+          <p
+            id="motherName-error"
+            className="mt-1 text-xs text-[#e11d48]"
+            role="alert"
+          >
             {errors.motherName.message}
           </p>
         )}
@@ -38,12 +54,29 @@ export function ParentInfoStep({ register, errors }: StepProps) {
         <Label htmlFor="emergencyContact">Emergency Contact *</Label>
         <Input
           id="emergencyContact"
+          type="tel"
+          inputMode="numeric"
+          maxLength={10}
           placeholder="9876543210"
+          autoComplete="tel-national"
+          aria-required="true"
+          aria-invalid={errors.emergencyContact ? "true" : "false"}
+          aria-describedby="emergencyContact-help emergencyContact-error"
           {...register("emergencyContact")}
           className={errors.emergencyContact ? "input-error" : ""}
         />
+        <p
+          id="emergencyContact-help"
+          className="mt-1 text-xs text-text-secondary"
+        >
+          10-digit Indian mobile number (digits only).
+        </p>
         {errors.emergencyContact && (
-          <p className="mt-1 text-xs text-[#e11d48]">
+          <p
+            id="emergencyContact-error"
+            className="mt-1 text-xs text-[#e11d48]"
+            role="alert"
+          >
             {errors.emergencyContact.message}
           </p>
         )}
@@ -53,11 +86,19 @@ export function ParentInfoStep({ register, errors }: StepProps) {
         <Textarea
           id="address"
           placeholder="Flat / House No, Street, Area, City"
+          autoComplete="street-address"
+          aria-required="true"
+          aria-invalid={errors.address ? "true" : "false"}
+          aria-describedby={errors.address ? "address-error" : undefined}
           {...register("address")}
           className={errors.address ? "input-error" : ""}
         />
         {errors.address && (
-          <p className="mt-1 text-xs text-[#e11d48]">
+          <p
+            id="address-error"
+            className="mt-1 text-xs text-[#e11d48]"
+            role="alert"
+          >
             {errors.address.message}
           </p>
         )}

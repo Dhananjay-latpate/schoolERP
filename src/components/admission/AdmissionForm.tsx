@@ -12,7 +12,7 @@ import {
   Save,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { z } from "zod";
 
@@ -36,27 +36,96 @@ import { ReviewStep } from "./steps/ReviewStep";
 import { StudentInfoStep } from "./steps/StudentInfoStep";
 import type { AdmissionFormValues } from "./types";
 
+// Allow letters, spaces, hyphens, apostrophes, and the period (for initials).
+const NAME_PATTERN = /^[A-Za-z][A-Za-z\s'.\-]*$/;
+const INDIAN_MOBILE_PATTERN = /^[6-9]\d{9}$/;
+const AADHAAR_PATTERN = /^\d{12}$/;
+
+function isAgeWithin(value: string, minYears: number, maxYears: number) {
+  const dob = new Date(value);
+  if (Number.isNaN(dob.getTime())) return false;
+  const today = new Date();
+  if (dob.getTime() > today.getTime()) return false;
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  return age >= minYears && age <= maxYears;
+}
+
+const requiredName = (label: string) =>
+  z
+    .string()
+    .trim()
+    .min(2, `${label} must be at least 2 characters`)
+    .max(50, `${label} must be 50 characters or fewer`)
+    .regex(
+      NAME_PATTERN,
+      `${label} can only contain letters, spaces, hyphens, apostrophes, and periods`,
+    );
+
+const optionalText = (max: number, label?: string) =>
+  z
+    .string()
+    .trim()
+    .max(max, label ? `${label} is too long` : "Too long")
+    .optional()
+    .default("");
+
 const schema = z
   .object({
-    firstName: z.string().min(1, "First name is required"),
-    middleName: z.string().optional(),
-    lastName: z.string().min(1, "Last name is required"),
+    firstName: requiredName("First name"),
+    middleName: z
+      .string()
+      .trim()
+      .max(50, "Middle name must be 50 characters or fewer")
+      .refine(
+        (v) => v.length === 0 || NAME_PATTERN.test(v),
+        "Middle name can only contain letters, spaces, hyphens, apostrophes, and periods",
+      )
+      .optional()
+      .default(""),
+    lastName: requiredName("Last name"),
     gender: z.enum(["male", "female", "other"], {
-      errorMap: () => ({ message: "Gender is required" }),
+      errorMap: () => ({ message: "Please select a gender" }),
     }),
-    dateOfBirth: z.string().min(1, "Date of birth is required"),
-    classAdmitted: z.string().min(1, "Class is required"),
-    fatherName: z.string().min(1, "Father name is required"),
-    motherName: z.string().min(1, "Mother name is required"),
-    address: z.string().min(1, "Address is required"),
-    emergencyContact: z.string().min(10, "Emergency contact is required"),
-    placeOfBirth: z.string().optional(),
-    nationality: z.string().optional(),
-    religion: z.string().optional(),
-    caste: z.string().optional(),
-    subCaste: z.string().optional(),
-    adharNumber: z.string().optional(),
-    motherTongue: z.string().optional(),
+    dateOfBirth: z
+      .string()
+      .min(1, "Date of birth is required")
+      .refine(
+        (v) => isAgeWithin(v, 3, 25),
+        "Date of birth must be a real date for a student aged 3 to 25 years",
+      ),
+    classAdmitted: z.string().trim().min(1, "Please select a class"),
+    fatherName: requiredName("Father's name"),
+    motherName: requiredName("Mother's name"),
+    address: z
+      .string()
+      .trim()
+      .min(8, "Address must be at least 8 characters")
+      .max(300, "Address must be 300 characters or fewer"),
+    emergencyContact: z
+      .string()
+      .trim()
+      .regex(
+        INDIAN_MOBILE_PATTERN,
+        "Enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9)",
+      ),
+    placeOfBirth: optionalText(80, "Place of birth"),
+    nationality: optionalText(40, "Nationality"),
+    religion: optionalText(40, "Religion"),
+    caste: optionalText(40, "Caste"),
+    subCaste: optionalText(40, "Sub-caste"),
+    adharNumber: z
+      .string()
+      .trim()
+      .transform((v) => v.replace(/\s+/g, ""))
+      .refine(
+        (v) => v.length === 0 || AADHAAR_PATTERN.test(v),
+        "Aadhaar number must be exactly 12 digits",
+      )
+      .optional()
+      .default(""),
+    motherTongue: optionalText(40, "Mother tongue"),
     paymentMethod: z
       .enum(["full_payment", "installment", "custom_payment"])
       .optional(),
@@ -103,16 +172,26 @@ const STEP_DESCRIPTIONS = [
   "Provide parent or guardian names and contact information.",
   "Select the class for admission. Fees are confirmed in the final step.",
   "Optional details such as religion, caste, and Aadhaar number.",
-  "Upload required supporting documents.",
+  "What you'll need ready — uploads happen after payment.",
   "Review all information carefully before moving to fees.",
   "Choose how you'd like to pay — full payment, standard installments, or request a custom arrangement.",
 ];
 
+const STEP_PAGE_TITLES = [
+  "Student Information",
+  "Parent Information",
+  "Academic Details",
+  "Additional Details",
+  "Required Documents",
+  "Review Application",
+  "Fees & Payment",
+];
+
 const STEP_FIELDS: Record<number, Array<keyof AdmissionFormValues>> = {
-  0: ["firstName", "lastName", "gender", "dateOfBirth"],
+  0: ["firstName", "middleName", "lastName", "gender", "dateOfBirth"],
   1: ["fatherName", "motherName", "address", "emergencyContact"],
   2: ["classAdmitted"],
-  3: [],
+  3: ["adharNumber"],
   4: [],
   5: [],
   6: ["paymentMethod"],
@@ -129,13 +208,13 @@ const FIELD_TO_STEP: Partial<Record<keyof AdmissionFormValues, number>> = {
   address: 1,
   emergencyContact: 1,
   classAdmitted: 2,
-  placeOfBirth: 3,
-  nationality: 3,
+  placeOfBirth: 0,
+  nationality: 0,
   religion: 3,
   caste: 3,
   subCaste: 3,
   adharNumber: 3,
-  motherTongue: 3,
+  motherTongue: 0,
   paymentMethod: 6,
   customPaymentAmount: 6,
   customPaymentReason: 6,
@@ -147,8 +226,35 @@ interface DraftNotification {
   applicationId: string;
 }
 
+const DEFAULT_VALUES: AdmissionFormValues = {
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  gender: "male",
+  dateOfBirth: "",
+  classAdmitted: "",
+  fatherName: "",
+  motherName: "",
+  address: "",
+  emergencyContact: "",
+  placeOfBirth: "",
+  nationality: "Indian",
+  religion: "",
+  caste: "",
+  subCaste: "",
+  adharNumber: "",
+  motherTongue: "",
+  paymentMethod: "full_payment",
+  customPaymentAmount: undefined,
+  customPaymentReason: "",
+};
+
 export function AdmissionForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // The "+ New Application" link adds ?fresh=<timestamp>; we use that to
+  // remount the form and clear all state.
+  const freshKey = searchParams.get("fresh") ?? "";
   const submitLockRef = useRef(false);
   const draftLockRef = useRef(false);
   const [step, setStep] = useState(0);
@@ -177,32 +283,39 @@ export function AdmissionForm() {
     trigger,
     getValues,
     watch,
+    reset,
     formState: { errors },
   } = useForm<AdmissionFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      gender: "male",
-      dateOfBirth: "",
-      classAdmitted: "",
-      fatherName: "",
-      motherName: "",
-      address: "",
-      emergencyContact: "",
-      placeOfBirth: "",
-      nationality: "Indian",
-      religion: "",
-      caste: "",
-      subCaste: "",
-      adharNumber: "",
-      motherTongue: "",
-      paymentMethod: "full_payment",
-      customPaymentAmount: undefined,
-      customPaymentReason: "",
-    },
+    defaultValues: DEFAULT_VALUES,
   });
+
+  // Reset everything when the freshKey changes (i.e. user clicked
+  // "+ New Application"). The header link appends ?fresh=<ts>.
+  useEffect(() => {
+    if (!freshKey) return;
+    setStep(0);
+    setPhase("form");
+    setSubmittedApp(null);
+    setErrorMessage(null);
+    setDraftNotification(null);
+    reset(DEFAULT_VALUES);
+  }, [freshKey, reset]);
+
+  // Keep the document title in sync with the current step for clearer
+  // browser history entries / tab labels.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (phase === "payment") {
+      document.title = "Payment — Resillix Admissions";
+      return;
+    }
+    if (phase === "done") {
+      document.title = "Submitted — Resillix Admissions";
+      return;
+    }
+    document.title = `${STEP_PAGE_TITLES[step]} — Resillix Admissions`;
+  }, [step, phase]);
 
   // Auto-dismiss draft notification after 6 s
   useEffect(() => {
@@ -226,12 +339,18 @@ export function AdmissionForm() {
     setStep((prev) => Math.max(prev - 1, 0));
   };
 
+  const goToStep = (target: number) => {
+    if (target < 0 || target >= STEPS.length) return;
+    if (target >= step) return; // only backward navigation via stepper
+    setErrorMessage(null);
+    setStep(target);
+  };
+
   const onSubmit = handleSubmit(
     async (values) => {
       if (submitLockRef.current) return;
       submitLockRef.current = true;
 
-      // Guard: application already submitted — re-enter payment flow instead of creating another
       if (submittedApp && submittedApp.status !== "draft") {
         if (values.paymentMethod === "custom_payment") {
           router.push(`/admissions/${submittedApp.applicationId}`);
@@ -253,7 +372,6 @@ export function AdmissionForm() {
         setSubmittedApp(response);
 
         if (values.paymentMethod === "custom_payment") {
-          // Create the custom plan then redirect to status page
           await createCustomPlan(
             response.applicationId,
             values.customPaymentAmount!,
@@ -309,7 +427,6 @@ export function AdmissionForm() {
     setIsSavingDraft(true);
     try {
       const values = getValues();
-      // Strip empty date/class — backend cannot coerce empty string to Date or find a class by empty id
       const payload = {
         applicationId: submittedApp?.applicationId,
         ...values,
@@ -368,7 +485,6 @@ export function AdmissionForm() {
             router.push(`/admissions/${submittedApp.applicationId}`)
           }
           onBack={() => {
-            // Return to review step but keep submittedApp — onSubmit guard prevents re-creation
             setStep(STEPS.length - 1);
             setPhase("form");
           }}
@@ -380,7 +496,6 @@ export function AdmissionForm() {
   // ── Form Phase ─────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-3xl">
-      {/* Main form card */}
       <AnimatePresence mode="wait">
         <motion.div
           key={step}
@@ -390,16 +505,14 @@ export function AdmissionForm() {
           transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
         >
           <Card className="overflow-hidden">
-            {/* Horizontal stepper header */}
             <div className="border-b border-surface-border bg-surface-muted px-6 pt-6 pb-5">
               <p className="mb-5 text-center text-[11px] font-bold uppercase tracking-widest text-text-secondary">
                 Admission Application
                 {activeSessionCode ? ` ${activeSessionCode}` : ""}
               </p>
-              <FormStepper currentStep={step} />
+              <FormStepper currentStep={step} onStepClick={goToStep} />
             </div>
 
-            {/* Step title */}
             <div className="border-b border-surface-border px-6 py-4">
               <h2 className="text-lg font-bold text-text-primary">
                 {STEPS[step]}
@@ -420,7 +533,11 @@ export function AdmissionForm() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <div
+                      className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3"
+                      role="status"
+                      aria-live="polite"
+                    >
                       <CheckCircle2
                         size={18}
                         className="mt-0.5 shrink-0 text-emerald-600"
@@ -460,7 +577,11 @@ export function AdmissionForm() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                    <div
+                      className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3"
+                      role="alert"
+                      aria-live="assertive"
+                    >
                       <AlertCircle
                         size={18}
                         className="mt-0.5 shrink-0 text-rose-600"
@@ -486,7 +607,6 @@ export function AdmissionForm() {
                 )}
               </AnimatePresence>
 
-              {/* Already-submitted warning on review step */}
               {isAlreadySubmitted && step === STEPS.length - 1 && (
                 <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                   <AlertCircle
@@ -512,9 +632,7 @@ export function AdmissionForm() {
               <form onSubmit={onSubmit} noValidate className="space-y-6">
                 {renderStep()}
 
-                {/* Navigation bar */}
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-surface-border pt-5">
-                  {/* Save Draft */}
                   {step >= 2 && (
                     <Button
                       type="button"
@@ -537,7 +655,6 @@ export function AdmissionForm() {
                     </Button>
                   )}
 
-                  {/* Back / Next / Submit */}
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"

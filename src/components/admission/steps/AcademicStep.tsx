@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getPublicClasses, type PublicClass } from "@/lib/api";
-import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import type { StepProps } from "../types";
+
+const LOAD_TIMEOUT_MS = 12_000;
 
 export function AcademicStep({ register, errors }: StepProps) {
   const [availableClasses, setAvailableClasses] = useState<PublicClass[]>([]);
@@ -13,63 +14,102 @@ export function AcademicStep({ register, errors }: StepProps) {
   const [classesError, setClassesError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setClassesLoading(true);
     setClassesError(null);
+
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setClassesError(
+        "Taking longer than expected. Please refresh the page if classes don't load.",
+      );
+      setClassesLoading(false);
+    }, LOAD_TIMEOUT_MS);
+
     getPublicClasses()
-      .then((classes) => setAvailableClasses(classes))
-      .catch(() =>
-        setClassesError("Unable to load classes. Please try again later."),
-      )
-      .finally(() => setClassesLoading(false));
+      .then((classes) => {
+        if (cancelled) return;
+        setAvailableClasses(classes);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setClassesError(
+          "Failed to load classes. Please refresh the page and try again.",
+        );
+      })
+      .finally(() => {
+        if (cancelled) return;
+        clearTimeout(timeout);
+        setClassesLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, []);
+
+  // Deduplicate classes by name+section so the dropdown never shows the same
+  // option twice (legacy duplicate rows in DB).
+  const dedupedClasses = useMemo(() => {
+    const seen = new Set<string>();
+    const unique: PublicClass[] = [];
+    for (const cls of availableClasses) {
+      const key = `${cls.name.toLowerCase()}|${(cls.section ?? "").toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(cls);
+    }
+    return unique;
+  }, [availableClasses]);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <Label htmlFor="classAdmitted">Applying For Class</Label>
+        <Label htmlFor="classAdmitted">Applying For Class *</Label>
         <Select
           id="classAdmitted"
+          aria-required="true"
+          aria-invalid={errors.classAdmitted ? "true" : "false"}
+          aria-describedby="classAdmitted-help classAdmitted-error"
           {...register("classAdmitted")}
           className={errors.classAdmitted ? "input-error" : ""}
           disabled={classesLoading}
         >
           {classesLoading ? (
             <option value="">Loading classes…</option>
-          ) : classesError ? (
+          ) : classesError && dedupedClasses.length === 0 ? (
             <option value="">Failed to load classes</option>
           ) : (
             <>
               <option value="">Select class</option>
-              {availableClasses.map((cls) => (
+              {dedupedClasses.map((cls) => (
                 <option key={cls.id} value={cls.name}>
                   {cls.name}
-                  {cls.section ? ` (${cls.section})` : ""}
+                  {cls.section ? ` — Section ${cls.section}` : ""}
                 </option>
               ))}
             </>
           )}
         </Select>
         {classesError && (
-          <p className="mt-1 text-xs text-status-error">{classesError}</p>
+          <p className="mt-1 text-xs text-status-error" role="alert">
+            {classesError}
+          </p>
         )}
         {errors.classAdmitted && (
-          <p className="mt-1 text-xs text-status-error">
+          <p
+            id="classAdmitted-error"
+            className="mt-1 text-xs text-status-error"
+            role="alert"
+          >
             {errors.classAdmitted.message}
           </p>
         )}
-        <p className="mt-2 text-xs text-text-muted">
+        <p id="classAdmitted-help" className="mt-2 text-xs text-text-muted">
           Fees, payment options, and the payment plan will be presented in the
           final step. You'll have a chance to review everything before paying.
         </p>
-      </div>
-
-      <div className="sm:col-span-2">
-        <Label htmlFor="adharNumber">Aadhaar Number (optional)</Label>
-        <Input
-          id="adharNumber"
-          placeholder="0000 0000 0000"
-          {...register("adharNumber")}
-        />
       </div>
     </div>
   );

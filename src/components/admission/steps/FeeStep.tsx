@@ -31,9 +31,6 @@ function formatOffsetLabel(offsetDays: number): string {
   return `${offsetDays} days after enrollment`;
 }
 
-// Only treat a string as a printable due date when it's a valid ISO
-// YYYY-MM-DD. Legacy fee structures sometimes carry malformed strings like
-// "2025-26-06-10" which we'd otherwise display verbatim — never user-facing.
 function tryFormatLegacyDate(value: unknown): string | null {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return null;
@@ -104,9 +101,15 @@ export function FeeStep({ register, errors, watch }: StepProps) {
     [feeStructure, selectedInstallmentOptionId],
   );
 
+  const installmentsAvailable =
+    !!feeStructure && feeStructure.installmentOptions.length > 0;
+
   if (!selectedClass) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+      <div
+        className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm"
+        role="status"
+      >
         <div className="flex items-start gap-3">
           <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-600" />
           <div>
@@ -131,11 +134,15 @@ export function FeeStep({ register, errors, watch }: StepProps) {
             Loading fee structure for {selectedClass}…
           </div>
         ) : feeError ? (
-          <div className="text-sm text-amber-800">
-            <p className="font-semibold">Fee structure not available</p>
-            <p className="mt-0.5 text-xs text-amber-700">
-              {feeError} — Fee details will be confirmed by the school after
-              your application is reviewed.
+          <div className="text-sm" role="alert">
+            <p className="font-semibold text-amber-800">
+              Fee structure not yet configured
+            </p>
+            <p className="mt-1 text-xs text-amber-700">
+              The fee structure for <strong>{selectedClass}</strong> hasn't been
+              set by the school yet, so we can't show fees here. Please contact
+              the admissions office to confirm fees, or come back after the
+              school has published them.
             </p>
           </div>
         ) : feeStructure ? (
@@ -168,79 +175,83 @@ export function FeeStep({ register, errors, watch }: StepProps) {
 
       {/* Payment method selection */}
       <div>
-        <Label htmlFor="paymentMethod">How would you like to pay?</Label>
-        <Select id="paymentMethod" {...register("paymentMethod")}>
+        <Label htmlFor="paymentMethod">How would you like to pay? *</Label>
+        <Select
+          id="paymentMethod"
+          aria-required="true"
+          aria-invalid={errors.paymentMethod ? "true" : "false"}
+          {...register("paymentMethod")}
+        >
           <option value="full_payment">Pay full amount now</option>
-          <option
-            value="installment"
-            disabled={
-              !!(feeStructure && feeStructure.installmentOptions.length === 0)
-            }
-          >
-            {feeStructure && feeStructure.installmentOptions.length > 0
-              ? `Pay in standard installments (${feeStructure.installmentOptions.length} plan${
-                  feeStructure.installmentOptions.length > 1 ? "s" : ""
+          <option value="installment" disabled={!installmentsAvailable}>
+            {installmentsAvailable
+              ? `Pay in standard installments (${feeStructure!.installmentOptions.length} plan${
+                  feeStructure!.installmentOptions.length > 1 ? "s" : ""
                 } available)`
-              : "Pay in standard installments (not available)"}
+              : "Pay in standard installments — not available for this class"}
           </option>
           <option value="custom_payment">
             Request a custom payment arrangement (hardship)
           </option>
         </Select>
+        {!installmentsAvailable && !feeLoading && !feeError && (
+          <p className="mt-1 text-xs text-text-muted">
+            Standard installment plans are not configured for this class. You
+            can still pay full amount or request a custom arrangement.
+          </p>
+        )}
       </div>
 
       {/* Installment plan picker */}
-      {paymentMethod === "installment" &&
-        feeStructure &&
-        feeStructure.installmentOptions.length > 0 && (
-          <div>
-            <Label htmlFor="installmentPlan">Choose Installment Plan</Label>
-            <Select
-              id="installmentPlan"
-              value={selectedInstallmentOptionId ?? ""}
-              onChange={(e) =>
-                setSelectedInstallmentOptionId(e.target.value || null)
-              }
-            >
-              <option value="">Select a plan</option>
-              {feeStructure.installmentOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.name} ({opt.numberOfInstallments} installment
-                  {opt.numberOfInstallments > 1 ? "s" : ""})
-                </option>
-              ))}
-            </Select>
-            {selectedOption && (
-              <div className="mt-3 rounded-xl border border-surface-border bg-white px-4 py-3">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-royal">
-                  {selectedOption.name} — Schedule
-                </p>
-                {selectedOption.installments.map((inst) => {
-                  const legacyDate = tryFormatLegacyDate(inst.dueDate);
-                  const offsetLabel =
-                    typeof inst.dueOffsetDays === "number"
-                      ? formatOffsetLabel(inst.dueOffsetDays)
-                      : legacyDate
-                        ? `Due ${legacyDate}`
-                        : "Schedule confirmed at enrollment";
-                  return (
-                    <div key={inst.id} className="fee-row text-xs">
-                      <span className="text-text-secondary">
-                        {inst.name} — {offsetLabel}
-                      </span>
-                      <span className="font-medium text-text-primary">
-                        {formatINR(inst.amount)}
-                      </span>
-                    </div>
-                  );
-                })}
-                <p className="mt-2 text-[11px] text-text-muted">
-                  Actual due dates are set when your application is submitted.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+      {paymentMethod === "installment" && installmentsAvailable && (
+        <div>
+          <Label htmlFor="installmentPlan">Choose Installment Plan</Label>
+          <Select
+            id="installmentPlan"
+            value={selectedInstallmentOptionId ?? ""}
+            onChange={(e) =>
+              setSelectedInstallmentOptionId(e.target.value || null)
+            }
+          >
+            <option value="">Select a plan</option>
+            {feeStructure!.installmentOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.name} ({opt.numberOfInstallments} installment
+                {opt.numberOfInstallments > 1 ? "s" : ""})
+              </option>
+            ))}
+          </Select>
+          {selectedOption && (
+            <div className="mt-3 rounded-xl border border-surface-border bg-white px-4 py-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-royal">
+                {selectedOption.name} — Schedule
+              </p>
+              {selectedOption.installments.map((inst) => {
+                const legacyDate = tryFormatLegacyDate(inst.dueDate);
+                const offsetLabel =
+                  typeof inst.dueOffsetDays === "number"
+                    ? formatOffsetLabel(inst.dueOffsetDays)
+                    : legacyDate
+                      ? `Due ${legacyDate}`
+                      : "Schedule confirmed at enrollment";
+                return (
+                  <div key={inst.id} className="fee-row text-xs">
+                    <span className="text-text-secondary">
+                      {inst.name} — {offsetLabel}
+                    </span>
+                    <span className="font-medium text-text-primary">
+                      {formatINR(inst.amount)}
+                    </span>
+                  </div>
+                );
+              })}
+              <p className="mt-2 text-[11px] text-text-muted">
+                Actual due dates are set when your application is submitted.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Custom hardship request */}
       {paymentMethod === "custom_payment" && (
@@ -263,16 +274,20 @@ export function FeeStep({ register, errors, watch }: StepProps) {
 
           <div>
             <Label htmlFor="customPaymentAmount">
-              Amount you can afford to pay (₹)
+              Amount you can afford to pay (₹) *
             </Label>
             <Input
               id="customPaymentAmount"
               type="number"
+              inputMode="numeric"
+              min={1}
               placeholder="e.g. 25000"
+              aria-required="true"
+              aria-invalid={errors.customPaymentAmount ? "true" : "false"}
               {...register("customPaymentAmount", { valueAsNumber: true })}
             />
             {errors.customPaymentAmount && (
-              <p className="mt-1 text-xs text-status-error">
+              <p className="mt-1 text-xs text-status-error" role="alert">
                 {errors.customPaymentAmount.message}
               </p>
             )}
@@ -280,17 +295,19 @@ export function FeeStep({ register, errors, watch }: StepProps) {
 
           <div>
             <Label htmlFor="customPaymentReason">
-              Briefly explain your situation
+              Briefly explain your situation *
             </Label>
             <textarea
               id="customPaymentReason"
               rows={4}
               placeholder="Share why you need a custom arrangement — the principal will read this before deciding."
+              aria-required="true"
+              aria-invalid={errors.customPaymentReason ? "true" : "false"}
               className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-royal/40"
               {...register("customPaymentReason")}
             />
             {errors.customPaymentReason && (
-              <p className="mt-1 text-xs text-status-error">
+              <p className="mt-1 text-xs text-status-error" role="alert">
                 {errors.customPaymentReason.message}
               </p>
             )}
@@ -308,6 +325,24 @@ export function FeeStep({ register, errors, watch }: StepProps) {
             <p className="mt-0.5 text-xs text-emerald-800">
               You'll be taken to a secure payment screen after submitting. Once
               the payment is verified, your admission moves into review.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {paymentMethod === "installment" && !installmentsAvailable && (
+        <div
+          className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm"
+          role="alert"
+        >
+          <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+          <div>
+            <p className="font-semibold text-amber-900">
+              Installment plans not available
+            </p>
+            <p className="mt-0.5 text-xs text-amber-800">
+              Please choose &ldquo;Pay full amount now&rdquo; or
+              &ldquo;Request a custom payment arrangement&rdquo;.
             </p>
           </div>
         </div>
