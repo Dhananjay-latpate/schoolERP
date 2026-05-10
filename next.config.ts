@@ -2,7 +2,10 @@ import path from "path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: path.join(__dirname, ".."),
+  // Only needed locally where client/ lives inside server/ monorepo
+  ...(process.env.VERCEL !== "1" && {
+    outputFileTracingRoot: path.join(__dirname, ".."),
+  }),
   images: {
     remotePatterns: [
       {
