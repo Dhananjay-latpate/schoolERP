@@ -211,7 +211,7 @@ export function FeeStep({ register, errors, watch }: StepProps) {
               ))}
             </Select>
             {selectedOption && (
-              <div className="mt-3 rounded-xl border border-surface-border bg-white px-4 py-3">
+              <div className="mt-3 rounded-xl border border-surface-border bg-surface-card px-4 py-3">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-royal">
                   {selectedOption.name} — Schedule
                 </p>
@@ -286,7 +286,7 @@ export function FeeStep({ register, errors, watch }: StepProps) {
               id="customPaymentReason"
               rows={4}
               placeholder="Share why you need a custom arrangement — the principal will read this before deciding."
-              className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-royal/40"
+              className="mt-1 w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-royal/40"
               {...register("customPaymentReason")}
             />
             {errors.customPaymentReason && (

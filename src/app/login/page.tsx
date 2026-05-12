@@ -128,7 +128,7 @@ function LoginInner() {
         <div className="grid overflow-hidden md:grid-cols-[1.1fr_1fr]">
           {/* Brand panel */}
           <div className="brand-gradient p-6 text-white sm:p-8">
-            <div className="inline-flex rounded-full bg-white/20 p-2">
+            <div className="inline-flex rounded-full bg-surface-card/20 p-2">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
@@ -257,7 +257,7 @@ function LoginInner() {
                     onClick={() => setShowPassword((v) => !v)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-pressed={showPassword}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-text-secondary hover:bg-slate-100"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-text-secondary hover:bg-surface-muted"
                     tabIndex={-1}
                     disabled={submitting}
                   >

@@ -35,7 +35,7 @@ export function FeeLedgerTab({ entries }: Props) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <tr className="border-b border-surface-border text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
             <th className="pb-2 pr-4">Date</th>
             <th className="pb-2 pr-4">Type</th>
             <th className="pb-2 pr-4">Description</th>

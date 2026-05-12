@@ -50,7 +50,7 @@ export function FeeChargesTab({ charges, accountId, token, onCharged }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-surface-border text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                 <th className="pb-2 pr-4">Name</th>
                 <th className="pb-2 pr-4">Source</th>
                 <th className="pb-2 pr-4 text-right">Amount</th>

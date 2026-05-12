@@ -87,7 +87,7 @@ function LoginForm() {
       <Card className="card-accent mx-auto w-full max-w-4xl p-0">
         <div className="grid overflow-hidden md:grid-cols-[1.15fr_1fr]">
           <div className="brand-gradient p-6 text-white sm:p-8">
-            <div className="inline-flex rounded-full bg-white/20 p-2">
+            <div className="inline-flex rounded-full bg-surface-card/20 p-2">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">

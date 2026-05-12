@@ -150,7 +150,7 @@ export default function PrincipalHomePage() {
           <div className="brand-gradient p-6 text-white sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <div className="inline-flex rounded-full bg-white/20 p-2">
+                <div className="inline-flex rounded-full bg-surface-card/20 p-2">
                   <LayoutDashboard className="h-5 w-5" />
                 </div>
                 <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
@@ -163,8 +163,8 @@ export default function PrincipalHomePage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Badge className="bg-white/20 text-white">Active Modules: {activeCount}</Badge>
-                <Badge className="bg-white/20 text-white">Planned Modules: {upcomingCount}</Badge>
+                <Badge className="bg-surface-card/20 text-white">Active Modules: {activeCount}</Badge>
+                <Badge className="bg-surface-card/20 text-white">Planned Modules: {upcomingCount}</Badge>
               </div>
             </div>
           </div>

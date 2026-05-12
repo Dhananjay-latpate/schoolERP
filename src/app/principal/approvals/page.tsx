@@ -301,7 +301,7 @@ export default function ApprovalsPage() {
                                 href={doc.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50"
+                                className="flex items-center gap-1.5 rounded-md border border-surface-border bg-surface-card px-3 py-1.5 text-xs text-brand-royal hover:bg-brand-sky-light"
                               >
                                 <FileText className="h-3.5 w-3.5" />
                                 {doc.name}

@@ -275,18 +275,18 @@ export default function PrincipalAdmissionDetailPage() {
   const statusLabel = STATUS_LABELS[statusKey] ?? application.status;
   const heroAccentClass =
     statusKey === "approved"
-      ? "from-emerald-50 via-emerald-50/40 to-white border-emerald-200"
+      ? "from-emerald-50 via-emerald-50/40 to-surface-card border-emerald-200"
       : statusKey === "rejected"
-        ? "from-rose-50 via-rose-50/40 to-white border-rose-200"
+        ? "from-rose-50 via-rose-50/40 to-surface-card border-rose-200"
         : statusKey === "cancelled"
-          ? "from-slate-100 via-slate-50/40 to-white border-slate-300"
+          ? "from-surface-muted via-surface-card to-surface-card border-surface-border"
           : statusKey === "on_hold"
-            ? "from-amber-50 via-amber-50/40 to-white border-amber-200"
+            ? "from-amber-50 via-amber-50/40 to-surface-card border-amber-200"
             : statusKey === "needs_correction"
-              ? "from-orange-50 via-orange-50/40 to-white border-orange-200"
+              ? "from-orange-50 via-orange-50/40 to-surface-card border-orange-200"
               : statusKey === "under_review"
-                ? "from-violet-50 via-violet-50/40 to-white border-violet-200"
-                : "from-blue-50 via-blue-50/40 to-white border-blue-200";
+                ? "from-violet-50 via-violet-50/40 to-surface-card border-violet-200"
+                : "from-brand-sky-light via-surface-card to-surface-card border-surface-border";
 
   const letterUrls = buildAdmissionLetterUrls(application.applicationId);
 
@@ -329,39 +329,39 @@ export default function PrincipalAdmissionDetailPage() {
             <p className="text-[11px] font-bold uppercase tracking-widest text-brand-royal">
               Principal · Application Workspace
             </p>
-            <h1 className="mt-0.5 truncate text-2xl font-bold text-slate-900 sm:text-3xl">
+            <h1 className="mt-0.5 truncate text-2xl font-bold text-text-primary sm:text-3xl">
               {application.studentFirstName}{" "}
               {application.studentMiddleName
                 ? `${application.studentMiddleName} `
                 : ""}
               {application.studentLastName}
             </h1>
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
-              <span className="font-mono text-xs font-semibold tracking-wide text-slate-700">
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-secondary">
+              <span className="font-mono text-xs font-semibold tracking-wide text-text-secondary">
                 {application.applicationId}
               </span>
               {application.grNumber ? (
                 <>
-                  <span className="text-slate-300">·</span>
+                  <span className="text-text-muted">·</span>
                   <span>
                     GR{" "}
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-text-secondary">
                       {application.grNumber}
                     </span>
                   </span>
                 </>
               ) : null}
-              <span className="text-slate-300">·</span>
+              <span className="text-text-muted">·</span>
               <span>
                 Class{" "}
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-text-secondary">
                   {classDisplay}
                 </span>
               </span>
-              <span className="text-slate-300">·</span>
+              <span className="text-text-muted">·</span>
               <span>
                 Session{" "}
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-text-secondary">
                   {application.admissionYear}
                 </span>
               </span>
@@ -373,14 +373,14 @@ export default function PrincipalAdmissionDetailPage() {
             <Badge variant={statusVariant(application.status)}>
               {statusLabel}
             </Badge>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-text-muted">
               Updated {formatDate(application.lastUpdatedAt)}
             </p>
           </div>
         </div>
 
         {/* Stepper strip */}
-        <div className="border-t border-slate-200/80 bg-white/50 px-6 py-5 sm:px-7">
+        <div className="border-t border-surface-border/80 bg-surface-card/50 px-6 py-5 sm:px-7">
           <WorkflowStepper status={statusKey} />
         </div>
       </Card>
@@ -389,14 +389,14 @@ export default function PrincipalAdmissionDetailPage() {
       <section className="mt-4 grid gap-3 md:grid-cols-3">
         <Card className="border border-surface-border p-4">
           <div className="flex items-center gap-3">
-            <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand-sky-light text-brand-royal">
               <CreditCard className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
                 Payment
               </p>
-              <p className="mt-0.5 text-sm font-bold capitalize text-slate-900">
+              <p className="mt-0.5 text-sm font-bold capitalize text-text-primary">
                 {application.payment?.status ?? "Not started"}
               </p>
             </div>
@@ -408,10 +408,10 @@ export default function PrincipalAdmissionDetailPage() {
               <Files className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
                 Documents
               </p>
-              <p className="mt-0.5 text-sm font-bold text-slate-900">
+              <p className="mt-0.5 text-sm font-bold text-text-primary">
                 {application.documents.length} uploaded
               </p>
             </div>
@@ -423,10 +423,10 @@ export default function PrincipalAdmissionDetailPage() {
               <Calendar className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
                 Submitted
               </p>
-              <p className="mt-0.5 text-sm font-bold text-slate-900">
+              <p className="mt-0.5 text-sm font-bold text-text-primary">
                 {formatDate(application.submittedAt)}
               </p>
             </div>
@@ -462,7 +462,7 @@ export default function PrincipalAdmissionDetailPage() {
                     href={letterUrls.htmlUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-emerald-700 bg-white px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-emerald-700 bg-surface-card px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
                   >
                     <FileText className="h-3.5 w-3.5" />
                     Preview Letter
@@ -566,8 +566,8 @@ export default function PrincipalAdmissionDetailPage() {
         />
       </section>
 
-      <div className="sticky top-2 z-20 mt-6 rounded-md border border-surface-border bg-white/95 p-2 backdrop-blur">
-        <div className="flex flex-wrap gap-2">
+      <div className="sticky top-2 z-20 mt-6 rounded-lg border border-surface-border bg-surface-card/90 px-1 backdrop-blur">
+        <div className="flex gap-1 overflow-x-auto" role="tablist">
           {(
             [
               "overview",
@@ -578,16 +578,30 @@ export default function PrincipalAdmissionDetailPage() {
               "ledger",
               "fee_approvals",
             ] as Tab[]
-          ).map((item) => (
-            <Button
-              key={item}
-              variant={tab === item ? "primary" : "secondary"}
-              className="h-9 px-4 text-sm capitalize"
-              onClick={() => setTab(item)}
-            >
-              {item === "fee_approvals" ? "Fee Approvals" : item}
-            </Button>
-          ))}
+          ).map((item) => {
+            const isActive = tab === item;
+            return (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setTab(item)}
+                className={`relative shrink-0 px-3.5 py-2.5 text-sm font-medium capitalize transition ${
+                  isActive
+                    ? "text-text-primary"
+                    : "text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                {item === "fee_approvals" ? "Fee Approvals" : item}
+                <span
+                  className={`absolute inset-x-2.5 -bottom-px h-0.5 rounded-full transition ${
+                    isActive ? "bg-brand-royal" : "bg-transparent"
+                  }`}
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -632,7 +646,7 @@ export default function PrincipalAdmissionDetailPage() {
                   </p>
                 </div>
               ) : null}
-              <div className="rounded-md border border-surface-border bg-white p-4 md:col-span-2">
+              <div className="rounded-md border border-surface-border bg-surface-card p-4 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase text-text-muted">
@@ -789,7 +803,7 @@ export default function PrincipalAdmissionDetailPage() {
               <div className="mt-3 space-y-2">
                 {application.reviews.length === 0 &&
                 allTransactions.length === 0 ? (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-text-muted">
                     No reviews or payments yet.
                   </p>
                 ) : null}

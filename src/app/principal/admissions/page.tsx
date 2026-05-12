@@ -68,8 +68,8 @@ const UI = {
   heading: "text-2xl sm:text-3xl font-bold",
   sectionTitle: "text-lg sm:text-xl font-semibold",
   cardPad: "p-4 sm:p-5",
-  primaryActionBtn: "h-9 px-4 text-sm",
-  queueActionBtn: "h-8 px-3 text-xs",
+  primaryActionBtn: "",
+  queueActionBtn: "btn-sm",
 };
 
 const DEFAULT_STATS: PrincipalDashboardStats = {
@@ -1422,36 +1422,31 @@ export default function PrincipalAdmissionsDashboardPage() {
   return (
     <div className="min-h-screen bg-surface-bg">
       {/* Toast container */}
-      <div className="fixed right-4 top-4 z-50 flex w-[340px] max-w-[90vw] flex-col gap-2">
+      <div className="fixed right-4 top-4 z-50 flex w-[360px] max-w-[90vw] flex-col gap-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`rounded-md border px-3 py-2 text-sm shadow-lg ${
-              toast.type === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                : "border-rose-200 bg-rose-50 text-rose-800"
-            }`}
+            role="status"
+            className="card-raised animate-rise flex items-start gap-2.5 px-3.5 py-3 text-sm text-text-primary"
           >
-            <div className="flex items-start gap-2">
-              {toast.type === "success" ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-              ) : (
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              )}
-              <span>{toast.message}</span>
-            </div>
+            {toast.type === "success" ? (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-status-success" />
+            ) : (
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-status-error" />
+            )}
+            <span className="leading-snug">{toast.message}</span>
           </div>
         ))}
       </div>
 
       <div className="flex min-h-screen">
         {/* Sidebar */}
-        <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:fixed lg:inset-y-0 lg:flex lg:flex-col">
-          <div className="border-b border-slate-100 px-4 py-4">
+        <aside className="hidden w-60 shrink-0 border-r border-surface-border bg-surface-card lg:fixed lg:inset-y-0 lg:flex lg:flex-col">
+          <div className="border-b border-surface-divider px-4 py-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-brand-royal">
               Principal
             </p>
-            <h1 className="mt-1 text-base font-bold text-slate-900">
+            <h1 className="mt-1 text-base font-bold text-text-primary">
               Admissions
             </h1>
           </div>
@@ -1467,7 +1462,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                   className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition ${
                     isActive
                       ? "bg-brand-royal/10 text-brand-royal"
-                      : "text-slate-700 hover:bg-surface-bg"
+                      : "text-text-secondary hover:bg-surface-bg"
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -1476,7 +1471,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                   </div>
                   {item.badge > 0 && (
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${isActive ? "bg-brand-royal text-white" : "bg-slate-100 text-slate-600"}`}
+                      className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${isActive ? "bg-brand-royal text-white" : "bg-surface-muted text-text-secondary"}`}
                     >
                       {item.badge}
                     </span>
@@ -1487,8 +1482,8 @@ export default function PrincipalAdmissionsDashboardPage() {
           </nav>
 
           {/* Mini stats */}
-          <div className="border-t border-slate-100 p-3 space-y-1">
-            <div className="flex justify-between text-xs text-slate-500">
+          <div className="border-t border-surface-divider p-3 space-y-1">
+            <div className="flex justify-between text-xs text-text-muted">
               <span>Collected</span>
               <span className="font-semibold text-emerald-700">
                 {isLoadingStats
@@ -1496,7 +1491,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                   : formatCurrency(stats.totalFeeCollected)}
               </span>
             </div>
-            <div className="flex justify-between text-xs text-slate-500">
+            <div className="flex justify-between text-xs text-text-muted">
               <span>Pending</span>
               <span className="font-semibold text-amber-700">
                 {isLoadingStats ? "..." : formatCurrency(stats.totalFeePending)}
@@ -1504,13 +1499,14 @@ export default function PrincipalAdmissionsDashboardPage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-100 p-2">
+          <div className="border-t border-surface-divider p-2">
             <Button
               variant="secondary"
-              className="h-8 w-full justify-center text-xs"
+              size="sm"
+              block
               onClick={handleSignOut}
             >
-              Sign Out
+              Sign out
             </Button>
           </div>
         </aside>
@@ -1518,14 +1514,14 @@ export default function PrincipalAdmissionsDashboardPage() {
         {/* Main content */}
         <div className="w-full lg:pl-60">
           {/* Top header */}
-          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+          <header className="sticky top-0 z-30 border-b border-surface-border bg-surface-card/95 backdrop-blur">
             <div className="flex items-center justify-between px-4 py-3 sm:px-6">
               <div className="flex items-center gap-3">
                 <div className="lg:hidden">
-                  <p className="text-sm font-bold text-slate-900">Admissions</p>
+                  <p className="text-sm font-bold text-text-primary">Admissions</p>
                 </div>
                 <div className="hidden lg:block">
-                  <p className="text-sm font-semibold text-slate-900">
+                  <p className="text-sm font-semibold text-text-primary">
                     {activeSection === "pipeline"
                       ? "Admission Pipeline"
                       : activeSection === "custom_plans"
@@ -1539,23 +1535,24 @@ export default function PrincipalAdmissionsDashboardPage() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="secondary"
-                  className="h-8 px-3 text-xs"
+                  size="sm"
                   onClick={handleRefresh}
                   disabled={isLoadingApps || isLoadingStats}
                 >
                   {isLoadingApps || isLoadingStats ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                    <RefreshCw className="h-3.5 w-3.5" />
                   )}
                   Refresh
                 </Button>
                 <Button
                   variant="ghost"
-                  className="h-8 px-3 text-xs lg:hidden"
+                  size="sm"
+                  className="lg:hidden"
                   onClick={handleSignOut}
                 >
-                  Sign Out
+                  Sign out
                 </Button>
               </div>
             </div>
@@ -1570,7 +1567,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                   className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${
                     activeSection === item.id
                       ? "border-brand-royal bg-brand-royal text-white"
-                      : "border-slate-200 bg-white text-slate-700"
+                      : "border-surface-border bg-surface-card text-text-secondary"
                   }`}
                 >
                   {item.label}
@@ -1593,8 +1590,8 @@ export default function PrincipalAdmissionsDashboardPage() {
             {/* ─── PIPELINE SECTION ─── */}
             {activeSection === "pipeline" ? (
               <div className="space-y-4">
-                {/* Stat bar */}
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {/* Stat bar — pipeline stages as selectable tiles */}
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
                   {PIPELINE_STAGES.map((stage) => {
                     const count = stageCounts[stage.id] ?? 0;
                     const isActive = activePipelineStage === stage.id;
@@ -1602,22 +1599,22 @@ export default function PrincipalAdmissionsDashboardPage() {
                       <button
                         key={stage.id}
                         type="button"
+                        aria-pressed={isActive}
                         onClick={() => setActivePipelineStage(stage.id)}
-                        className={`rounded-lg border p-2.5 text-left transition ${
+                        className={`rounded-lg border bg-surface-card p-3 text-left transition ${
                           isActive
-                            ? `border-current ring-2 ${stage.ringColor} ${stage.bgColor}`
-                            : "border-slate-200 bg-white hover:border-slate-300"
+                            ? "border-brand-royal shadow-glow"
+                            : "border-surface-border hover:border-text-muted/50"
                         }`}
                       >
-                        <div
-                          className={`text-xl font-bold ${isActive ? stage.textColor : "text-slate-800"}`}
-                        >
-                          {isLoadingStats ? "…" : count}
+                        <div className="flex items-center gap-1.5">
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${stage.color}`} />
+                          <span className="truncate text-[11px] font-medium uppercase tracking-wide text-text-muted">
+                            {stage.label}
+                          </span>
                         </div>
-                        <div
-                          className={`mt-0.5 text-[11px] font-medium leading-tight ${isActive ? stage.textColor : "text-slate-500"}`}
-                        >
-                          {stage.label}
+                        <div className="mt-1.5 text-2xl font-semibold tabular-nums text-text-primary">
+                          {isLoadingStats ? "—" : count}
                         </div>
                       </button>
                     );
@@ -1625,32 +1622,24 @@ export default function PrincipalAdmissionsDashboardPage() {
                 </div>
 
                 {/* Active stage panel */}
-                <Card className="border border-surface-border">
+                <Card className="overflow-hidden p-0">
                   {/* Stage header */}
-                  <div
-                    className={`flex items-center gap-3 rounded-t-lg border-b border-slate-200 px-4 py-3 ${currentStageConfig.bgColor}`}
-                  >
-                    <div
-                      className={`h-2.5 w-2.5 rounded-full ${currentStageConfig.color}`}
-                    />
-                    <h2
-                      className={`text-sm font-bold ${currentStageConfig.textColor}`}
-                    >
+                  <div className="flex items-center gap-2.5 border-b border-surface-border bg-surface-muted px-4 py-3">
+                    <span className={`h-2 w-2 rounded-full ${currentStageConfig.color}`} />
+                    <h2 className="text-sm font-semibold text-text-primary">
                       {currentStageConfig.label}
                     </h2>
                     <Badge>{stageApplications.length}</Badge>
-                    <div className="ml-auto flex items-center gap-1.5">
-                      {currentTransitions.length > 0 && (
-                        <div className="flex items-center gap-1 rounded-md bg-white/70 px-2 py-1 text-xs text-slate-500">
-                          <ArrowRight className="h-3 w-3" />
-                          <span>Quick actions available</span>
-                        </div>
-                      )}
-                    </div>
+                    {currentTransitions.length > 0 && (
+                      <span className="ml-auto hidden items-center gap-1 text-xs text-text-muted sm:inline-flex">
+                        <ArrowRight className="h-3 w-3" />
+                        Quick actions available
+                      </span>
+                    )}
                   </div>
 
                   {/* Filters */}
-                  <div className="flex flex-wrap gap-2 border-b border-slate-100 bg-surface-bg px-4 py-2.5">
+                  <div className="flex flex-wrap gap-2 border-b border-surface-divider bg-surface-bg px-4 py-2.5">
                     <Input
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -1685,20 +1674,20 @@ export default function PrincipalAdmissionsDashboardPage() {
                     <div className="ml-auto flex items-center gap-1.5">
                       <Button
                         variant="secondary"
-                        className="h-8 px-2.5 text-xs"
+                        size="sm"
                         disabled={selectedApplications.length === 0}
                         onClick={handleExportSelectedCsv}
                       >
-                        <Download className="mr-1 h-3 w-3" />
-                        Export ({selectedApplications.length})
+                        <Download className="h-3.5 w-3.5" />
+                        Export{selectedApplications.length > 0 ? ` (${selectedApplications.length})` : ""}
                       </Button>
                     </div>
                   </div>
 
                   {/* Bulk actions panel — only show when selections exist */}
                   {actionableSelections.length > 0 && (
-                    <div className="border-b border-amber-100 bg-amber-50 px-4 py-3">
-                      <p className="mb-2 text-xs font-semibold text-amber-800">
+                    <div className="border-b border-surface-border bg-brand-amber-light px-4 py-3">
+                      <p className="mb-2 text-xs font-semibold text-brand-amber">
                         Bulk action — {actionableSelections.length} selected
                       </p>
                       <div className="flex flex-wrap items-end gap-2">
@@ -1710,7 +1699,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                                 e.target.value as BulkActionType,
                               )
                             }
-                            className="h-8 text-xs"
+                            className="h-9 text-sm"
                           >
                             <option value="under_review">
                               Move to Under Review
@@ -1746,190 +1735,212 @@ export default function PrincipalAdmissionsDashboardPage() {
                           </div>
                         )}
                         <Button
-                          className="h-8 px-3 text-xs"
                           disabled={isBulkActionLoading}
                           onClick={() => void handleBulkApplyDecision()}
                         >
-                          {isBulkActionLoading ? "Applying..." : "Apply"}
+                          {isBulkActionLoading ? "Applying…" : "Apply"}
                         </Button>
                         <Button
                           variant="secondary"
-                          className="h-8 px-3 text-xs"
                           disabled={isBulkActionLoading}
                           onClick={() => setAuditDrawerOpen(true)}
                         >
-                          Audit &amp; Confirm
+                          Audit &amp; confirm
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* Application list */}
-                  <div className="divide-y divide-slate-100">
-                    {isLoadingApps ? (
-                      <div className="flex items-center gap-2 px-4 py-6 text-sm text-slate-500">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-                      </div>
-                    ) : paginatedApplications.length === 0 ? (
-                      <div className="px-4 py-8 text-center text-sm text-slate-400">
-                        No applications in this stage.
-                      </div>
-                    ) : (
-                      paginatedApplications.map((app) => {
-                        const transitions =
-                          STAGE_TRANSITIONS[app.status as PipelineStage] ?? [];
-                        const isLoading = actionLoadingFor === app.id;
-                        return (
-                          <div
-                            key={app.id}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-surface-bg"
-                          >
-                            {/* Select checkbox */}
-                            <div className="mt-0.5 flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={selectedIds.includes(app.id)}
-                                onChange={() => toggleRowSelection(app.id)}
-                                disabled={!isReviewableStatus(app.status)}
-                                aria-label={`Select ${app.applicationId}`}
-                                className="h-4 w-4 rounded border-slate-300"
-                              />
-                            </div>
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                <span className="font-semibold text-slate-900 text-sm">
-                                  {app.applicationId}
-                                </span>
-                                <span className="text-sm text-slate-600">
+                  {/* Applications table */}
+                  <div className="overflow-x-auto">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th className="w-10">
+                            <input
+                              type="checkbox"
+                              checked={isPageFullySelected}
+                              onChange={togglePageSelection}
+                              aria-label="Select all on page"
+                              className="h-4 w-4 rounded border-surface-border align-middle accent-[var(--color-brand-royal)]"
+                            />
+                          </th>
+                          <th>Application</th>
+                          <th>Student</th>
+                          <th className="hidden md:table-cell">Class</th>
+                          <th className="hidden sm:table-cell">Year</th>
+                          <th>Payment</th>
+                          <th className="text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {isLoadingApps ? (
+                          <tr>
+                            <td colSpan={7}>
+                              <span className="flex items-center gap-2 py-4 text-sm text-text-muted">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Loading applications…
+                              </span>
+                            </td>
+                          </tr>
+                        ) : paginatedApplications.length === 0 ? (
+                          <tr>
+                            <td colSpan={7}>
+                              <span className="block py-10 text-center text-sm text-text-muted">
+                                No applications in this stage.
+                              </span>
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedApplications.map((app) => {
+                            const transitions =
+                              STAGE_TRANSITIONS[app.status as PipelineStage] ??
+                              [];
+                            const isLoading = actionLoadingFor === app.id;
+                            return (
+                              <tr key={app.id}>
+                                <td>
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedIds.includes(app.id)}
+                                    onChange={() => toggleRowSelection(app.id)}
+                                    disabled={!isReviewableStatus(app.status)}
+                                    aria-label={`Select ${app.applicationId}`}
+                                    className="h-4 w-4 rounded border-surface-border align-middle accent-[var(--color-brand-royal)]"
+                                  />
+                                </td>
+                                <td>
+                                  <div className="flex items-center gap-1.5">
+                                    <Link
+                                      href={`/principal/admissions/${app.applicationId}`}
+                                      className="font-medium text-text-primary hover:text-brand-royal hover:no-underline"
+                                    >
+                                      {app.applicationId}
+                                    </Link>
+                                    {app.correctionNeeded && (
+                                      <span
+                                        className="inline-flex h-1.5 w-1.5 rounded-full bg-status-warning"
+                                        title="Correction needed"
+                                        aria-label="Correction needed"
+                                      />
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="text-text-secondary">
                                   {app.studentFirstName} {app.studentLastName}
-                                </span>
-                                {app.correctionNeeded && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700">
-                                    <AlertTriangle className="h-2.5 w-2.5" />{" "}
-                                    Correction needed
-                                  </span>
-                                )}
-                              </div>
-                              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
-                                {app.class ? (
-                                  <span>
-                                    {app.class.name}
-                                    {app.class.section
-                                      ? ` - ${app.class.section}`
-                                      : ""}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400">
-                                    No class
-                                  </span>
-                                )}
-                                <span>{app.admissionYear}</span>
-                                <Badge
-                                  variant={paymentBadgeVariant(
-                                    app.payment?.status,
-                                  )}
-                                >
-                                  {app.payment?.status ?? "no payment"}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                              <Link
-                                href={`/principal/admissions/${app.applicationId}`}
-                                className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-brand-royal hover:border-brand-royal hover:bg-brand-royal/5 transition"
-                              >
-                                Open <ChevronRight className="h-3 w-3" />
-                              </Link>
-                              {transitions.map((t) => (
-                                <button
-                                  key={t.status}
-                                  type="button"
-                                  disabled={isLoading}
-                                  onClick={() =>
-                                    openTransitionModal(app, t.status, t.label)
-                                  }
-                                  className={`flex items-center gap-1 rounded border px-2 py-1 text-xs font-semibold transition disabled:opacity-50 ${
-                                    t.direction === "forward"
-                                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                      : t.direction === "terminal"
-                                        ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
-                                        : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
-                                  }`}
-                                >
-                                  {isLoading ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : t.direction === "forward" ? (
-                                    <ArrowRight className="h-3 w-3" />
-                                  ) : t.direction === "back" ? (
-                                    <ArrowLeft className="h-3 w-3" />
-                                  ) : null}
-                                  {t.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
+                                </td>
+                                <td className="hidden text-text-secondary md:table-cell">
+                                  {app.class
+                                    ? `${app.class.name}${app.class.section ? ` · ${app.class.section}` : ""}`
+                                    : "—"}
+                                </td>
+                                <td className="hidden tabular-nums text-text-secondary sm:table-cell">
+                                  {app.admissionYear}
+                                </td>
+                                <td>
+                                  <Badge
+                                    variant={paymentBadgeVariant(
+                                      app.payment?.status,
+                                    )}
+                                  >
+                                    {app.payment?.status ?? "no payment"}
+                                  </Badge>
+                                </td>
+                                <td>
+                                  <div className="flex shrink-0 items-center justify-end gap-1">
+                                    <Link
+                                      href={`/principal/admissions/${app.applicationId}`}
+                                      className="btn-secondary btn-sm"
+                                    >
+                                      Open
+                                      <ChevronRight className="h-3.5 w-3.5" />
+                                    </Link>
+                                    {transitions.map((t) => (
+                                      <button
+                                        key={t.status}
+                                        type="button"
+                                        disabled={isLoading}
+                                        onClick={() =>
+                                          openTransitionModal(
+                                            app,
+                                            t.status,
+                                            t.label,
+                                          )
+                                        }
+                                        title={t.label}
+                                        className={`inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition hover:bg-surface-muted disabled:opacity-50 ${
+                                          t.direction === "forward"
+                                            ? "text-status-success"
+                                            : t.direction === "terminal"
+                                              ? "text-status-error"
+                                              : "text-brand-amber"
+                                        }`}
+                                      >
+                                        {isLoading ? (
+                                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : t.direction === "forward" ? (
+                                          <ArrowRight className="h-3.5 w-3.5" />
+                                        ) : t.direction === "back" ? (
+                                          <ArrowLeft className="h-3.5 w-3.5" />
+                                        ) : (
+                                          <AlertTriangle className="h-3.5 w-3.5" />
+                                        )}
+                                        <span className="hidden lg:inline">
+                                          {t.label}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   </div>
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-                      <p className="text-xs text-slate-500">
-                        Page {Math.min(page, totalPages)} of {totalPages}
-                      </p>
-                      <div className="flex gap-1.5">
+                  {/* Footer — pagination + shortcuts */}
+                  <div className="flex flex-wrap items-center gap-3 border-t border-surface-divider px-4 py-3">
+                    {totalPages > 1 ? (
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="secondary"
-                          className="h-7 px-2.5 text-xs"
+                          size="sm"
                           disabled={page <= 1}
                           onClick={() => setPage((p) => Math.max(1, p - 1))}
                         >
+                          <ArrowLeft className="h-3.5 w-3.5" />
                           Prev
                         </Button>
+                        <span className="text-xs tabular-nums text-text-muted">
+                          {Math.min(page, totalPages)} / {totalPages}
+                        </span>
                         <Button
                           variant="secondary"
-                          className="h-7 px-2.5 text-xs"
+                          size="sm"
                           disabled={page >= totalPages}
                           onClick={() =>
                             setPage((p) => Math.min(totalPages, p + 1))
                           }
                         >
                           Next
+                          <ArrowRight className="h-3.5 w-3.5" />
                         </Button>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Select all row */}
-                  {paginatedApplications.length > 1 && (
-                    <div className="flex items-center gap-2 border-t border-slate-100 bg-surface-bg px-4 py-2">
-                      <input
-                        type="checkbox"
-                        checked={isPageFullySelected}
-                        onChange={togglePageSelection}
-                        aria-label="Select all on page"
-                        className="h-4 w-4 rounded border-slate-300"
-                      />
-                      <span className="text-xs text-slate-500">
-                        {isPageFullySelected
-                          ? "Deselect all on page"
-                          : "Select all on page"}
+                    ) : null}
+                    <div className="ml-auto flex items-center gap-2 text-xs text-text-muted">
+                      <Keyboard className="h-3.5 w-3.5" />
+                      <span>
+                        <kbd className="font-semibold text-text-secondary">R</kbd>{" "}
+                        refresh ·{" "}
+                        <kbd className="font-semibold text-text-secondary">E</kbd>{" "}
+                        export ·{" "}
+                        <kbd className="font-semibold text-text-secondary">U</kbd>{" "}
+                        bulk review
                       </span>
-                      <div className="ml-auto flex items-center gap-2 text-xs text-slate-400">
-                        <Keyboard className="h-3.5 w-3.5" />
-                        <span>
-                          <b>R</b> refresh · <b>E</b> export · <b>U</b> bulk
-                          under review
-                        </span>
-                      </div>
                     </div>
-                  )}
+                  </div>
                 </Card>
               </div>
             ) : null}
@@ -1939,10 +1950,10 @@ export default function PrincipalAdmissionsDashboardPage() {
               <Card className="border border-surface-border p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h2 className="text-base font-bold text-slate-900">
+                    <h2 className="text-base font-bold text-text-primary">
                       Custom Installment Requests
                     </h2>
-                    <p className="mt-0.5 text-sm text-slate-500">
+                    <p className="mt-0.5 text-sm text-text-muted">
                       Review and approve or reject requested custom payment
                       plans.
                     </p>
@@ -1968,11 +1979,11 @@ export default function PrincipalAdmissionsDashboardPage() {
 
                 <div className="mt-4 space-y-3">
                   {isLoadingCustomPlans ? (
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-text-muted">
                       Loading custom requests…
                     </p>
                   ) : pendingCustomPlans.length === 0 ? (
-                    <div className="rounded-md border border-slate-200 bg-surface-bg p-3 text-sm text-slate-500">
+                    <div className="rounded-md border border-surface-border bg-surface-bg p-3 text-sm text-text-muted">
                       No pending custom payment plan requests.
                     </div>
                   ) : (
@@ -1983,20 +1994,20 @@ export default function PrincipalAdmissionsDashboardPage() {
                       return (
                         <div
                           key={plan.id}
-                          className="rounded-lg border border-slate-200 bg-white p-4"
+                          className="rounded-lg border border-surface-border bg-surface-card p-4"
                         >
-                          <p className="text-sm font-semibold text-slate-900">
+                          <p className="text-sm font-semibold text-text-primary">
                             {plan.studentName}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-text-muted">
                             Application: {plan.applicationId}
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-text-muted">
                             Requested: {formatCurrency(plan.totalAmount)} ·{" "}
                             {plan.installments.length} installments
                           </p>
                           {plan.customPlanReason ? (
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs text-text-muted">
                               Reason: {plan.customPlanReason}
                             </p>
                           ) : null}
@@ -2019,9 +2030,9 @@ export default function PrincipalAdmissionsDashboardPage() {
                             />
                           </div>
 
-                          <div className="mt-3 rounded-md border border-slate-100 bg-surface-bg p-3">
+                          <div className="mt-3 rounded-md border border-surface-divider bg-surface-bg p-3">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
                                 Installments
                               </p>
                               {isEditing ? (
@@ -2085,7 +2096,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                                         className="h-8"
                                       />
                                     ) : (
-                                      <p className="truncate text-slate-800">
+                                      <p className="truncate text-text-primary">
                                         {installment.name}
                                       </p>
                                     )}
@@ -2105,7 +2116,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                                         className="h-8"
                                       />
                                     ) : (
-                                      <p className="text-slate-500">
+                                      <p className="text-text-muted">
                                         {installment.dueDate}
                                       </p>
                                     )}
@@ -2130,7 +2141,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                                         className="h-8 text-right"
                                       />
                                     ) : (
-                                      <p className="text-right font-semibold text-slate-600">
+                                      <p className="text-right font-semibold text-text-secondary">
                                         {formatCurrency(installment.amount)}
                                       </p>
                                     )}
@@ -2181,10 +2192,10 @@ export default function PrincipalAdmissionsDashboardPage() {
             {activeSection === "settings" ? (
               <div className="grid gap-5 xl:grid-cols-[1.1fr_1.4fr]">
                 <Card className="border border-surface-border p-4 sm:p-5">
-                  <h2 className="text-base font-bold text-slate-900">
+                  <h2 className="text-base font-bold text-text-primary">
                     Create Class
                   </h2>
-                  <p className="mt-0.5 text-sm text-slate-500">
+                  <p className="mt-0.5 text-sm text-text-muted">
                     Add admission classes before configuring fee structures.
                   </p>
                   <div className="mt-4 grid gap-3">
@@ -2206,7 +2217,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                           </option>
                         ))}
                       </Select>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-text-muted">
                         Standard grades only. Free-text class names are no
                         longer accepted.
                       </p>
@@ -2271,10 +2282,10 @@ export default function PrincipalAdmissionsDashboardPage() {
                 <Card className="border border-surface-border p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-base font-bold text-slate-900">
+                      <h2 className="text-base font-bold text-text-primary">
                         Fee Configuration
                       </h2>
-                      <p className="mt-0.5 text-sm text-slate-500">
+                      <p className="mt-0.5 text-sm text-text-muted">
                         Define fee components and installment split.
                       </p>
                     </div>
@@ -2323,9 +2334,9 @@ export default function PrincipalAdmissionsDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-md border border-slate-200 bg-surface-bg p-3">
+                  <div className="mt-4 rounded-md border border-surface-border bg-surface-bg p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-text-primary">
                         Fee Components
                       </p>
                       <Button
@@ -2400,9 +2411,9 @@ export default function PrincipalAdmissionsDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-md border border-slate-200 bg-surface-bg p-3">
+                  <div className="mt-4 rounded-md border border-surface-border bg-surface-bg p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-text-primary">
                         Standard Installments
                       </p>
                       <Button
@@ -2497,7 +2508,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                               }
                               placeholder="Days after enrollment"
                             />
-                            <p className="mt-1 text-[11px] text-slate-500">
+                            <p className="mt-1 text-[11px] text-text-muted">
                               {installment.dueOffsetDays === 0
                                 ? "Due on enrollment day"
                                 : `Due ${installment.dueOffsetDays} day${installment.dueOffsetDays === 1 ? "" : "s"} after enrollment`}
@@ -2537,7 +2548,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                         </div>
                       ))}
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">
+                    <p className="mt-2 text-xs text-text-muted">
                       Total: {installmentPercentageTotal}%{" "}
                       {Math.abs(installmentPercentageTotal - 100) <= 0.01
                         ? "(valid ✓)"
@@ -2559,14 +2570,14 @@ export default function PrincipalAdmissionsDashboardPage() {
                     </Button>
                   </div>
 
-                  <div className="mt-5 rounded-md border border-slate-200 bg-white p-3">
-                    <p className="text-sm font-semibold text-slate-800">
+                  <div className="mt-5 rounded-md border border-surface-border bg-surface-card p-3">
+                    <p className="text-sm font-semibold text-text-primary">
                       Existing Fee Structures ({feeStructures.length})
                     </p>
                     {isLoadingFeeStructures ? (
-                      <p className="mt-2 text-sm text-slate-500">Loading…</p>
+                      <p className="mt-2 text-sm text-text-muted">Loading…</p>
                     ) : feeStructures.length === 0 ? (
-                      <p className="mt-2 text-sm text-slate-500">
+                      <p className="mt-2 text-sm text-text-muted">
                         None configured yet.
                       </p>
                     ) : (
@@ -2574,9 +2585,9 @@ export default function PrincipalAdmissionsDashboardPage() {
                         {feeStructures.map((row) => (
                           <div
                             key={row.id}
-                            className="flex items-center justify-between rounded-md border border-slate-100 bg-surface-bg px-3 py-2"
+                            className="flex items-center justify-between rounded-md border border-surface-divider bg-surface-bg px-3 py-2"
                           >
-                            <p className="text-sm font-medium text-slate-800">
+                            <p className="text-sm font-medium text-text-primary">
                               {row.class.name}
                               {row.class.section
                                 ? ` - ${row.class.section}`
@@ -2597,32 +2608,32 @@ export default function PrincipalAdmissionsDashboardPage() {
             {activeSection === "audit" ? (
               <div className="grid gap-5 xl:grid-cols-[1.3fr_1fr]">
                 <Card className="border border-surface-border p-4 sm:p-5">
-                  <h2 className="text-base font-bold text-slate-900">
+                  <h2 className="text-base font-bold text-text-primary">
                     Recent Action Logs
                   </h2>
-                  <p className="mt-0.5 text-sm text-slate-500">
+                  <p className="mt-0.5 text-sm text-text-muted">
                     Session-local bulk decision trail.
                   </p>
                   <div className="mt-4 space-y-2">
                     {auditLogs.length === 0 ? (
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-text-muted">
                         No audit entries yet.
                       </p>
                     ) : (
                       auditLogs.map((entry) => (
                         <div
                           key={entry.id}
-                          className="rounded-md border border-slate-200 bg-surface-bg p-3"
+                          className="rounded-md border border-surface-border bg-surface-bg p-3"
                         >
-                          <p className="text-sm font-semibold text-slate-900">
+                          <p className="text-sm font-semibold text-text-primary">
                             {entry.action.replace("_", " ")} (
                             {entry.successCount} ok / {entry.failureCount}{" "}
                             failed)
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-text-muted">
                             {new Date(entry.timestamp).toLocaleString("en-IN")}
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-text-muted">
                             Reason: {entry.reason}
                           </p>
                         </div>
@@ -2631,7 +2642,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                   </div>
                 </Card>
                 <Card className="border border-surface-border p-4 sm:p-5">
-                  <h2 className="text-base font-bold text-slate-900">
+                  <h2 className="text-base font-bold text-text-primary">
                     Guidance
                   </h2>
                   <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
@@ -2666,24 +2677,24 @@ export default function PrincipalAdmissionsDashboardPage() {
       {transitionModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <Card className="w-full max-w-md p-5">
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold text-text-primary">
               {transitionModal.label}
             </h3>
             <div className="mt-2 rounded-md bg-surface-bg px-3 py-2 text-sm">
-              <p className="font-semibold text-slate-800">
+              <p className="font-semibold text-text-primary">
                 {transitionModal.app.applicationId}
               </p>
-              <p className="text-slate-500">
+              <p className="text-text-muted">
                 {transitionModal.app.studentFirstName}{" "}
                 {transitionModal.app.studentLastName}
               </p>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-text-muted">
                 Current stage:{" "}
-                <span className="font-semibold text-slate-600">
+                <span className="font-semibold text-text-secondary">
                   {transitionModal.app.status.replace(/_/g, " ")}
                 </span>
                 {" → "}
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-text-primary">
                   {transitionModal.toStatus.replace(/_/g, " ")}
                 </span>
               </p>
@@ -2745,12 +2756,12 @@ export default function PrincipalAdmissionsDashboardPage() {
       {confirmBulkOpen ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
           <Card className="w-full max-w-lg p-5">
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold text-text-primary">
               Confirm Bulk Decision
             </h3>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-text-secondary">
               You are about to apply{" "}
-              <span className="font-semibold text-slate-900">
+              <span className="font-semibold text-text-primary">
                 {bulkActionType === "on_hold" ? "On Hold" : "Needs Correction"}
               </span>{" "}
               to {actionableSelections.length} application(s).
@@ -2780,13 +2791,13 @@ export default function PrincipalAdmissionsDashboardPage() {
       {/* ─── AUDIT DRAWER ─── */}
       {auditDrawerOpen ? (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
-          <div className="h-full w-full max-w-xl overflow-y-auto bg-white p-5 shadow-xl">
+          <div className="h-full w-full max-w-xl overflow-y-auto bg-surface-card p-5 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-bold text-text-primary">
                   Bulk Audit Preview
                 </h3>
-                <p className="mt-0.5 text-sm text-slate-500">
+                <p className="mt-0.5 text-sm text-text-muted">
                   Review exact impact before applying.
                 </p>
               </div>
@@ -2795,11 +2806,11 @@ export default function PrincipalAdmissionsDashboardPage() {
               </Button>
             </div>
 
-            <div className="mt-4 rounded-md border border-slate-200 bg-surface-bg p-3">
-              <p className="text-sm font-semibold text-slate-900">
+            <div className="mt-4 rounded-md border border-surface-border bg-surface-bg p-3">
+              <p className="text-sm font-semibold text-text-primary">
                 Action: {bulkActionType.replace("_", " ")}
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-text-muted">
                 Actionable: {actionableSelections.length}
               </p>
             </div>
@@ -2808,15 +2819,15 @@ export default function PrincipalAdmissionsDashboardPage() {
               {actionableSelections.map((app) => (
                 <div
                   key={app.id}
-                  className="rounded-md border border-slate-200 px-3 py-2 text-sm"
+                  className="rounded-md border border-surface-border px-3 py-2 text-sm"
                 >
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-semibold text-text-primary">
                     {app.applicationId}
                   </p>
-                  <p className="text-slate-500">
+                  <p className="text-text-muted">
                     {app.studentFirstName} {app.studentLastName}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-text-muted">
                     {app.status} →{" "}
                     {bulkActionType === "needs_correction"
                       ? "needs_correction"
@@ -2827,7 +2838,7 @@ export default function PrincipalAdmissionsDashboardPage() {
             </div>
 
             <div className="mt-4">
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-muted">
                 Audit Reason (required)
               </label>
               <Textarea

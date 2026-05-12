@@ -37,7 +37,7 @@ export function FormStepper({ currentStep }: FormStepperProps) {
                       ? "bg-[#1a4dad] text-white shadow-md shadow-blue-300/50"
                       : isDone
                         ? "bg-[#1a4dad] text-white"
-                        : "border-2 border-gray-300 bg-white text-gray-400",
+                        : "border-2 border-surface-border bg-surface-card text-gray-400",
                   ].join(" ")}
                 >
                   {isDone ? "✓" : index + 1}
@@ -62,7 +62,7 @@ export function FormStepper({ currentStep }: FormStepperProps) {
                   {isDone ? (
                     <div className="h-0.5 w-full bg-[#1a4dad]" />
                   ) : (
-                    <div className="h-0 w-full border-t-2 border-dashed border-gray-300" />
+                    <div className="h-0 w-full border-t-2 border-dashed border-surface-border" />
                   )}
                 </div>
               )}
