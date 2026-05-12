@@ -131,19 +131,19 @@ function LoginInner() {
             <div className="inline-flex rounded-full bg-white/20 p-2">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-blue-100">
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
               Resillix Workspace
             </p>
             <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
               Secure Sign In
             </h1>
-            <p className="mt-3 text-sm text-blue-100">
+            <p className="mt-3 text-sm text-white/70">
               Sign in to access admission reviews, fee approvals, and the
               principal command centre. Sessions are short-lived and
               cookie-protected.
             </p>
 
-            <ul className="mt-6 space-y-2 text-xs text-blue-100">
+            <ul className="mt-6 space-y-2 text-xs text-white/70">
               <li className="flex items-start gap-2">
                 <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>HTTP-only refresh cookies — never exposed to JavaScript.</span>

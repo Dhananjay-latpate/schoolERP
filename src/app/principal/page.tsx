@@ -134,7 +134,7 @@ export default function PrincipalHomePage() {
 
   if (isCheckingSession) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-surface-bg px-4">
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Loader2 className="h-4 w-4 animate-spin" />
           Preparing principal workspace...
@@ -144,7 +144,7 @@ export default function PrincipalHomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-surface-bg px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <Card className="overflow-hidden p-0">
           <div className="brand-gradient p-6 text-white sm:p-8">
@@ -153,11 +153,11 @@ export default function PrincipalHomePage() {
                 <div className="inline-flex rounded-full bg-white/20 p-2">
                   <LayoutDashboard className="h-5 w-5" />
                 </div>
-                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-blue-100">
+                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
                   Principal Command Center
                 </p>
                 <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Main Dashboard</h1>
-                <p className="mt-2 max-w-3xl text-sm text-blue-100">
+                <p className="mt-2 max-w-3xl text-sm text-white/70">
                   Central workspace for principal operations. Navigate across modules and
                   monitor institution workflows from one place.
                 </p>
@@ -213,10 +213,10 @@ export default function PrincipalHomePage() {
               const isActive = module.status === "active";
 
               return (
-                <Card key={module.key} className="border border-surface-border p-4">
+                <Card key={module.key} className="card-interactive p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="inline-flex rounded-md bg-slate-100 p-2">
-                      <Icon className="h-4 w-4 text-slate-700" />
+                    <div className="inline-flex rounded-md bg-surface-muted p-2">
+                      <Icon className="h-4 w-4 text-text-secondary" />
                     </div>
                     <Badge variant={isActive ? "success" : "default"}>
                       {isActive ? "Live" : "Coming Soon"}

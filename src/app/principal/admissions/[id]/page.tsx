@@ -318,7 +318,7 @@ export default function PrincipalAdmissionDetailPage() {
         <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-7">
           {/* Avatar */}
           <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-royal to-blue-700 text-2xl font-bold text-white shadow-md shadow-blue-200/50"
+            className="logo-mark h-16 w-16 rounded-2xl text-2xl"
             aria-hidden="true"
           >
             {studentInitials || "?"}

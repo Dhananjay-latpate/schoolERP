@@ -1420,7 +1420,7 @@ export default function PrincipalAdmissionsDashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface-bg">
       {/* Toast container */}
       <div className="fixed right-4 top-4 z-50 flex w-[340px] max-w-[90vw] flex-col gap-2">
         {toasts.map((toast) => (
@@ -1467,7 +1467,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                   className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition ${
                     isActive
                       ? "bg-brand-royal/10 text-brand-royal"
-                      : "text-slate-700 hover:bg-slate-50"
+                      : "text-slate-700 hover:bg-surface-bg"
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -1650,7 +1650,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                   </div>
 
                   {/* Filters */}
-                  <div className="flex flex-wrap gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+                  <div className="flex flex-wrap gap-2 border-b border-slate-100 bg-surface-bg px-4 py-2.5">
                     <Input
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -1782,7 +1782,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                         return (
                           <div
                             key={app.id}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50"
+                            className="flex items-start gap-3 px-4 py-3 hover:bg-surface-bg"
                           >
                             {/* Select checkbox */}
                             <div className="mt-0.5 flex items-center">
@@ -1908,7 +1908,7 @@ export default function PrincipalAdmissionsDashboardPage() {
 
                   {/* Select all row */}
                   {paginatedApplications.length > 1 && (
-                    <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50 px-4 py-2">
+                    <div className="flex items-center gap-2 border-t border-slate-100 bg-surface-bg px-4 py-2">
                       <input
                         type="checkbox"
                         checked={isPageFullySelected}
@@ -1972,7 +1972,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                       Loading custom requests…
                     </p>
                   ) : pendingCustomPlans.length === 0 ? (
-                    <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+                    <div className="rounded-md border border-slate-200 bg-surface-bg p-3 text-sm text-slate-500">
                       No pending custom payment plan requests.
                     </div>
                   ) : (
@@ -2019,7 +2019,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                             />
                           </div>
 
-                          <div className="mt-3 rounded-md border border-slate-100 bg-slate-50 p-3">
+                          <div className="mt-3 rounded-md border border-slate-100 bg-surface-bg p-3">
                             <div className="flex items-center justify-between gap-2">
                               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                                 Installments
@@ -2323,7 +2323,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <div className="mt-4 rounded-md border border-slate-200 bg-surface-bg p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-800">
                         Fee Components
@@ -2400,7 +2400,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <div className="mt-4 rounded-md border border-slate-200 bg-surface-bg p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-800">
                         Standard Installments
@@ -2574,7 +2574,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                         {feeStructures.map((row) => (
                           <div
                             key={row.id}
-                            className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50 px-3 py-2"
+                            className="flex items-center justify-between rounded-md border border-slate-100 bg-surface-bg px-3 py-2"
                           >
                             <p className="text-sm font-medium text-slate-800">
                               {row.class.name}
@@ -2612,7 +2612,7 @@ export default function PrincipalAdmissionsDashboardPage() {
                       auditLogs.map((entry) => (
                         <div
                           key={entry.id}
-                          className="rounded-md border border-slate-200 bg-slate-50 p-3"
+                          className="rounded-md border border-slate-200 bg-surface-bg p-3"
                         >
                           <p className="text-sm font-semibold text-slate-900">
                             {entry.action.replace("_", " ")} (
@@ -2669,7 +2669,7 @@ export default function PrincipalAdmissionsDashboardPage() {
             <h3 className="text-base font-bold text-slate-900">
               {transitionModal.label}
             </h3>
-            <div className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
+            <div className="mt-2 rounded-md bg-surface-bg px-3 py-2 text-sm">
               <p className="font-semibold text-slate-800">
                 {transitionModal.app.applicationId}
               </p>
@@ -2795,7 +2795,7 @@ export default function PrincipalAdmissionsDashboardPage() {
               </Button>
             </div>
 
-            <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="mt-4 rounded-md border border-slate-200 bg-surface-bg p-3">
               <p className="text-sm font-semibold text-slate-900">
                 Action: {bulkActionType.replace("_", " ")}
               </p>

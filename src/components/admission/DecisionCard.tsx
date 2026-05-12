@@ -47,8 +47,7 @@ const variantClass: Record<ActionDescriptor["variant"], string> = {
     "border border-rose-200 bg-white text-rose-700 hover:bg-rose-50 hover:border-rose-300",
 };
 
-const primaryVariantClass =
-  "bg-gradient-to-r from-brand-royal to-blue-600 text-white shadow-md shadow-blue-200/40 hover:shadow-lg hover:shadow-blue-200/60";
+const primaryVariantClass = "btn-pay";
 
 export function DecisionCard({
   context,

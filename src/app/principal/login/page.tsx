@@ -90,13 +90,13 @@ function LoginForm() {
             <div className="inline-flex rounded-full bg-white/20 p-2">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-blue-100">
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
               Principal Workspace
             </p>
             <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
               Admissions Operations Login
             </h1>
-            <p className="mt-3 text-sm text-blue-100">
+            <p className="mt-3 text-sm text-white/70">
               Access the principal command center for admission review, bulk
               decisions, and audit-enabled workflows.
             </p>
