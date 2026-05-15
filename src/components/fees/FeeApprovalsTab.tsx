@@ -43,7 +43,7 @@ export function FeeApprovalsTab({ approvals }: Props) {
       {approvals.map((approval) => (
         <div
           key={approval.id}
-          className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-4"
+          className="flex items-start gap-3 rounded-lg border border-surface-border bg-surface-card p-4"
         >
           <div className="mt-0.5 shrink-0">
             {STATUS_ICONS[approval.status] ?? STATUS_ICONS.pending}

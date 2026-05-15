@@ -175,7 +175,7 @@ function ResetInner() {
                   type="button"
                   onClick={() => setShow((v) => !v)}
                   aria-label={show ? "Hide password" : "Show password"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-text-secondary hover:bg-slate-100"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-text-secondary hover:bg-surface-muted"
                   tabIndex={-1}
                 >
                   {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -187,7 +187,7 @@ function ResetInner() {
                     {[0, 1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className={`h-full flex-1 rounded ${i < strength.score ? strength.color : "bg-slate-200"}`}
+                        className={`h-full flex-1 rounded ${i < strength.score ? strength.color : "bg-surface-divider"}`}
                       />
                     ))}
                   </div>

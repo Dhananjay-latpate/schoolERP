@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const manrope = Manrope({
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Resillix | School ERP",
+  title: "Resillix — School ERP",
   description:
-    "Resillix admission platform for schools - premium, fast, and parent-friendly admission experience.",
+    "Resillix: a calm, fast, parent-friendly school ERP — admissions, fees, attendance, and the principal command center in one workspace.",
 };
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${manrope.variable} min-h-screen bg-surface-bg text-text-primary`}
+        className={`${inter.variable} min-h-screen bg-surface-bg text-text-primary antialiased`}
       >
         {children}
       </body>

@@ -64,7 +64,7 @@ export function RecordPaymentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+      <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="font-semibold text-gray-900">Record Manual Payment</h2>
           <button
@@ -97,7 +97,7 @@ export function RecordPaymentModal({
               value={method}
               onChange={(e) => setMethod(e.target.value)}
               disabled={loading}
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-surface-border bg-surface-card px-3 py-2 text-sm shadow-sm focus:border-brand-royal focus:outline-none focus:ring-1 focus:ring-brand-royal"
             >
               {METHODS.map((m) => (
                 <option key={m} value={m} className="capitalize">

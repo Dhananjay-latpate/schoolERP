@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Plus } from "lucide-react";
 import { ActiveSessionBadge } from "@/components/admission/ActiveSessionBadge";
 
 export default function AdmissionsLayout({
@@ -8,72 +9,35 @@ export default function AdmissionsLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-surface-bg">
-      {/* Decorative background blobs */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -left-40 -top-20 h-96 w-96 rounded-full bg-brand-sky/10 blur-[80px]" />
-        <div className="absolute -right-40 top-60 h-80 w-80 rounded-full bg-brand-royal/10 blur-[70px]" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-brand-amber/8 blur-[60px]" />
-      </div>
-
-      <header className="sticky top-0 z-20 border-b border-surface-border/60 bg-white/85 backdrop-blur-xl">
-        {/* Thin accent line at very top */}
-        <div
-          className="h-0.5 w-full"
-          style={{
-            background:
-              "linear-gradient(90deg, #1A4DAD 0%, #3B82F6 50%, #F59E0B 100%)",
-          }}
-        />
-        <div className="mx-auto flex h-[60px] w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/admissions/apply" className="flex items-center gap-3">
-            {/* Logo mark */}
-            <span
-              className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black tracking-tight text-white shadow-sm"
-              style={{
-                background:
-                  "linear-gradient(140deg, #0A1628 0%, #142D5C 50%, #1A4DAD 100%)",
-                boxShadow: "0 2px 8px rgb(26 77 173 / 0.4)",
-              }}
-            >
-              R
-            </span>
-            <div className="leading-none">
-              <p className="text-[0.875rem] font-bold tracking-tight text-text-primary">
+    <main className="min-h-screen bg-surface-bg">
+      <header className="sticky top-0 z-20 border-b border-surface-border bg-surface-card/85 backdrop-blur-md">
+        <div className="page-shell flex h-14 items-center justify-between">
+          <Link href="/admissions/apply" className="flex items-center gap-2.5">
+            <span className="logo-mark h-8 w-8 text-sm">R</span>
+            <span className="flex items-baseline gap-2">
+              <span className="text-sm font-semibold tracking-tight text-text-primary">
                 Resillix
-              </p>
-              <p className="text-[0.7rem] font-medium uppercase tracking-widest text-text-muted">
-                Admissions Portal
-              </p>
-            </div>
+              </span>
+              <span className="hidden text-xs text-text-muted sm:inline">
+                Admissions
+              </span>
+            </span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <ActiveSessionBadge />
             <Link
               href="/admissions/apply"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-white px-3 py-1.5 text-xs font-semibold text-text-secondary shadow-xs transition-all duration-150 hover:border-brand-royal hover:bg-brand-sky-light hover:text-brand-royal"
+              className="btn-secondary btn-sm"
             >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              >
-                <path d="M6 1v10M1 6h10" />
-              </svg>
-              New Application
+              <Plus className="h-3.5 w-3.5" />
+              New application
             </Link>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-        {children}
-      </section>
+      <section className="page-shell py-8 sm:py-10">{children}</section>
     </main>
   );
 }

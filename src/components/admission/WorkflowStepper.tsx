@@ -98,7 +98,7 @@ export function WorkflowStepper({ status }: WorkflowStepperProps) {
           const isLast = index === STAGES.length - 1;
           const labelText = isLast ? decisionFinalLabel : stage.label;
 
-          let dotClass = "border-2 border-slate-300 bg-white text-slate-400";
+          let dotClass = "border-2 border-surface-border bg-surface-card text-text-muted";
           if (isComplete) {
             dotClass = "bg-brand-royal text-white";
           } else if (isCurrent) {
@@ -111,8 +111,8 @@ export function WorkflowStepper({ status }: WorkflowStepperProps) {
             }
           }
 
-          let labelClass = "text-slate-400";
-          if (isComplete) labelClass = "text-slate-600";
+          let labelClass = "text-text-muted";
+          if (isComplete) labelClass = "text-text-secondary";
           if (isCurrent) {
             if (isLast && decisionTone === "approved")
               labelClass = "font-semibold text-emerald-700";
@@ -157,7 +157,7 @@ export function WorkflowStepper({ status }: WorkflowStepperProps) {
                   <div
                     className={[
                       "h-0.5 w-full",
-                      isComplete ? "bg-brand-royal" : "bg-slate-200",
+                      isComplete ? "bg-brand-royal" : "bg-surface-divider",
                     ].join(" ")}
                   />
                 </div>

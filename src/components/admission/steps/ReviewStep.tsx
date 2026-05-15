@@ -31,7 +31,7 @@ export function ReviewStep({ values }: ReviewStepProps) {
           return (
             <div
               key={item.key}
-              className="rounded-lg border border-surface-border bg-white p-3"
+              className="rounded-lg border border-surface-border bg-surface-card p-3"
             >
               <p className="text-xs uppercase tracking-wide text-text-muted">
                 {item.label}

@@ -41,14 +41,13 @@ interface DecisionCardProps {
 const variantClass: Record<ActionDescriptor["variant"], string> = {
   primary: "bg-brand-royal text-white hover:bg-brand-royal/90",
   secondary:
-    "border border-slate-300 bg-white text-slate-700 hover:border-brand-royal hover:text-brand-royal",
-  ghost: "text-slate-600 hover:bg-slate-100",
+    "border border-surface-border bg-surface-card text-text-secondary hover:border-brand-royal hover:text-brand-royal",
+  ghost: "text-text-secondary hover:bg-surface-muted",
   danger:
-    "border border-rose-200 bg-white text-rose-700 hover:bg-rose-50 hover:border-rose-300",
+    "border border-rose-200 bg-surface-card text-rose-700 hover:bg-rose-50 hover:border-rose-300",
 };
 
-const primaryVariantClass =
-  "bg-gradient-to-r from-brand-royal to-blue-600 text-white shadow-md shadow-blue-200/40 hover:shadow-lg hover:shadow-blue-200/60";
+const primaryVariantClass = "btn-pay";
 
 export function DecisionCard({
   context,
@@ -139,10 +138,10 @@ export function DecisionCard({
           <Info className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-bold text-slate-900">
+          <h2 className="text-base font-bold text-text-primary">
             {hint.headline}
           </h2>
-          <p className="mt-0.5 text-sm leading-relaxed text-slate-600">
+          <p className="mt-0.5 text-sm leading-relaxed text-text-secondary">
             {hint.detail}
           </p>
         </div>
@@ -165,7 +164,7 @@ export function DecisionCard({
       {approvedSlot ? <div className="mt-5">{approvedSlot}</div> : null}
 
       {all.length === 0 ? (
-        <p className="mt-5 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        <p className="mt-5 rounded-md border border-surface-border bg-surface-muted px-3 py-2 text-sm text-text-secondary">
           No further actions are available from this state.
         </p>
       ) : (
@@ -173,18 +172,18 @@ export function DecisionCard({
           {/* Primary CTA */}
           {primary ? (
             <div className="mt-5">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 Recommended next step
               </p>
               <div>{renderActionButton(primary, true)}</div>
-              <p className="mt-1.5 text-xs text-slate-500">{primary.helper}</p>
+              <p className="mt-1.5 text-xs text-text-muted">{primary.helper}</p>
             </div>
           ) : null}
 
           {/* Secondary actions */}
           {secondary.length > 0 ? (
-            <div className="mt-5 border-t border-slate-100 pt-4">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <div className="mt-5 border-t border-surface-divider pt-4">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 Other actions
               </p>
               <div className="flex flex-wrap gap-2">
@@ -208,14 +207,14 @@ export function DecisionCard({
 
       {/* Confirm modal */}
       {pendingAction ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-overlay p-4 backdrop-blur-sm">
           <Card className="w-full max-w-md p-5 shadow-2xl">
             <h3
-              className={`text-base font-bold ${pendingAction.destructive ? "text-rose-700" : "text-slate-900"}`}
+              className={`text-base font-bold ${pendingAction.destructive ? "text-rose-700" : "text-text-primary"}`}
             >
               {pendingAction.label}
             </h3>
-            <p className="mt-1 text-sm leading-relaxed text-slate-600">
+            <p className="mt-1 text-sm leading-relaxed text-text-secondary">
               {pendingAction.helper}
             </p>
 
