@@ -202,6 +202,75 @@ export type ParentPaymentOrder = {
   };
 };
 
+export type ParentPaymentConfig = {
+  gateway: "razorpay" | "cashfree";
+  cashfreeEnv: "sandbox" | "production" | string;
+  configured: boolean;
+};
+
+export async function getParentPaymentConfig(
+  token: string,
+): Promise<ParentPaymentConfig> {
+  return request<ParentPaymentConfig>("/api/parent/fees/pay/config", token);
+}
+
+export type ParentCashfreeOrder = {
+  orderId: string;
+  paymentSessionId: string;
+  cashfreeEnv: "sandbox" | "production" | string;
+  installmentDetails: {
+    name: string;
+    amount: number; // rupees
+    dueDate: string;
+  };
+};
+
+export async function createParentCashfreeOrder(
+  token: string,
+  installmentId: string,
+  customer?: { customerEmail?: string; customerPhone?: string },
+): Promise<ParentCashfreeOrder> {
+  const response = await fetch(`${API_BASE_URL}/api/parent/fees/pay/cashfree-order`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ installmentId, ...customer }),
+    cache: "no-store",
+  });
+  const body = (await response.json().catch(() => undefined)) as
+    | (ParentCashfreeOrder & { success: boolean; message?: string })
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new ParentApiError(
+      body?.message || `Order failed (${response.status})`,
+      response.status,
+      body,
+    );
+  }
+  return {
+    orderId: body.orderId,
+    paymentSessionId: body.paymentSessionId,
+    cashfreeEnv: body.cashfreeEnv,
+    installmentDetails: body.installmentDetails,
+  };
+}
+
+export async function verifyParentCashfreePayment(
+  token: string,
+  payload: { installmentId: string; orderId: string },
+): Promise<{ receiptNumber: string }> {
+  return request<{ receiptNumber: string }>(
+    "/api/parent/fees/pay/cashfree-verify",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
 export async function createParentPaymentOrder(
   token: string,
   installmentId: string,

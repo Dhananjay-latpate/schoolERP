@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Loader2, ArrowLeft, Plus, Receipt, Undo2 } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Receipt, Undo2, RefreshCcw } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +19,7 @@ import { ToastContainer, type ToastItem } from "../../_components/ToastContainer
 import { RecordPaymentModal } from "../../_components/RecordPaymentModal";
 import { ConcessionRequestModal } from "../../_components/ConcessionRequestModal";
 import { RefundRequestModal } from "../../_components/RefundRequestModal";
+import { RestructurePlanModal } from "../../_components/RestructurePlanModal";
 
 const formatINR = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
@@ -54,6 +55,7 @@ export default function AccountDetailPage() {
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showConcession, setShowConcession] = useState(false);
   const [showRefund, setShowRefund] = useState(false);
+  const [showRestructure, setShowRestructure] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((type: "success" | "error", message: string) => {
@@ -196,7 +198,12 @@ export default function AccountDetailPage() {
               {activeTab === "charges" && (
                 <ChargesTab account={account} onAddCharge={() => setShowAddCharge(true)} />
               )}
-              {activeTab === "installments" && <InstallmentsTab account={account} />}
+              {activeTab === "installments" && (
+                <InstallmentsTab
+                  account={account}
+                  onRestructure={() => setShowRestructure(true)}
+                />
+              )}
               {activeTab === "ledger" && <LedgerTab account={account} />}
               {activeTab === "concessions" && (
                 <ConcessionsTab
@@ -217,6 +224,25 @@ export default function AccountDetailPage() {
             onSuccess={() => {
               setShowAddCharge(false);
               addToast("success", "Charge added");
+              void fetchDetail();
+            }}
+          />
+        )}
+        {account && showRestructure && account.applicationId && (
+          <RestructurePlanModal
+            applicationId={account.applicationId}
+            installments={account.installments.map((i) => ({
+              id: i.id,
+              name: i.name,
+              dueDate: i.dueDate,
+              amount: i.amount,
+              isPaid: i.isPaid,
+            }))}
+            token={token}
+            onClose={() => setShowRestructure(false)}
+            onSuccess={() => {
+              setShowRestructure(false);
+              addToast("success", "Plan restructured");
               void fetchDetail();
             }}
           />
@@ -374,10 +400,28 @@ function ChargesTab({
   );
 }
 
-function InstallmentsTab({ account }: { account: FeeAccountDetail }) {
+function InstallmentsTab({
+  account,
+  onRestructure,
+}: {
+  account: FeeAccountDetail;
+  onRestructure: () => void;
+}) {
+  const hasUnpaid = account.installments.some((i) => !i.isPaid);
   return (
     <Card className="overflow-x-auto p-0">
-      <h3 className="px-4 py-3 text-sm font-semibold text-text-primary">Installments</h3>
+      <div className="flex items-center justify-between px-4 py-3">
+        <h3 className="text-sm font-semibold text-text-primary">Installments</h3>
+        {account.applicationId && hasUnpaid && (
+          <Button
+            variant="secondary"
+            className="h-8 text-xs"
+            onClick={onRestructure}
+          >
+            <RefreshCcw className="mr-1 h-3.5 w-3.5" /> Restructure remaining
+          </Button>
+        )}
+      </div>
       {account.installments.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm text-text-muted">No installments scheduled.</p>
       ) : (

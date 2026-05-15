@@ -1463,6 +1463,28 @@ export async function listReminderLog(
   return request<ReminderLogEntry[]>(`/api/fees/reminders/log${suffix}`, token);
 }
 
+// ─── Restructure plan ─────────────────────────────────────────────────────────
+
+export type RestructureInstallment = {
+  name: string;
+  dueDate: string;
+  amount: number; // RUPEES
+};
+
+export async function restructureRemainingInstallments(
+  token: string,
+  payload: {
+    applicationId: string;
+    installments: RestructureInstallment[];
+    reason?: string;
+  },
+): Promise<unknown> {
+  return request<unknown>("/api/fees/restructure-installments", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 // ─── Receipt PDF ──────────────────────────────────────────────────────────────
 
 export async function downloadTransactionReceiptPdf(
