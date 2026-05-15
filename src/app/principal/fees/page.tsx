@@ -1,0 +1,204 @@
+"use client";
+
+import { useMemo } from "react";
+import Link from "next/link";
+import {
+  Banknote,
+  TrendingUp,
+  AlertTriangle,
+  CalendarCheck2,
+  Users,
+  Wallet,
+  Loader2,
+  ArrowRight,
+  Receipt,
+} from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { FeesSidebar } from "./_components/Sidebar";
+import { useFeesSession } from "./_components/useFeesSession";
+
+const formatINR = (value: number, opts: { compact?: boolean } = {}) =>
+  `₹${value.toLocaleString("en-IN", {
+    maximumFractionDigits: opts.compact ? 0 : 2,
+    minimumFractionDigits: opts.compact ? 0 : 0,
+  })}`;
+
+export default function FeesDashboardPage() {
+  const { token, isChecking, summary, isLoadingSummary, signOut } = useFeesSession();
+
+  const kpis = useMemo(() => {
+    if (!summary) return [] as Array<{ label: string; value: string; tone: string; icon: any }>;
+    return [
+      {
+        label: "Today's Collection",
+        value: formatINR(summary.todayCollection, { compact: true }),
+        tone: "text-emerald-700",
+        icon: TrendingUp,
+        meta: `${summary.todayTransactionCount} txns`,
+      },
+      {
+        label: "Outstanding Dues",
+        value: formatINR(summary.totalDue, { compact: true }),
+        tone: "text-amber-700",
+        icon: AlertTriangle,
+        meta: `${summary.overdueCharges} overdue`,
+      },
+      {
+        label: "Collected (MTD)",
+        value: formatINR(summary.monthCollection, { compact: true }),
+        tone: "text-brand-royal",
+        icon: CalendarCheck2,
+        meta: `${summary.monthTransactionCount} txns`,
+      },
+      {
+        label: "Active Accounts",
+        value: String(summary.totalAccounts),
+        tone: "text-slate-800",
+        icon: Users,
+        meta: `${summary.pendingApprovals} approvals`,
+      },
+    ];
+  }, [summary]);
+
+  if (isChecking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-surface-bg">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading fees workspace...
+        </div>
+      </main>
+    );
+  }
+
+  if (!token) return null;
+
+  return (
+    <div className="flex">
+      <FeesSidebar summary={summary} isLoading={isLoadingSummary} onSignOut={signOut} />
+      <main className="flex-1 lg:ml-60">
+        <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+          <Card className="overflow-hidden p-0">
+            <div className="brand-gradient p-6 text-white sm:p-8">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="inline-flex rounded-full bg-surface-card/20 p-2">
+                    <Banknote className="h-5 w-5" />
+                  </div>
+                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
+                    Fees & Accounts Command Center
+                  </p>
+                  <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Collections Overview</h1>
+                  <p className="mt-2 max-w-3xl text-sm text-white/70">
+                    Track payments, manage student accounts, run the cashier counter, and
+                    configure fee masters from a single workspace.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-surface-card/20 text-white">Live</Badge>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {(isLoadingSummary || !summary
+              ? Array.from({ length: 4 }).map((_, i) => ({ key: i }))
+              : kpis
+            ).map((kpi: any, idx) => (
+              <Card key={kpi.label ?? idx} className="border border-surface-border p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs uppercase tracking-wide text-text-muted">
+                    {kpi.label ?? "Loading…"}
+                  </p>
+                  {kpi.icon && <kpi.icon className="h-4 w-4 text-text-muted" />}
+                </div>
+                <p className={`mt-2 text-2xl font-bold ${kpi.tone ?? "text-text-primary"}`}>
+                  {kpi.value ?? "..."}
+                </p>
+                {kpi.meta && <p className="mt-1 text-xs text-text-muted">{kpi.meta}</p>}
+              </Card>
+            ))}
+          </section>
+
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Card className="card-interactive p-5">
+              <div className="inline-flex rounded-md bg-surface-muted p-2">
+                <Users className="h-4 w-4 text-text-secondary" />
+              </div>
+              <h3 className="mt-3 text-base font-semibold text-text-primary">
+                Student Fee Accounts
+              </h3>
+              <p className="mt-1 text-sm text-text-secondary">
+                Browse balances, assign charges, record payments, view ledger and approvals
+                for every enrolled student.
+              </p>
+              <Link
+                href="/principal/fees/students"
+                className="mt-4 inline-flex items-center text-sm font-semibold text-brand-royal hover:underline"
+              >
+                Open accounts <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Card>
+
+            <Card className="card-interactive p-5">
+              <div className="inline-flex rounded-md bg-surface-muted p-2">
+                <Wallet className="h-4 w-4 text-text-secondary" />
+              </div>
+              <h3 className="mt-3 text-base font-semibold text-text-primary">
+                Cashier Counter
+              </h3>
+              <p className="mt-1 text-sm text-text-secondary">
+                Open the day with an opening float, collect payments at the counter, and
+                close with a reconciled cash count.
+              </p>
+              <Link
+                href="/principal/fees/cashier"
+                className="mt-4 inline-flex items-center text-sm font-semibold text-brand-royal hover:underline"
+              >
+                Open counter <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Card>
+
+            <Card className="card-interactive p-5">
+              <div className="inline-flex rounded-md bg-surface-muted p-2">
+                <Receipt className="h-4 w-4 text-text-secondary" />
+              </div>
+              <h3 className="mt-3 text-base font-semibold text-text-primary">
+                Approvals Queue
+              </h3>
+              <p className="mt-1 text-sm text-text-secondary">
+                Review concession requests, late-fee waivers, custom installment plans, and
+                refunds awaiting your decision.
+              </p>
+              <p className="mt-4 text-sm font-semibold text-text-muted">
+                {summary ? `${summary.pendingApprovals} pending` : "..."}
+              </p>
+            </Card>
+          </section>
+
+          <Card className="border border-surface-border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-text-primary">Looking for masters?</p>
+                <p className="text-sm text-text-secondary">
+                  Fee heads, structures and installment templates live under Masters in the
+                  sidebar.
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  window.location.href = "/principal/fees/masters/fee-heads";
+                }}
+              >
+                Open Masters
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+}

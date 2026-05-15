@@ -50,7 +50,8 @@ const MODULES: PrincipalModule[] = [
     key: "fees_accounts",
     title: "Fees & Accounts",
     description: "Track payment collection, outstanding balances, and finance workflows.",
-    status: "coming_soon",
+    href: "/principal/fees",
+    status: "active",
     icon: Banknote,
   },
   {

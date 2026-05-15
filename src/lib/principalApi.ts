@@ -902,6 +902,306 @@ export async function requestConcession(
   });
 }
 
+// ─── Fees Module: Dashboard, Accounts, Cashier ───────────────────────────────
+
+export type FeesDashboardSummary = {
+  totalAccounts: number;
+  totalCharged: number;
+  totalPaid: number;
+  totalDue: number;
+  totalConcession: number;
+  overdueCharges: number;
+  todayCollection: number;
+  todayTransactionCount: number;
+  monthCollection: number;
+  monthTransactionCount: number;
+  pendingApprovals: number;
+};
+
+export type FeeAccountListItem = {
+  id: string;
+  applicationId: string | null;
+  grNumber: string | null;
+  studentName: string;
+  contactNumber: string | null;
+  className: string | null;
+  section: string | null;
+  academicYear: string;
+  status: string;
+  totalCharged: number;
+  totalConcession: number;
+  totalPaid: number;
+  totalDue: number;
+  updatedAt: string;
+};
+
+export type FeeAccountListResponse = {
+  data: FeeAccountListItem[];
+  total: number;
+  pages: number;
+  currentPage: number;
+};
+
+export type FeeAccountDetail = {
+  id: string;
+  applicationId: string | null;
+  grNumber: string | null;
+  studentName: string;
+  contactNumber: string | null;
+  fatherName: string | null;
+  motherName: string | null;
+  address: string | null;
+  className: string | null;
+  section: string | null;
+  academicYear: string;
+  status: string;
+  totalCharged: number;
+  totalConcession: number;
+  totalPaid: number;
+  totalDue: number;
+  charges: Array<{
+    id: string;
+    name: string;
+    source: string;
+    amount: number;
+    paid: number;
+    due: number;
+    dueDate: string | null;
+    status: string;
+    feeHeadId: string | null;
+    paymentInstallmentId: string | null;
+  }>;
+  ledgerEntries: Array<{
+    id: string;
+    entryType: string;
+    debit: number;
+    credit: number;
+    referenceType: string | null;
+    referenceId: string | null;
+    description: string | null;
+    postedAt: string;
+  }>;
+  approvalRequests: Array<{
+    id: string;
+    type: string;
+    status: string;
+    reason: string;
+    comments: string | null;
+    createdAt: string;
+    reviewedAt: string | null;
+    documents: Array<{ id: string; name: string; url: string }>;
+  }>;
+  concessions: Array<{
+    id: string;
+    type: string;
+    amount: number;
+    percentage: number | null;
+    reason: string;
+    status: string;
+    approvedAt: string | null;
+  }>;
+  installments: Array<{
+    id: string;
+    name: string;
+    dueDate: string;
+    amount: number;
+    isPaid: boolean;
+    paidAmount: number | null;
+    paidDate: string | null;
+    receiptNumber: string | null;
+    isCustom: boolean;
+    transactions: Array<{
+      id: string;
+      amount: number;
+      method: string;
+      paidAt: string;
+      receiptNumber: string | null;
+    }>;
+  }>;
+  paymentPlan: {
+    id: string;
+    isCustomPlan: boolean;
+    status: string;
+    totalAmount: number;
+    paidAmount: number;
+    remainingAmount: number;
+  } | null;
+};
+
+export type CashierSessionDto = {
+  id: string;
+  cashierId: string;
+  cashierName: string | null;
+  status: "open" | "closed" | "reconciled";
+  openedAt: string;
+  closedAt: string | null;
+  closedByName: string | null;
+  openingFloat: number;
+  declaredClose: number | null;
+  expectedClose: number | null;
+  variance: number | null;
+  notes: string | null;
+};
+
+export type CashbookEntry = {
+  id: string;
+  amount: number;
+  method: string;
+  paidAt: string;
+  receiptNumber: string | null;
+  transactionId: string | null;
+  notes: string | null;
+  recordedByName: string | null;
+  applicationId: string | null;
+  studentName: string | null;
+  installmentName: string | null;
+};
+
+export type CashbookDto = {
+  session: CashierSessionDto;
+  summary: Array<{ method: string; count: number; total: number }>;
+  transactions: CashbookEntry[];
+};
+
+export async function getFeesDashboardSummary(
+  token: string,
+  academicYear?: string,
+): Promise<FeesDashboardSummary> {
+  const qs = academicYear ? `?academicYear=${encodeURIComponent(academicYear)}` : "";
+  return request<FeesDashboardSummary>(`/api/fees/dashboard/summary${qs}`, token);
+}
+
+export async function listStudentFeeAccounts(
+  token: string,
+  options?: {
+    academicYear?: string;
+    classId?: string;
+    status?: string;
+    dueFilter?: "any" | "due" | "overdue" | "clear";
+    search?: string;
+    page?: number;
+    limit?: number;
+  },
+): Promise<FeeAccountListResponse> {
+  const query = new URLSearchParams();
+  if (options?.academicYear) query.set("academicYear", options.academicYear);
+  if (options?.classId) query.set("classId", options.classId);
+  if (options?.status) query.set("status", options.status);
+  if (options?.dueFilter) query.set("dueFilter", options.dueFilter);
+  if (options?.search) query.set("search", options.search);
+  if (options?.page) query.set("page", String(options.page));
+  if (options?.limit) query.set("limit", String(options.limit));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+
+  const response = await fetch(`${API_BASE_URL}/api/fees/accounts${suffix}`, {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; total?: number; pages?: number; currentPage?: number; data?: FeeAccountListItem[]; message?: string }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(body?.message || "Failed to load fee accounts", response.status, body);
+  }
+  return {
+    data: body.data ?? [],
+    total: body.total ?? 0,
+    pages: body.pages ?? 1,
+    currentPage: body.currentPage ?? 1,
+  };
+}
+
+export async function getFeeAccountDetail(
+  token: string,
+  accountId: string,
+): Promise<FeeAccountDetail> {
+  return request<FeeAccountDetail>(
+    `/api/fees/accounts/${encodeURIComponent(accountId)}`,
+    token,
+  );
+}
+
+export async function bulkAssignCharge(
+  token: string,
+  payload: {
+    accountIds?: string[];
+    classId?: string;
+    academicYear?: string;
+    type: "transport" | "hostel" | "exam" | "activity" | "misc";
+    name: string;
+    amount: number;
+    dueDate?: string;
+    feeHeadId?: string;
+  },
+): Promise<{ totalCount: number; succeeded: number; failed: number; results: Array<{ accountId: string; chargeId?: string; error?: string }> }> {
+  return request("/api/fees/charges/bulk-assign", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function openCashierSession(
+  token: string,
+  payload: { openingFloat: number; notes?: string },
+): Promise<CashierSessionDto> {
+  return request<CashierSessionDto>("/api/fees/cashier/sessions/open", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function closeCashierSession(
+  token: string,
+  sessionId: string,
+  payload: { declaredClose: number; notes?: string },
+): Promise<CashierSessionDto> {
+  return request<CashierSessionDto>(
+    `/api/fees/cashier/sessions/${encodeURIComponent(sessionId)}/close`,
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export async function getCurrentCashierSession(
+  token: string,
+): Promise<CashierSessionDto | null> {
+  return request<CashierSessionDto | null>("/api/fees/cashier/sessions/current", token);
+}
+
+export async function listCashierSessions(
+  token: string,
+  options?: { status?: "open" | "closed" | "reconciled"; cashierId?: string; page?: number; limit?: number },
+): Promise<{ data: CashierSessionDto[]; total: number }> {
+  const query = new URLSearchParams();
+  if (options?.status) query.set("status", options.status);
+  if (options?.cashierId) query.set("cashierId", options.cashierId);
+  if (options?.page) query.set("page", String(options.page));
+  if (options?.limit) query.set("limit", String(options.limit));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+
+  const response = await fetch(`${API_BASE_URL}/api/fees/cashier/sessions${suffix}`, {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; total?: number; data?: CashierSessionDto[]; message?: string }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(body?.message || "Failed to load sessions", response.status, body);
+  }
+  return { data: body.data ?? [], total: body.total ?? 0 };
+}
+
+export async function getCashbook(
+  token: string,
+  sessionId: string,
+): Promise<CashbookDto> {
+  return request<CashbookDto>(
+    `/api/fees/cashier/sessions/${encodeURIComponent(sessionId)}/cashbook`,
+    token,
+  );
+}
+
 // ─── Tally Export (returns XML) ───────────────────────────────────────────────
 
 export async function exportTallyDaybook(
