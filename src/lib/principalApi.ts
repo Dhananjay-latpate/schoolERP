@@ -1303,6 +1303,229 @@ export async function listRefunds(
   return { data: body.data ?? [], total: body.total ?? 0, currentPage: body.currentPage ?? 1 };
 }
 
+// ─── Reminders ────────────────────────────────────────────────────────────────
+
+export type ReminderChannel = "whatsapp" | "sms" | "email";
+
+export type ReminderTemplate = {
+  id: string;
+  name: string;
+  channel: ReminderChannel;
+  subject: string | null;
+  body: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReminderRule = {
+  id: string;
+  name: string;
+  academicYear: string;
+  daysBeforeDue: number | null;
+  daysAfterDue: number | null;
+  minAmount: number | null;
+  classId: string | null;
+  isActive: boolean;
+  templateId: string;
+  template: { id: string; name: string; channel: ReminderChannel } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReminderRecipient = {
+  accountId: string;
+  applicationId: string | null;
+  studentName: string;
+  contact: string | null;
+  parentName: string | null;
+  className: string | null;
+  amountDue: number;
+  earliestDueDate: string | null;
+};
+
+export type ReminderPreview = {
+  rule: { id: string; name: string; channel: ReminderChannel };
+  recipientCount: number;
+  recipients: ReminderRecipient[];
+};
+
+export type ReminderLogEntry = {
+  id: string;
+  accountId: string;
+  channel: ReminderChannel;
+  status: "queued" | "sent" | "failed";
+  recipient: string;
+  message: string;
+  dueAmount: number;
+  dueDate: string | null;
+  sentAt: string | null;
+  error: string | null;
+  createdAt: string;
+};
+
+export async function listReminderTemplates(token: string): Promise<ReminderTemplate[]> {
+  return request<ReminderTemplate[]>("/api/fees/reminders/templates", token);
+}
+
+export async function createReminderTemplate(
+  token: string,
+  payload: {
+    name: string;
+    channel: ReminderChannel;
+    subject?: string;
+    body: string;
+    isActive?: boolean;
+  },
+): Promise<ReminderTemplate> {
+  return request<ReminderTemplate>("/api/fees/reminders/templates", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteReminderTemplate(token: string, id: string): Promise<void> {
+  await request<unknown>(
+    `/api/fees/reminders/templates/${encodeURIComponent(id)}`,
+    token,
+    { method: "DELETE" },
+  );
+}
+
+export async function listReminderRules(
+  token: string,
+  filters?: { academicYear?: string; isActive?: boolean },
+): Promise<ReminderRule[]> {
+  const query = new URLSearchParams();
+  if (filters?.academicYear) query.set("academicYear", filters.academicYear);
+  if (filters?.isActive !== undefined)
+    query.set("isActive", String(filters.isActive));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<ReminderRule[]>(`/api/fees/reminders/rules${suffix}`, token);
+}
+
+export async function createReminderRule(
+  token: string,
+  payload: {
+    name: string;
+    academicYear: string;
+    templateId: string;
+    daysBeforeDue?: number;
+    daysAfterDue?: number;
+    minAmount?: number;
+    classId?: string;
+    isActive?: boolean;
+  },
+): Promise<ReminderRule> {
+  return request<ReminderRule>("/api/fees/reminders/rules", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteReminderRule(token: string, id: string): Promise<void> {
+  await request<unknown>(
+    `/api/fees/reminders/rules/${encodeURIComponent(id)}`,
+    token,
+    { method: "DELETE" },
+  );
+}
+
+export async function previewReminderRule(
+  token: string,
+  ruleId: string,
+): Promise<ReminderPreview> {
+  return request<ReminderPreview>(
+    `/api/fees/reminders/rules/${encodeURIComponent(ruleId)}/preview`,
+    token,
+  );
+}
+
+export async function dispatchReminders(
+  token: string,
+  payload: { ruleId: string; dryRun?: boolean },
+): Promise<{ queued: number; sent: number; failed: number; dryRun: boolean }> {
+  return request("/api/fees/reminders/dispatch", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listReminderLog(
+  token: string,
+  filters?: { channel?: ReminderChannel; status?: string; limit?: number },
+): Promise<ReminderLogEntry[]> {
+  const query = new URLSearchParams();
+  if (filters?.channel) query.set("channel", filters.channel);
+  if (filters?.status) query.set("status", filters.status);
+  if (filters?.limit) query.set("limit", String(filters.limit));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<ReminderLogEntry[]>(`/api/fees/reminders/log${suffix}`, token);
+}
+
+// ─── Reports ──────────────────────────────────────────────────────────────────
+
+export type DefaulterRow = {
+  accountId: string;
+  applicationId: string | null;
+  grNumber: string | null;
+  studentName: string;
+  contact: string | null;
+  className: string | null;
+  section: string | null;
+  totalDue: number;
+  overdueCharges: number;
+  oldestDueDate: string | null;
+  daysOverdue: number;
+};
+
+export type ClassWiseRow = {
+  classId: string | null;
+  charged: number;
+  paid: number;
+  due: number;
+  students: number;
+};
+
+export type HeadWiseRow = {
+  feeHeadId: string | null;
+  charged: number;
+  paid: number;
+  due: number;
+};
+
+export type CashbookRow = {
+  day: string;
+  method: string;
+  amount: number;
+  count: number;
+};
+
+export type AgingBuckets = Record<"0-30" | "31-60" | "61-90" | "90+", number>;
+
+export async function getFeeReport<T = unknown>(
+  token: string,
+  report:
+    | "class-wise-collection"
+    | "head-wise-collection"
+    | "daily-cashbook"
+    | "pending-dues"
+    | "aging"
+    | "concessions"
+    | "defaulters",
+  params?: { academicYear?: string; fromDate?: string; toDate?: string; asOf?: string; minOverdueDays?: number },
+): Promise<T> {
+  const query = new URLSearchParams();
+  if (params?.academicYear) query.set("academicYear", params.academicYear);
+  if (params?.fromDate) query.set("fromDate", params.fromDate);
+  if (params?.toDate) query.set("toDate", params.toDate);
+  if (params?.asOf) query.set("asOf", params.asOf);
+  if (params?.minOverdueDays != null)
+    query.set("minOverdueDays", String(params.minOverdueDays));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<T>(`/api/fees/reports/${report}${suffix}`, token);
+}
+
 // ─── Tally Export (returns XML) ───────────────────────────────────────────────
 
 export async function exportTallyDaybook(

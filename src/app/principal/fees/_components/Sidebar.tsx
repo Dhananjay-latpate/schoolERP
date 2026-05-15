@@ -13,6 +13,8 @@ import {
   Inbox,
   AlarmClock,
   Undo2,
+  FileBarChart,
+  BellRing,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { FeesDashboardSummary } from "@/lib/principalApi";
@@ -30,6 +32,8 @@ const navItems = [
   { href: "/principal/fees/approvals", label: "Approvals", icon: Inbox },
   { href: "/principal/fees/late-fees", label: "Late Fees", icon: AlarmClock },
   { href: "/principal/fees/refunds", label: "Refunds", icon: Undo2 },
+  { href: "/principal/fees/reports", label: "Reports", icon: FileBarChart },
+  { href: "/principal/fees/reminders", label: "Reminders", icon: BellRing },
 ];
 
 const masterItems = [
