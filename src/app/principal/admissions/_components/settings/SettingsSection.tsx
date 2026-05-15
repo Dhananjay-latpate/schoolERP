@@ -31,6 +31,35 @@ interface SettingsSectionProps {
   onRefreshDashboard: () => Promise<void>;
 }
 
+// Build a "YYYY-YY" session code from a calendar start year, e.g. 2026 → "2026-27".
+function formatSessionCode(startYear: number): string {
+  const endShort = ((startYear + 1) % 100).toString().padStart(2, "0");
+  return `${startYear}-${endShort}`;
+}
+
+// Infer the current admission session — the academic year window flips in June,
+// matching the backend's inferCurrentAdmissionSessionCode helper.
+function currentSessionStartYear(date = new Date()): number {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  return month >= 6 ? year : year - 1;
+}
+
+// Dropdown options for Academic Year: a sliding window around the current
+// session (2 past, current, 4 future). Principals pick a structured session
+// code like "2026-27" instead of typing a plain year, eliminating mismatches
+// between class records and admission sessions.
+function buildSessionCodeOptions(): string[] {
+  const start = currentSessionStartYear();
+  const options: string[] = [];
+  for (let offset = -2; offset <= 4; offset += 1) {
+    options.push(formatSessionCode(start + offset));
+  }
+  return options;
+}
+
+const DEFAULT_SESSION_CODE = formatSessionCode(currentSessionStartYear());
+
 const DEFAULT_FEE_COMPONENTS: FeeComponentInput[] = [
   { name: "Tuition Fee", amount: 0, description: "", isMandatory: true },
   { name: "Lab Fee", amount: 0, description: "", isMandatory: false },
@@ -58,11 +87,20 @@ export function SettingsSection({
   const [classForm, setClassForm] = useState({
     name: "",
     section: "",
-    academicYear: new Date().getFullYear().toString(),
+    academicYear: DEFAULT_SESSION_CODE,
     capacity: "",
   });
   const [feeClassId, setFeeClassId] = useState("");
-  const [feeAcademicYear, setFeeAcademicYear] = useState(new Date().getFullYear().toString());
+  const [feeAcademicYear, setFeeAcademicYear] = useState(DEFAULT_SESSION_CODE);
+  const sessionCodeOptions = useMemo(() => {
+    const base = buildSessionCodeOptions();
+    // Preserve any legacy/non-standard year already attached to the selected
+    // class so it remains visible in the dropdown when editing.
+    const extras = [classForm.academicYear, feeAcademicYear].filter(
+      (code) => code && !base.includes(code),
+    );
+    return Array.from(new Set([...base, ...extras])).sort();
+  }, [classForm.academicYear, feeAcademicYear]);
   const [installmentIntervalDays, setInstallmentIntervalDays] = useState(30);
   const [feeComponentsDraft, setFeeComponentsDraft] = useState<FeeComponentInput[]>(DEFAULT_FEE_COMPONENTS);
   const [installmentsDraft, setInstallmentsDraft] = useState<SettingsInstallmentDraft[]>(DEFAULT_INSTALLMENTS);
@@ -293,11 +331,15 @@ export function SettingsSection({
           </div>
           <div>
             <Label>Academic Year</Label>
-            <Input
+            <Select
               value={classForm.academicYear}
               onChange={(e) => setClassForm((prev) => ({ ...prev, academicYear: e.target.value }))}
-              placeholder="2026"
-            />
+            >
+              {sessionCodeOptions.map((code) => (
+                <option key={code} value={code}>{code}</option>
+              ))}
+            </Select>
+            <p className="mt-1 text-xs text-slate-500">Pick the admission session this class belongs to (format YYYY-YY).</p>
           </div>
           <div>
             <Label>Capacity (optional)</Label>
@@ -351,7 +393,11 @@ export function SettingsSection({
           </div>
           <div>
             <Label>Academic Year</Label>
-            <Input value={feeAcademicYear} onChange={(e) => setFeeAcademicYear(e.target.value)} placeholder="2026" />
+            <Select value={feeAcademicYear} onChange={(e) => setFeeAcademicYear(e.target.value)}>
+              {sessionCodeOptions.map((code) => (
+                <option key={code} value={code}>{code}</option>
+              ))}
+            </Select>
           </div>
         </div>
 

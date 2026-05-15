@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Plus } from "lucide-react";
 import { ActiveSessionBadge } from "@/components/admission/ActiveSessionBadge";
 import { NewApplicationButton } from "@/components/admission/NewApplicationButton";
 
@@ -37,10 +36,10 @@ export default function AdmissionsLayout({
               "linear-gradient(90deg, #1A4DAD 0%, #3B82F6 50%, #F59E0B 100%)",
           }}
         />
-        <div className="mx-auto flex h-[60px] w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-15 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/admissions/apply" className="flex items-center gap-3">
             <span
-              className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-black tracking-tight text-white shadow-sm"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black tracking-tight text-white shadow-sm"
               style={{
                 background:
                   "linear-gradient(140deg, #0A1628 0%, #142D5C 50%, #1A4DAD 100%)",
@@ -52,11 +51,11 @@ export default function AdmissionsLayout({
             <div className="leading-none">
               <p className="text-[0.875rem] font-bold tracking-tight text-text-primary">
                 Resillix
-              </span>
-              <span className="hidden text-xs text-text-muted sm:inline">
-                Admissions
-              </span>
-            </span>
+                <span className="hidden text-xs text-text-muted sm:inline">
+                  Admissions
+                </span>
+              </p>
+            </div>
           </Link>
 
           <div className="flex items-center gap-2">
