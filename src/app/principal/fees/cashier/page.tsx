@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
-import { Banknote } from "lucide-react";
+import { Banknote, Download } from "lucide-react";
 import {
   PrincipalApiError,
   closeCashierSession,
+  downloadTransactionReceiptPdf,
   getCashbook,
   getCurrentCashierSession,
   openCashierSession,
@@ -157,6 +158,17 @@ export default function CashierPage() {
               isMutating={isMutating}
               onClose={handleClose}
               onQuickCollect={() => setShowQuickCollect(true)}
+              onDownloadReceipt={async (txnId) => {
+                try {
+                  await downloadTransactionReceiptPdf(token, txnId);
+                } catch (err) {
+                  const msg =
+                    err instanceof PrincipalApiError
+                      ? err.message
+                      : "Failed to download receipt";
+                  addToast("error", msg);
+                }
+              }}
             />
           ) : (
             <OpenSessionForm
@@ -253,6 +265,7 @@ function ActiveSessionView({
   isMutating,
   onClose,
   onQuickCollect,
+  onDownloadReceipt,
 }: {
   session: CashierSessionDto;
   cashbook: CashbookDto | null;
@@ -263,6 +276,7 @@ function ActiveSessionView({
   isMutating: boolean;
   onClose: () => void;
   onQuickCollect: () => void;
+  onDownloadReceipt: (transactionId: string) => Promise<void> | void;
 }) {
   const cashCollected =
     cashbook?.summary.find((s) => s.method === "cash")?.total ?? 0;
@@ -373,6 +387,7 @@ function ActiveSessionView({
                 <th className="px-4 py-3">Method</th>
                 <th className="px-4 py-3 text-right">Amount</th>
                 <th className="px-4 py-3">Receipt</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -391,6 +406,16 @@ function ActiveSessionView({
                   </td>
                   <td className="px-4 py-3 text-xs text-text-muted">
                     {t.receiptNumber ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => void onDownloadReceipt(t.id)}
+                      className="inline-flex items-center text-xs font-medium text-brand-royal hover:underline"
+                    >
+                      <Download className="mr-1 h-3 w-3" />
+                      PDF
+                    </button>
                   </td>
                 </tr>
               ))}

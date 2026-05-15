@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Receipt } from "lucide-react";
+import { Loader2, Receipt, Download } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import {
   ParentApiError,
+  downloadParentReceiptPdf,
   getParentReceipt,
   getParentTransactions,
   type ParentTransaction,
@@ -23,6 +24,7 @@ export default function ParentHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<unknown>(null);
   const [receiptLoading, setReceiptLoading] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!token) return;
@@ -53,6 +55,21 @@ export default function ParentHistoryPage() {
         setError(err instanceof ParentApiError ? err.message : "Failed to load receipt");
       } finally {
         setReceiptLoading(null);
+      }
+    },
+    [token],
+  );
+
+  const downloadPdf = useCallback(
+    async (transactionId: string) => {
+      if (!token) return;
+      setPdfLoading(transactionId);
+      try {
+        await downloadParentReceiptPdf(token, transactionId);
+      } catch (err) {
+        setError(err instanceof ParentApiError ? err.message : "Failed to download receipt");
+      } finally {
+        setPdfLoading(null);
       }
     },
     [token],
@@ -129,19 +146,34 @@ export default function ParentHistoryPage() {
                       {t.receiptNumber ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => void viewReceipt(t.id)}
-                        disabled={receiptLoading === t.id}
-                        className="inline-flex items-center text-xs font-medium text-brand-royal hover:underline"
-                      >
-                        {receiptLoading === t.id ? (
-                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        ) : (
-                          <Receipt className="mr-1 h-3 w-3" />
-                        )}
-                        View
-                      </button>
+                      <div className="inline-flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => void viewReceipt(t.id)}
+                          disabled={receiptLoading === t.id}
+                          className="inline-flex items-center text-xs font-medium text-brand-royal hover:underline"
+                        >
+                          {receiptLoading === t.id ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Receipt className="mr-1 h-3 w-3" />
+                          )}
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void downloadPdf(t.id)}
+                          disabled={pdfLoading === t.id}
+                          className="inline-flex items-center text-xs font-medium text-brand-royal hover:underline"
+                        >
+                          {pdfLoading === t.id ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Download className="mr-1 h-3 w-3" />
+                          )}
+                          PDF
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

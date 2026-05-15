@@ -1463,6 +1463,39 @@ export async function listReminderLog(
   return request<ReminderLogEntry[]>(`/api/fees/reminders/log${suffix}`, token);
 }
 
+// ─── Receipt PDF ──────────────────────────────────────────────────────────────
+
+export async function downloadTransactionReceiptPdf(
+  token: string,
+  transactionId: string,
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/fees/transaction-receipt/${encodeURIComponent(transactionId)}/pdf`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  if (!response.ok) {
+    let message = `Failed to download receipt (${response.status})`;
+    try {
+      const body = (await response.json()) as { message?: string };
+      if (body?.message) message = body.message;
+    } catch {
+      /* ignore */
+    }
+    throw new PrincipalApiError(message, response.status);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `fee_receipt_${transactionId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // ─── Reconciliation ───────────────────────────────────────────────────────────
 
 export type ReconciliationStatus = "pending" | "matched" | "unmatched" | "mismatch";
