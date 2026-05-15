@@ -84,7 +84,7 @@ export function FormStepper({ currentStep, onStepClick }: FormStepperProps) {
                   {isDone ? (
                     <div className="h-0.5 w-full bg-[#1a4dad]" />
                   ) : (
-                    <div className="h-0 w-full border-t-2 border-dashed border-gray-300" />
+                    <div className="h-0 w-full border-t-2 border-dashed border-surface-border" />
                   )}
                 </div>
               )}

@@ -2,12 +2,24 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "pay";
+  size?: "sm" | "md" | "lg";
+  block?: boolean;
+};
+
+const VARIANT_CLASS: Record<NonNullable<ButtonProps["variant"]>, string> = {
+  primary: "btn-primary",
+  secondary: "btn-secondary",
+  ghost: "btn-ghost",
+  danger: "btn-danger",
+  pay: "btn-pay",
 };
 
 export function Button({
   className,
   variant = "primary",
+  size = "md",
+  block = false,
   type = "button",
   ...props
 }: ButtonProps) {
@@ -15,11 +27,10 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" && "btn-primary",
-        variant === "secondary" && "btn-secondary",
-        variant === "ghost" &&
-          "border border-transparent bg-transparent text-text-secondary hover:bg-surface-muted",
+        VARIANT_CLASS[variant],
+        size === "sm" && "btn-sm",
+        size === "lg" && "btn-lg",
+        block && "btn-block",
         className,
       )}
       {...props}

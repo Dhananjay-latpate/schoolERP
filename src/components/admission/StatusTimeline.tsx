@@ -35,8 +35,8 @@ const dotColor = (status: string): string => {
   if (status === "needs_correction") return "bg-orange-500";
   if (status === "under_review") return "bg-violet-500";
   if (status === "payment_completed" || status === "payment_pending")
-    return "bg-blue-500";
-  return "bg-slate-400";
+    return "bg-brand-royal";
+  return "bg-text-muted";
 };
 
 const labelFor = (status: string): string => {
@@ -57,7 +57,7 @@ export function StatusTimeline({ entries, className }: StatusTimelineProps) {
   if (ordered.length === 0) {
     return (
       <Card className={`border border-surface-border p-4 ${className ?? ""}`}>
-        <p className="text-sm text-slate-500">No status changes yet.</p>
+        <p className="text-sm text-text-muted">No status changes yet.</p>
       </Card>
     );
   }
@@ -67,22 +67,22 @@ export function StatusTimeline({ entries, className }: StatusTimelineProps) {
       <h3 className="text-sm font-bold uppercase tracking-wider text-brand-royal">
         Status Timeline
       </h3>
-      <ol className="relative mt-4 space-y-4 border-l-2 border-slate-200 pl-5">
+      <ol className="relative mt-4 space-y-4 border-l-2 border-surface-border pl-5">
         {ordered.map((entry) => (
           <li key={entry.id} className="relative">
             <span
               className={`absolute -left-[27px] top-1.5 h-3.5 w-3.5 rounded-full ring-4 ring-white ${dotColor(entry.status)}`}
               aria-hidden="true"
             />
-            <p className="text-sm font-semibold capitalize text-slate-900">
+            <p className="text-sm font-semibold capitalize text-text-primary">
               {labelFor(entry.status)}
             </p>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-0.5 text-xs text-text-muted">
               {formatDateTime(entry.changedAt)}
               {entry.changedByName ? ` · by ${entry.changedByName}` : ""}
             </p>
             {entry.comments ? (
-              <p className="mt-1 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-700">
+              <p className="mt-1 rounded-md bg-surface-muted px-3 py-2 text-xs text-text-secondary">
                 {entry.comments}
               </p>
             ) : null}

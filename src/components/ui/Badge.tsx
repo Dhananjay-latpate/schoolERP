@@ -3,7 +3,22 @@ import { cn } from "@/lib/utils";
 type BadgeProps = {
   children: React.ReactNode;
   className?: string;
-  variant?: "default" | "success" | "warning" | "error";
+  variant?:
+    | "default"
+    | "success"
+    | "warning"
+    | "error"
+    | "info"
+    | "violet";
+};
+
+const VARIANT_CLASS: Record<NonNullable<BadgeProps["variant"]>, string> = {
+  default: "badge-muted",
+  success: "badge-success",
+  warning: "badge-warning",
+  error: "badge-error",
+  info: "badge-info",
+  violet: "badge-violet",
 };
 
 export function Badge({
@@ -12,16 +27,7 @@ export function Badge({
   variant = "default",
 }: BadgeProps) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-        variant === "default" && "bg-surface-muted text-text-secondary",
-        variant === "success" && "bg-emerald-100 text-emerald-700",
-        variant === "warning" && "bg-amber-100 text-amber-700",
-        variant === "error" && "bg-rose-100 text-rose-700",
-        className,
-      )}
-    >
+    <span className={cn("badge-base", VARIANT_CLASS[variant], className)}>
       {children}
     </span>
   );

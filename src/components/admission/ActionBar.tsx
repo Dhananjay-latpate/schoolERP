@@ -31,8 +31,8 @@ interface ActionBarProps {
 const variantClass: Record<ActionDescriptor["variant"], string> = {
   primary: "bg-brand-royal text-white hover:bg-brand-royal/90",
   secondary:
-    "border border-slate-300 bg-white text-slate-800 hover:border-brand-royal hover:text-brand-royal",
-  ghost: "text-slate-600 hover:bg-slate-100",
+    "border border-surface-border bg-surface-card text-text-primary hover:border-brand-royal hover:text-brand-royal",
+  ghost: "text-text-secondary hover:bg-surface-muted",
   danger: "bg-rose-600 text-white hover:bg-rose-700",
 };
 
@@ -85,17 +85,17 @@ export function ActionBar({
     <Card className="border border-surface-border p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold text-slate-900">
+          <h2 className="text-base font-bold text-text-primary">
             Principal Actions
           </h2>
           {hint.headline ? (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-slate-600">
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-text-secondary">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-royal" />
               <span>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-text-primary">
                   {hint.headline}.
                 </span>{" "}
-                <span className="text-slate-600">{hint.detail}</span>
+                <span className="text-text-secondary">{hint.detail}</span>
               </span>
             </p>
           ) : null}
@@ -117,7 +117,7 @@ export function ActionBar({
 
       <div className="mt-4 flex flex-wrap gap-2">
         {actions.length === 0 ? (
-          <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          <p className="rounded-md border border-surface-border bg-surface-muted px-3 py-2 text-sm text-text-secondary">
             No further actions are available from this state.
           </p>
         ) : (
@@ -150,9 +150,9 @@ export function ActionBar({
           don't appear once per disabled button. Hovering the disabled button
           still reveals the same reason via title attribute. */}
       {actions.some((a) => a.blockedReasons.length > 0) ? (
-        <div className="mt-3 flex flex-wrap items-start gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-          <p className="text-xs text-slate-600">
+        <div className="mt-3 flex flex-wrap items-start gap-2 rounded-md border border-surface-border bg-surface-muted px-3 py-2">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-text-muted" />
+          <p className="text-xs text-text-secondary">
             Some actions are unavailable:{" "}
             {Array.from(
               new Set(
@@ -170,11 +170,11 @@ export function ActionBar({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <Card className="w-full max-w-md p-5">
             <h3
-              className={`text-base font-bold ${pendingAction.destructive ? "text-rose-700" : "text-slate-900"}`}
+              className={`text-base font-bold ${pendingAction.destructive ? "text-rose-700" : "text-text-primary"}`}
             >
               {pendingAction.label}
             </h3>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-text-secondary">
               {pendingAction.helper}
             </p>
 

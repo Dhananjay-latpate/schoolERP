@@ -344,7 +344,7 @@ export default function AdmissionStatusPage() {
               href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}/api/admissions/${encodeURIComponent(data.applicationId)}/letter`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-emerald-700 bg-white px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-emerald-700 bg-surface-card px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
             >
               Preview Letter
             </a>
@@ -385,7 +385,7 @@ export default function AdmissionStatusPage() {
                 {feeStructure.installmentOptions.map((option, index) => (
                   <label
                     key={option.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-rose-200 bg-surface-card px-3 py-2"
                   >
                     <input
                       type="radio"
@@ -439,7 +439,7 @@ export default function AdmissionStatusPage() {
               {paymentPlan.installments.map((installment, index) => (
                 <div
                   key={installment.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-surface-border bg-white px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-surface-border bg-surface-card px-3 py-2"
                 >
                   <div>
                     <p className="text-sm font-semibold text-text-primary">

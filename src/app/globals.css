@@ -1,83 +1,93 @@
 @import "tailwindcss";
 
-/* ─────────────────────────────────────────────────────────────
-   RESILLIX DESIGN SYSTEM v2 — Premium Brand Identity
-   ───────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════
+   RESILLIX DESIGN SYSTEM — "Calm Operations"
+   ───────────────────────────────────────────────────────────────────────
+   Principles (modeled on the restraint of modern AI product UIs):
+     1. Content first — chrome recedes, data leads.
+     2. Neutral foundation — warm near-blacks on warm off-whites; colour is
+        used sparingly and only to carry meaning (status, focus, brand).
+     3. Borders over shadows — surfaces are defined by hairline borders;
+        elevation is reserved for true overlays (menus, modals, toasts).
+     4. One brand accent — Resillix teal. Easily re-themable for clients via
+        the `--color-brand-*` tokens below.
+     5. Generous, consistent spacing and a single type scale.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 @layer base {
   :root {
-    /* ── Brand Core ── */
-    --color-brand-navy: #0a1628;
-    --color-brand-sapphire: #142d5c;
-    --color-brand-royal: #1a4dad;
-    --color-brand-sky: #3b82f6;
-    --color-brand-sky-light: #dbeafe;
-    --color-brand-amber: #f59e0b;
-    --color-brand-amber-light: #fef3c7;
-    --color-brand-emerald: #059669;
-    --color-brand-emerald-light: #d1fae5;
-    --color-brand-rose: #e11d48;
-    --color-brand-rose-light: #ffe4e6;
-    --color-brand-violet: #7c3aed;
-    --color-brand-violet-light: #ede9fe;
+    /* ── Brand accent (client-themeable) ─────────────────────────────── */
+    --color-brand-navy: #14130f;        /* deep ink — dark panels / logo   */
+    --color-brand-sapphire: #1f1e19;    /* ink step toward accent          */
+    --color-brand-royal: #0b6e5f;       /* PRIMARY ACCENT — Resillix teal  */
+    --color-brand-sky: #0e8a78;         /* lighter accent                  */
+    --color-brand-sky-light: #e6f3f0;   /* accent wash (badge / hover bg)  */
+    --color-brand-amber: #9a6212;       /* attention / payment             */
+    --color-brand-amber-light: #faf2e3;
+    --color-brand-emerald: #1a7a45;     /* success                         */
+    --color-brand-emerald-light: #e8f3ec;
+    --color-brand-rose: #b3372f;        /* error / destructive             */
+    --color-brand-rose-light: #fbeceb;
+    --color-brand-violet: #5b4c8a;      /* info / secondary category       */
+    --color-brand-violet-light: #efedf7;
 
-    /* ── Surfaces ── */
-    --color-surface-bg: #eff4fb;
-    --color-surface-card: #ffffff;
-    --color-surface-border: #dde3ee;
-    --color-surface-muted: #f5f8fc;
-    --color-surface-divider: #c9d4e6;
-    --color-surface-overlay: rgba(10, 22, 40, 0.48);
+    /* ── Surfaces ────────────────────────────────────────────────────── */
+    --color-surface-bg: #f7f7f5;        /* app canvas — warm off-white     */
+    --color-surface-card: #ffffff;      /* raised content                  */
+    --color-surface-border: #e7e6e2;    /* hairline border                 */
+    --color-surface-muted: #f2f1ee;     /* inset / hover fill              */
+    --color-surface-divider: #ebeae6;   /* thin separators                 */
+    --color-surface-overlay: rgba(20, 19, 15, 0.4);
 
-    /* ── Text ── */
-    --color-text-primary: #0a1628;
-    --color-text-secondary: #4a5878;
-    --color-text-muted: #8a97b0;
+    /* ── Text ────────────────────────────────────────────────────────── */
+    --color-text-primary: #1a1a17;      /* warm near-black                 */
+    --color-text-secondary: #5b5a53;    /* supporting copy                 */
+    --color-text-muted: #8d8c84;        /* meta / placeholders             */
     --color-text-inverse: #ffffff;
-    --color-text-link: #1a4dad;
+    --color-text-link: #0b6e5f;
 
-    /* ── Status ── */
-    --color-status-success: #059669;
-    --color-status-warning: #d97706;
-    --color-status-error: #e11d48;
-    --color-status-info: #1a4dad;
+    /* ── Status (text-on-light foregrounds) ──────────────────────────── */
+    --color-status-success: #1a7a45;
+    --color-status-warning: #9a6212;
+    --color-status-error: #b3372f;
+    --color-status-info: #0b6e5f;
 
-    /* ── Radii ── */
+    /* ── Radii ───────────────────────────────────────────────────────── */
     --radius-xs: 4px;
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
-    --radius-2xl: 32px;
+    --radius-sm: 8px;     /* inputs, buttons, chips                       */
+    --radius-md: 10px;
+    --radius-lg: 14px;    /* cards, panels                               */
+    --radius-xl: 20px;
+    --radius-2xl: 28px;
     --radius-full: 9999px;
 
-    /* ── Layered Shadows ── */
-    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-sm:
-      0 1px 3px 0 rgb(10 22 40 / 0.06), 0 2px 8px -1px rgb(10 22 40 / 0.04);
-    --shadow-card:
-      0 2px 6px -1px rgb(10 22 40 / 0.07), 0 8px 28px -4px rgb(10 22 40 / 0.06);
-    --shadow-raised:
-      0 4px 14px -2px rgb(10 22 40 / 0.1), 0 12px 40px -6px rgb(10 22 40 / 0.08);
-    --shadow-modal: 0 8px 48px -4px rgb(10 22 40 / 0.22);
-    --shadow-glow:
-      0 0 0 3px rgb(26 77 173 / 0.2), 0 0 0 1px rgb(26 77 173 / 0.35);
-    --shadow-glow-emerald: 0 0 0 3px rgb(5 150 105 / 0.2);
-    --shadow-glow-amber: 0 0 0 3px rgb(217 119 6 / 0.25);
-    --shadow-btn:
-      0 2px 8px -1px rgb(26 77 173 / 0.28), 0 1px 2px rgb(26 77 173 / 0.2);
-    --shadow-btn-hover:
-      0 6px 20px -2px rgb(26 77 173 / 0.42), 0 2px 6px rgb(26 77 173 / 0.2);
+    /* ── Elevation — deliberately quiet ──────────────────────────────── */
+    --shadow-xs: 0 1px 2px rgb(20 19 15 / 0.04);
+    --shadow-sm: 0 1px 2px rgb(20 19 15 / 0.05), 0 1px 3px rgb(20 19 15 / 0.04);
+    --shadow-card: 0 1px 2px rgb(20 19 15 / 0.04);
+    --shadow-raised: 0 2px 4px rgb(20 19 15 / 0.04), 0 8px 24px -8px rgb(20 19 15 / 0.10);
+    --shadow-modal: 0 4px 12px rgb(20 19 15 / 0.06), 0 24px 56px -12px rgb(20 19 15 / 0.20);
+    --shadow-glow: 0 0 0 3px rgb(11 110 95 / 0.16);
+    --shadow-glow-emerald: 0 0 0 3px rgb(26 122 69 / 0.16);
+    --shadow-glow-amber: 0 0 0 3px rgb(154 98 18 / 0.18);
+    --shadow-glow-rose: 0 0 0 3px rgb(179 55 47 / 0.14);
+    --shadow-btn: 0 1px 2px rgb(20 19 15 / 0.08);
+    --shadow-btn-hover: 0 1px 2px rgb(20 19 15 / 0.10);
 
-    /* ── Transitions ── */
-    --ease-brand: cubic-bezier(0.4, 0, 0.2, 1);
-    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --duration-fast: 130ms;
-    --duration-normal: 220ms;
-    --duration-slow: 380ms;
+    /* ── Motion ──────────────────────────────────────────────────────── */
+    --ease-brand: cubic-bezier(0.2, 0, 0, 1);
+    --ease-bounce: cubic-bezier(0.34, 1.4, 0.64, 1);
+    --duration-fast: 120ms;
+    --duration-normal: 200ms;
+    --duration-slow: 320ms;
+
+    /* ── Type ────────────────────────────────────────────────────────── */
+    --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
 
-/* ─── Inline theme registration for Tailwind v4 ─── */
+/* ─── Tailwind v4 token registration ─────────────────────────────────── */
 @theme inline {
   --color-brand-navy: var(--color-brand-navy);
   --color-brand-sapphire: var(--color-brand-sapphire);
@@ -126,9 +136,11 @@
   --shadow-modal: var(--shadow-modal);
   --shadow-glow: var(--shadow-glow);
   --shadow-btn: var(--shadow-btn);
+
+  --font-sans: var(--font-sans);
 }
 
-/* ─── Base Resets ─── */
+/* ─── Base ───────────────────────────────────────────────────────────── */
 @layer base {
   *,
   *::before,
@@ -146,296 +158,334 @@
   body {
     background-color: var(--color-surface-bg);
     color: var(--color-text-primary);
-    font-family: var(--font-inter), system-ui, sans-serif;
-    line-height: 1.6;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;          /* 15px base — comfortable for dense ERP */
+    line-height: 1.55;
+    font-feature-settings: "cv11", "ss01";
+    letter-spacing: -0.003em;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-weight: 700;
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
     line-height: 1.2;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.018em;
     color: var(--color-text-primary);
+    text-wrap: balance;
   }
+
+  h1 { font-size: 1.75rem; letter-spacing: -0.025em; }
+  h2 { font-size: 1.375rem; }
+  h3 { font-size: 1.125rem; }
+
+  p { text-wrap: pretty; }
 
   a {
     color: var(--color-text-link);
     text-decoration: none;
   }
-  input,
-  textarea,
-  select {
-    font-family: inherit;
+  a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  input, textarea, select, button { font: inherit; }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-brand-royal) 22%, transparent);
+    color: var(--color-text-primary);
   }
 
-  /* Scrollbar */
-  ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+  /* Consistent, visible keyboard focus */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-royal);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
+
+  /* Scrollbar — slim and quiet */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     background: var(--color-surface-divider);
     border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
+    background-clip: content-box;
+    border: 3px solid transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-/* ─── Components ─── */
+/* ─── Components ─────────────────────────────────────────────────────── */
 @layer components {
-  /* ── Brand gradient ── */
-  .brand-gradient {
-    background: linear-gradient(
-      140deg,
-      var(--color-brand-navy) 0%,
-      var(--color-brand-sapphire) 45%,
-      var(--color-brand-royal) 100%
-    );
+
+  /* ── Layout helpers ──────────────────────────────────────────────── */
+  .page-shell {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 80rem;            /* 1280px */
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) { .page-shell { padding-inline: 1.5rem; } }
+
+  .stack-loose > * + * { margin-top: 1.5rem; }
+  .stack > * + * { margin-top: 1rem; }
+  .stack-tight > * + * { margin-top: 0.5rem; }
+
+  .divider {
+    height: 1px;
+    width: 100%;
+    background: var(--color-surface-divider);
+    border: 0;
   }
 
-  /* ── Cards ── */
+  /* ── Typographic accents ─────────────────────────────────────────── */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .eyebrow-accent { color: var(--color-brand-royal); }
+
+  .text-balance { text-wrap: balance; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* ── Brand / dark panel ──────────────────────────────────────────── */
+  .brand-gradient {
+    background:
+      radial-gradient(120% 140% at 0% 0%, rgb(11 110 95 / 0.28) 0%, transparent 55%),
+      linear-gradient(155deg, var(--color-brand-navy) 0%, var(--color-brand-sapphire) 55%, #26241d 100%);
+    color: var(--color-text-inverse);
+  }
+
+  .sidebar-dark {
+    background:
+      radial-gradient(110% 90% at 100% 0%, rgb(11 110 95 / 0.22) 0%, transparent 50%),
+      linear-gradient(165deg, var(--color-brand-navy) 0%, var(--color-brand-sapphire) 100%);
+    border-radius: var(--radius-lg);
+  }
+
+  .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--color-text-inverse);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    background: linear-gradient(150deg, var(--color-brand-navy) 0%, #2a2820 100%);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
+
+  /* ── Cards / surfaces ────────────────────────────────────────────── */
   .card {
     background: var(--color-surface-card);
+    border: 1px solid var(--color-surface-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
+  }
+
+  .card-interactive {
+    background: var(--color-surface-card);
     border: 1px solid var(--color-surface-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    transition: border-color var(--duration-fast) var(--ease-brand),
+      box-shadow var(--duration-fast) var(--ease-brand),
+      transform var(--duration-fast) var(--ease-brand);
+  }
+  .card-interactive:hover {
+    border-color: color-mix(in oklab, var(--color-brand-royal) 35%, var(--color-surface-border));
+    box-shadow: var(--shadow-raised);
   }
 
   .card-raised {
     background: var(--color-surface-card);
+    border: 1px solid var(--color-surface-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-raised);
-    border: 1px solid var(--color-surface-border);
   }
 
-  /* Card with colored accent stripe on top */
+  /* Card with a thin brand keyline along the top */
   .card-accent {
     background: var(--color-surface-card);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
     border: 1px solid var(--color-surface-border);
-    border-top: 3px solid var(--color-brand-royal);
-  }
-
-  /* Glassmorphism card */
-  .card-glass {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border-top: 2px solid var(--color-brand-royal);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
-    border: 1px solid rgba(255, 255, 255, 0.6);
   }
 
-  /* ── Sidebar / dark panel ── */
-  .sidebar-dark {
-    background: linear-gradient(
-      160deg,
-      var(--color-brand-navy) 0%,
-      var(--color-brand-sapphire) 100%
-    );
+  .card-glass {
+    background: color-mix(in oklab, var(--color-surface-card) 82%, transparent);
+    backdrop-filter: blur(14px) saturate(1.3);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    border: 1px solid var(--color-surface-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-raised);
+    box-shadow: var(--shadow-card);
   }
 
-  /* ── Inputs ── */
+  /* Quiet inset region inside a card */
+  .panel-inset {
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-surface-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* ── Form controls ───────────────────────────────────────────────── */
   .input-base {
     width: 100%;
-    border: 1.5px solid var(--color-surface-border);
+    border: 1px solid var(--color-surface-border);
     border-radius: var(--radius-sm);
-    padding: 0.6rem 0.875rem;
+    padding: 0.5625rem 0.8125rem;
     font-size: 0.9375rem;
     line-height: 1.5;
     color: var(--color-text-primary);
     background: var(--color-surface-card);
     transition:
       border-color var(--duration-fast) var(--ease-brand),
-      box-shadow var(--duration-fast) var(--ease-brand),
-      background var(--duration-fast) var(--ease-brand);
+      box-shadow var(--duration-fast) var(--ease-brand);
     outline: none;
   }
-
-  .input-base:hover {
-    border-color: var(--color-brand-royal);
-    background: #fafcff;
+  .input-base:hover:not(:disabled):not(:focus) {
+    border-color: color-mix(in oklab, var(--color-text-muted) 60%, var(--color-surface-border));
   }
-
   .input-base:focus {
     border-color: var(--color-brand-royal);
     box-shadow: var(--shadow-glow);
-    background: #fafcff;
   }
-
-  .input-base::placeholder {
+  .input-base::placeholder { color: var(--color-text-muted); }
+  .input-base:disabled {
+    background: var(--color-surface-muted);
     color: var(--color-text-muted);
-  }
-
-  .input-error {
-    border-color: var(--color-status-error) !important;
-    box-shadow: 0 0 0 3px rgb(225 29 72 / 0.14) !important;
-  }
-
-  /* ── Buttons ── */
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.5rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--color-text-inverse);
-    background: linear-gradient(
-      140deg,
-      var(--color-brand-royal) 0%,
-      #1262d8 100%
-    );
-    border-radius: var(--radius-sm);
-    border: none;
-    cursor: pointer;
-    box-shadow: var(--shadow-btn);
-    transition:
-      transform var(--duration-fast) var(--ease-brand),
-      box-shadow var(--duration-fast) var(--ease-brand),
-      filter var(--duration-fast) var(--ease-brand);
-    user-select: none;
-    white-space: nowrap;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-btn-hover);
-    filter: brightness(1.06);
-  }
-
-  .btn-primary:active:not(:disabled) {
-    transform: translateY(0);
-    filter: brightness(0.97);
-    box-shadow: var(--shadow-btn);
-  }
-
-  .btn-primary:disabled {
-    opacity: 0.52;
     cursor: not-allowed;
-    box-shadow: none;
+  }
+  .input-error,
+  .input-base.input-error {
+    border-color: var(--color-status-error) !important;
+  }
+  .input-error:focus,
+  .input-base.input-error:focus {
+    box-shadow: var(--shadow-glow-rose) !important;
   }
 
-  /* Pay button — amber accent */
+  /* ── Buttons ─────────────────────────────────────────────────────── */
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger,
   .btn-pay {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem 2rem;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    color: #1a1a0a;
-    background: linear-gradient(140deg, #fbbf24 0%, #f59e0b 100%);
-    border-radius: var(--radius-sm);
-    border: none;
-    cursor: pointer;
-    box-shadow:
-      0 2px 8px -1px rgb(245 158 11 / 0.35),
-      0 1px 2px rgb(245 158 11 / 0.2);
-    transition:
-      transform var(--duration-fast) var(--ease-brand),
-      box-shadow var(--duration-fast) var(--ease-brand),
-      filter var(--duration-fast) var(--ease-brand);
-    user-select: none;
-  }
-
-  .btn-pay:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow:
-      0 6px 20px -2px rgb(245 158 11 / 0.5),
-      0 2px 6px rgb(245 158 11 / 0.25);
-    filter: brightness(1.05);
-  }
-
-  .btn-pay:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  .btn-pay:disabled {
-    opacity: 0.52;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.5rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--color-brand-royal);
-    background: transparent;
-    border: 1.5px solid var(--color-surface-border);
+    font-weight: 500;
+    line-height: 1.25rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-brand),
-      border-color var(--duration-fast) var(--ease-brand),
-      color var(--duration-fast) var(--ease-brand);
     user-select: none;
     white-space: nowrap;
+    transition:
+      background-color var(--duration-fast) var(--ease-brand),
+      border-color var(--duration-fast) var(--ease-brand),
+      color var(--duration-fast) var(--ease-brand),
+      box-shadow var(--duration-fast) var(--ease-brand),
+      opacity var(--duration-fast) var(--ease-brand);
   }
-
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--color-brand-sky-light);
-    border-color: var(--color-brand-royal);
-    color: var(--color-brand-royal);
-  }
-
-  .btn-secondary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Ghost button */
-  .btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
     padding: 0.5rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  /* Primary — solid ink. Confident, low-chrome. */
+  .btn-primary {
+    color: var(--color-text-inverse);
+    background: var(--color-text-primary);
+    border: 1px solid var(--color-text-primary);
+    box-shadow: var(--shadow-btn);
+  }
+  .btn-primary:hover:not(:disabled) { background: #000; border-color: #000; }
+  .btn-primary:active:not(:disabled) { background: #2c2b27; border-color: #2c2b27; }
+
+  /* Secondary — white surface, hairline border. */
+  .btn-secondary {
+    color: var(--color-text-primary);
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-surface-border);
+    box-shadow: var(--shadow-xs);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-surface-muted);
+    border-color: color-mix(in oklab, var(--color-text-muted) 50%, var(--color-surface-border));
+  }
+  .btn-secondary:active:not(:disabled) { background: var(--color-surface-divider); }
+
+  /* Ghost — chromeless, for toolbars / inline actions. */
+  .btn-ghost {
+    padding: 0.4375rem 0.75rem;
     font-size: 0.875rem;
-    font-weight: 500;
     color: var(--color-text-secondary);
     background: transparent;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition:
-      background var(--duration-fast) var(--ease-brand),
-      color var(--duration-fast);
-    user-select: none;
+    border: 1px solid transparent;
   }
-
   .btn-ghost:hover:not(:disabled) {
     background: var(--color-surface-muted);
     color: var(--color-text-primary);
   }
 
-  .btn-ghost:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  /* Danger — destructive confirmation. */
+  .btn-danger {
+    color: var(--color-text-inverse);
+    background: var(--color-status-error);
+    border: 1px solid var(--color-status-error);
+    box-shadow: var(--shadow-btn);
+  }
+  .btn-danger:hover:not(:disabled) { background: #9c2f28; border-color: #9c2f28; }
+
+  /* Pay — primary call-to-action for payment flows (brand accent). */
+  .btn-pay {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-inverse);
+    background: var(--color-brand-royal);
+    border: 1px solid var(--color-brand-royal);
+    box-shadow: var(--shadow-btn);
+  }
+  .btn-pay:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--color-brand-royal) 88%, #000);
+    border-color: color-mix(in oklab, var(--color-brand-royal) 88%, #000);
+  }
+  .btn-pay:active:not(:disabled) {
+    background: color-mix(in oklab, var(--color-brand-royal) 80%, #000);
   }
 
-  /* ── Step Timeline (sidebar) ── */
+  .btn-primary:disabled,
+  .btn-secondary:disabled,
+  .btn-ghost:disabled,
+  .btn-danger:disabled,
+  .btn-pay:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn-sm { padding-block: 0.375rem; padding-inline: 0.75rem; font-size: 0.8125rem; }
+  .btn-lg { padding-block: 0.625rem; padding-inline: 1.25rem; font-size: 1rem; }
+  .btn-block { display: flex; width: 100%; }
+
+  /* ── Step timeline (used on dark sidebars & light panels) ────────── */
   .step-item {
     position: relative;
     display: flex;
@@ -443,129 +493,234 @@
     gap: 0.875rem;
     padding: 0.5rem 0;
   }
-
-  /* Vertical connector line */
   .step-item:not(:last-child)::after {
     content: "";
     position: absolute;
-    left: 1.1875rem;
-    top: 2.75rem;
+    left: 1.0625rem;
+    top: 2.625rem;
     bottom: -0.5rem;
-    width: 2px;
+    width: 1.5px;
     border-radius: 1px;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgb(255 255 255 / 0.12);
     transform: translateX(-50%);
   }
-
-  .step-item.step-done:not(:last-child)::after {
-    background: rgba(255, 255, 255, 0.35);
-  }
+  .step-item.step-done:not(:last-child)::after { background: rgb(255 255 255 / 0.32); }
 
   .step-icon {
     flex-shrink: 0;
-    width: 2.375rem;
-    height: 2.375rem;
-    border-radius: 50%;
+    width: 2.125rem;
+    height: 2.125rem;
+    border-radius: var(--radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.875rem;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 600;
     transition:
       transform var(--duration-normal) var(--ease-bounce),
+      background-color var(--duration-normal) var(--ease-brand),
       box-shadow var(--duration-normal) var(--ease-brand);
   }
-
   .step-icon-active {
-    background: rgba(255, 255, 255, 1);
-    color: var(--color-brand-royal);
-    box-shadow:
-      0 0 0 4px rgba(255, 255, 255, 0.25),
-      0 2px 12px rgba(0, 0, 0, 0.2);
-    transform: scale(1.08);
+    background: #fff;
+    color: var(--color-brand-navy);
+    box-shadow: 0 0 0 4px rgb(255 255 255 / 0.18);
   }
-
   .step-icon-done {
-    background: rgba(5, 150, 105, 0.9);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+    background: rgb(255 255 255 / 0.92);
+    color: var(--color-brand-royal);
   }
-
   .step-icon-inactive {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.4);
-    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    background: rgb(255 255 255 / 0.07);
+    color: rgb(255 255 255 / 0.45);
+    border: 1.5px solid rgb(255 255 255 / 0.14);
   }
 
-  /* ── Status Badges ── */
+  /* Light-surface variant: add `.steps-on-light` on the wrapper */
+  .steps-on-light .step-item:not(:last-child)::after { background: var(--color-surface-divider); }
+  .steps-on-light .step-item.step-done:not(:last-child)::after { background: var(--color-brand-royal); }
+  .steps-on-light .step-icon-active {
+    background: var(--color-text-primary);
+    color: #fff;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-text-primary) 14%, transparent);
+  }
+  .steps-on-light .step-icon-done {
+    background: var(--color-brand-sky-light);
+    color: var(--color-brand-royal);
+  }
+  .steps-on-light .step-icon-inactive {
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+    border: 1.5px solid var(--color-surface-border);
+  }
+
+  /* ── Status badges ───────────────────────────────────────────────── */
   .badge-base {
     display: inline-flex;
     align-items: center;
-    gap: 0.3em;
-    padding: 0.25em 0.75em;
+    gap: 0.375em;
+    padding: 0.1875em 0.5625em;
     border-radius: var(--radius-full);
     font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.025em;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.2;
     white-space: nowrap;
+    border: 1px solid transparent;
   }
-
-  .badge-blue {
+  .badge-blue,
+  .badge-info {
     background: var(--color-brand-sky-light);
-    color: #1a4dad;
+    color: var(--color-brand-royal);
+    border-color: color-mix(in oklab, var(--color-brand-royal) 18%, transparent);
   }
-  .badge-emerald {
+  .badge-emerald,
+  .badge-success {
     background: var(--color-brand-emerald-light);
-    color: #065f46;
+    color: var(--color-brand-emerald);
+    border-color: color-mix(in oklab, var(--color-brand-emerald) 18%, transparent);
   }
-  .badge-amber {
+  .badge-amber,
+  .badge-warning {
     background: var(--color-brand-amber-light);
-    color: #92400e;
+    color: var(--color-brand-amber);
+    border-color: color-mix(in oklab, var(--color-brand-amber) 20%, transparent);
   }
-  .badge-rose {
+  .badge-rose,
+  .badge-error {
     background: var(--color-brand-rose-light);
-    color: #9f1239;
+    color: var(--color-brand-rose);
+    border-color: color-mix(in oklab, var(--color-brand-rose) 18%, transparent);
   }
   .badge-violet {
     background: var(--color-brand-violet-light);
-    color: #5b21b6;
+    color: var(--color-brand-violet);
+    border-color: color-mix(in oklab, var(--color-brand-violet) 18%, transparent);
   }
   .badge-muted {
     background: var(--color-surface-muted);
     color: var(--color-text-secondary);
-    border: 1px solid var(--color-surface-border);
+    border-color: var(--color-surface-border);
   }
 
-  /* ── Fee card ── */
+  /* Small status dot for inline indicators */
+  .status-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    background: var(--color-text-muted);
+  }
+  .status-dot-success { background: var(--color-status-success); }
+  .status-dot-warning { background: var(--color-status-warning); }
+  .status-dot-error { background: var(--color-status-error); }
+  .status-dot-info { background: var(--color-status-info); }
+
+  /* ── Tables ──────────────────────────────────────────────────────── */
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+  }
+  .data-table thead th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid var(--color-surface-border);
+    background: var(--color-surface-muted);
+  }
+  .data-table tbody td {
+    padding: 0.75rem 0.875rem;
+    border-bottom: 1px solid var(--color-surface-divider);
+    color: var(--color-text-primary);
+    vertical-align: middle;
+  }
+  .data-table tbody tr:last-child td { border-bottom: 0; }
+  .data-table tbody tr {
+    transition: background-color var(--duration-fast) var(--ease-brand);
+  }
+  .data-table tbody tr:hover { background: var(--color-surface-muted); }
+
+  /* ── Fee summary block ───────────────────────────────────────────── */
   .fee-card {
     border-radius: var(--radius-md);
-    border: 1px solid var(--color-brand-sky-light);
-    background: linear-gradient(135deg, #f0f7ff 0%, #eef5ff 100%);
+    border: 1px solid var(--color-surface-border);
+    background: var(--color-surface-muted);
     padding: 1rem 1.25rem;
   }
-
   .fee-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.375rem 0;
+    padding: 0.4375rem 0;
     font-size: 0.875rem;
+    color: var(--color-text-secondary);
   }
-
-  .fee-row + .fee-row {
-    border-top: 1px solid var(--color-surface-border);
-  }
-
+  .fee-row + .fee-row { border-top: 1px solid var(--color-surface-divider); }
+  .fee-row > :last-child { color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
   .fee-total {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.625rem 0 0;
-    border-top: 2px solid var(--color-brand-royal);
-    margin-top: 0.25rem;
-    font-weight: 700;
+    padding: 0.6875rem 0 0;
+    border-top: 1.5px solid var(--color-text-primary);
+    margin-top: 0.375rem;
+    font-weight: 600;
     font-size: 0.9375rem;
-    color: var(--color-brand-royal);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Overlays ────────────────────────────────────────────────────── */
+  .overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--color-surface-overlay);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .modal-panel {
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-surface-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-modal);
+  }
+
+  /* ── Loading skeleton ────────────────────────────────────────────── */
+  .skeleton {
+    border-radius: var(--radius-sm);
+    background: linear-gradient(
+      100deg,
+      var(--color-surface-muted) 30%,
+      color-mix(in oklab, var(--color-surface-muted) 55%, #fff) 50%,
+      var(--color-surface-muted) 70%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────── */
+@layer utilities {
+  .animate-fade-in { animation: fade-in var(--duration-normal) var(--ease-brand) both; }
+  .animate-rise { animation: rise var(--duration-slow) var(--ease-brand) both; }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 

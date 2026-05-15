@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Plus } from "lucide-react";
 import { ActiveSessionBadge } from "@/components/admission/ActiveSessionBadge";
 import { NewApplicationButton } from "@/components/admission/NewApplicationButton";
 
@@ -51,23 +52,21 @@ export default function AdmissionsLayout({
             <div className="leading-none">
               <p className="text-[0.875rem] font-bold tracking-tight text-text-primary">
                 Resillix
-              </p>
-              <p className="text-[0.7rem] font-medium uppercase tracking-widest text-text-muted">
-                Admissions Portal
-              </p>
-            </div>
+              </span>
+              <span className="hidden text-xs text-text-muted sm:inline">
+                Admissions
+              </span>
+            </span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <ActiveSessionBadge />
             <NewApplicationButton />
           </div>
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-        {children}
-      </section>
+      <section className="page-shell py-8 sm:py-10">{children}</section>
     </main>
   );
 }

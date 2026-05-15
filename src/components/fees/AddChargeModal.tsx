@@ -62,7 +62,7 @@ export function AddChargeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+      <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="font-semibold text-gray-900">Add Fee Charge</h2>
           <button
@@ -81,7 +81,7 @@ export function AddChargeModal({
               value={type}
               onChange={(e) => setType(e.target.value as FeeAssignmentType)}
               disabled={loading}
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-md border border-surface-border bg-surface-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-royal"
             >
               <option value="misc">Miscellaneous</option>
               <option value="transport">Transport</option>
