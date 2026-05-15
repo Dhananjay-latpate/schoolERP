@@ -8,10 +8,16 @@ import type { StepProps } from "../types";
 
 const LOAD_TIMEOUT_MS = 12_000;
 
-export function AcademicStep({ register, errors }: StepProps) {
+export function AcademicStep({ register, errors, watch }: StepProps) {
   const [availableClasses, setAvailableClasses] = useState<PublicClass[]>([]);
   const [classesLoading, setClassesLoading] = useState(true);
   const [classesError, setClassesError] = useState<string | null>(null);
+
+  // Keep the previously-chosen class visible when the step is remounted
+  // (user navigated away and back). Without an option matching the form's
+  // current value, the browser drops the selection and the saved class
+  // appears blank until classes finish loading.
+  const currentClass = watch?.("classAdmitted") ?? "";
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +83,11 @@ export function AcademicStep({ register, errors }: StepProps) {
           disabled={classesLoading}
         >
           {classesLoading ? (
-            <option value="">Loading classes…</option>
+            currentClass ? (
+              <option value={currentClass}>{currentClass}</option>
+            ) : (
+              <option value="">Loading classes…</option>
+            )
           ) : classesError && dedupedClasses.length === 0 ? (
             <option value="">Failed to load classes</option>
           ) : (

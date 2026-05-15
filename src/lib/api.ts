@@ -42,7 +42,22 @@ export type AdmissionSubmission = {
   paymentMethod?: "full_payment" | "installment" | "custom_payment";
   customPaymentAmount?: number;
   customPaymentReason?: string;
+  /** Which fee-structure installment plan the parent selected (only used
+   *  when paymentMethod === "installment"). */
+  installmentOptionId?: string;
   status?: AdmissionStatus;
+};
+
+export type AdmissionPaymentRecord = {
+  id: string;
+  amount: number;
+  currency: string;
+  method?: string | null;
+  status: "pending" | "completed" | "failed";
+  gateway?: "razorpay" | "cashfree" | null;
+  cashfreeOrderId?: string | null;
+  razorpayOrderId?: string | null;
+  paidAt?: string | null;
 };
 
 export type AdmissionRecord = AdmissionSubmission & {
@@ -50,6 +65,11 @@ export type AdmissionRecord = AdmissionSubmission & {
   status: AdmissionStatus;
   createdAt?: string;
   updatedAt?: string;
+  /** Admission session code (e.g. "2025-26"). Returned by the server. */
+  admissionYear?: string;
+  /** Latest payment row for this application, used by the status page to
+   *  show the parent the actual rupee amount and gateway state. */
+  payment?: AdmissionPaymentRecord | null;
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -85,8 +105,94 @@ export async function submitAdmission(data: AdmissionSubmission) {
   });
 }
 
+// The server returns the application with Prisma's native column names
+// (`studentFirstName`, `class.name`, …). The client UI is written against the
+// AdmissionRecord shape (`firstName`, `classAdmitted`, …) — normalize once,
+// here, so every page can rely on the cleaner type.
+function normalizeAdmissionRecord(
+  raw: Record<string, unknown>,
+): AdmissionRecord {
+  const cls = (raw.class as { name?: string } | undefined) ?? undefined;
+  const payment = (raw.payment as AdmissionPaymentRecord | null | undefined) ??
+    null;
+  // The chosen payment method is stored on the payment row. Surface it at
+  // the top level so the status page can drive flow-specific UX (custom
+  // hardship vs. full/installment).
+  const inferredPaymentMethod = (() => {
+    const m = (payment?.method ?? "").toString();
+    if (m === "custom_payment" || m === "installment" || m === "full_payment") {
+      return m;
+    }
+    return undefined;
+  })();
+  return {
+    ...(raw as Record<string, unknown>),
+    paymentMethod: inferredPaymentMethod,
+    applicationId: String(raw.applicationId ?? ""),
+    status: raw.status as AdmissionStatus,
+    firstName: (raw.firstName as string | undefined) ??
+      (raw.studentFirstName as string | undefined) ??
+      "",
+    middleName: (raw.middleName as string | undefined) ??
+      (raw.studentMiddleName as string | undefined) ??
+      undefined,
+    lastName: (raw.lastName as string | undefined) ??
+      (raw.studentLastName as string | undefined) ??
+      "",
+    gender: (raw.gender as "male" | "female" | "other" | undefined) ??
+      (raw.studentGender as "male" | "female" | "other" | undefined) ??
+      "male",
+    dateOfBirth: (raw.dateOfBirth as string | undefined) ??
+      (typeof raw.studentDob === "string"
+        ? raw.studentDob.slice(0, 10)
+        : undefined),
+    classAdmitted: (raw.classAdmitted as string | undefined) ?? cls?.name ?? "",
+    fatherName: String(raw.fatherName ?? ""),
+    motherName: String(raw.motherName ?? ""),
+    address: String(raw.address ?? ""),
+    emergencyContact: String(raw.emergencyContact ?? ""),
+    admissionYear: raw.admissionYear as string | undefined,
+    payment,
+  } as AdmissionRecord;
+}
+
 export async function getAdmissionById(applicationId: string) {
-  return request<AdmissionRecord>(`/api/admissions/${applicationId}`);
+  const raw = await request<Record<string, unknown>>(
+    `/api/admissions/${applicationId}`,
+  );
+  return normalizeAdmissionRecord(raw);
+}
+
+export type AdmissionDraftSnapshot = {
+  applicationId: string;
+  status: AdmissionStatus;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  gender: string;
+  dateOfBirth: string;
+  placeOfBirth: string;
+  nationality: string;
+  religion: string;
+  caste: string;
+  subCaste: string;
+  adharNumber: string;
+  motherTongue: string;
+  fatherName: string;
+  motherName: string;
+  address: string;
+  emergencyContact: string;
+  classAdmitted: string;
+};
+
+export async function resumeAdmissionDraft(
+  applicationId: string,
+  mobile: string,
+) {
+  return request<AdmissionDraftSnapshot>("/api/admissions/resume", {
+    method: "POST",
+    body: JSON.stringify({ applicationId, mobile }),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -348,8 +454,10 @@ export async function createCustomPlan(
     .toISOString()
     .split("T")[0];
 
+  // Use the public admission mirror so the anonymous parent flow can create
+  // the custom plan right after submission without needing an auth token.
   return request<{ id: string; status: CustomPlanStatus }>(
-    "/api/fees/create-custom-plan",
+    "/api/admissions/public/create-custom-plan",
     {
       method: "POST",
       body: JSON.stringify({
@@ -365,8 +473,9 @@ export async function createCustomPlan(
 }
 
 export async function getCustomPlanStatus(applicationId: string) {
+  // Public mirror — read-only plan status for the anonymous parent flow.
   return request<CustomPlanStatusResponse>(
-    `/api/fees/payment-plan-status/${encodeURIComponent(applicationId)}`,
+    `/api/admissions/public/payment-plan-status/${encodeURIComponent(applicationId)}`,
   );
 }
 
@@ -408,8 +517,10 @@ export async function createStandardPlan(
 }
 
 export async function getPaymentPlan(applicationId: string) {
+  // Public mirror so the anonymous parent status page can render the
+  // approved/pending custom plan without an auth token.
   return request<PaymentPlanRecord>(
-    `/api/fees/payment-plan/${encodeURIComponent(applicationId)}`,
+    `/api/admissions/public/payment-plan/${encodeURIComponent(applicationId)}`,
   );
 }
 

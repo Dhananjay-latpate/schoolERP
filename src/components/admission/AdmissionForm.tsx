@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, type FieldErrors } from "react-hook-form";
+import { useForm, type DefaultValues, type FieldErrors } from "react-hook-form";
 import { z } from "zod";
 
 import {
@@ -21,6 +21,7 @@ import {
   createCustomPlan,
   getActiveAdmissionSessionPublic,
   getAdmissionSetupStatus,
+  type AdmissionDraftSnapshot,
   type AdmissionRecord,
   type AdmissionSetupStatus,
 } from "@/lib/api";
@@ -174,14 +175,16 @@ const schema = z
       .optional()
       .default(""),
     motherTongue: optionalText(40, "Mother tongue"),
-    paymentMethod: z
-      .enum(["full_payment", "installment", "custom_payment"])
-      .optional(),
+    paymentMethod: z.enum(
+      ["full_payment", "installment", "custom_payment"],
+      { errorMap: () => ({ message: "Please choose a payment method" }) },
+    ),
     customPaymentAmount: z
       .number({ invalid_type_error: "Enter a valid amount" })
       .positive("Amount must be greater than zero")
       .optional(),
     customPaymentReason: z.string().optional(),
+    installmentOptionId: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.paymentMethod === "custom_payment") {
@@ -202,6 +205,13 @@ const schema = z
           message: "Please provide a reason (at least 10 characters)",
         });
       }
+    }
+    if (data.paymentMethod === "installment" && !data.installmentOptionId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["installmentOptionId"],
+        message: "Please pick an installment plan",
+      });
     }
   });
 
@@ -242,7 +252,7 @@ const STEP_FIELDS: Record<number, Array<keyof AdmissionFormValues>> = {
   3: ["adharNumber"],
   4: [],
   5: [],
-  6: ["paymentMethod"],
+  6: ["paymentMethod", "installmentOptionId", "customPaymentAmount", "customPaymentReason"],
 };
 
 const FIELD_TO_STEP: Partial<Record<keyof AdmissionFormValues, number>> = {
@@ -266,6 +276,7 @@ const FIELD_TO_STEP: Partial<Record<keyof AdmissionFormValues, number>> = {
   paymentMethod: 6,
   customPaymentAmount: 6,
   customPaymentReason: 6,
+  installmentOptionId: 6,
 };
 
 type Phase = "form" | "payment" | "done";
@@ -274,7 +285,41 @@ interface DraftNotification {
   applicationId: string;
 }
 
-const DEFAULT_VALUES: AdmissionFormValues = {
+// sessionStorage key for handing a fetched draft from the Resume page/modal
+// to this form. Cleared by the "+ New Application" button.
+export const RESUME_DRAFT_KEY = "admission:resume-draft";
+
+function snapshotToFormValues(
+  snapshot: AdmissionDraftSnapshot,
+): Partial<AdmissionFormValues> {
+  const gender =
+    snapshot.gender === "male" ||
+    snapshot.gender === "female" ||
+    snapshot.gender === "other"
+      ? snapshot.gender
+      : undefined;
+  return {
+    firstName: snapshot.firstName,
+    middleName: snapshot.middleName,
+    lastName: snapshot.lastName,
+    gender,
+    dateOfBirth: snapshot.dateOfBirth,
+    classAdmitted: snapshot.classAdmitted,
+    fatherName: snapshot.fatherName,
+    motherName: snapshot.motherName,
+    address: snapshot.address,
+    emergencyContact: snapshot.emergencyContact,
+    placeOfBirth: snapshot.placeOfBirth,
+    nationality: snapshot.nationality,
+    religion: snapshot.religion,
+    caste: snapshot.caste,
+    subCaste: snapshot.subCaste,
+    adharNumber: snapshot.adharNumber,
+    motherTongue: snapshot.motherTongue,
+  };
+}
+
+const DEFAULT_VALUES: DefaultValues<AdmissionFormValues> = {
   firstName: "",
   middleName: "",
   lastName: "",
@@ -292,9 +337,10 @@ const DEFAULT_VALUES: AdmissionFormValues = {
   subCaste: "",
   adharNumber: "",
   motherTongue: "",
-  paymentMethod: "full_payment",
+  paymentMethod: undefined,
   customPaymentAmount: undefined,
   customPaymentReason: "",
+  installmentOptionId: "",
 };
 
 export function AdmissionForm() {
@@ -366,6 +412,7 @@ export function AdmissionForm() {
     trigger,
     getValues,
     watch,
+    setValue,
     reset,
     formState: { errors },
   } = useForm<AdmissionFormValues>({
@@ -383,6 +430,38 @@ export function AdmissionForm() {
     setErrorMessage(null);
     setDraftNotification(null);
     reset(DEFAULT_VALUES);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(RESUME_DRAFT_KEY);
+    }
+  }, [freshKey, reset]);
+
+  // Hydrate from a resumed draft (placed in sessionStorage by the Resume
+  // page/modal). We replay all field values into the form and remember the
+  // applicationId so subsequent draft saves update the same row.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (freshKey) return;
+    const raw = window.sessionStorage.getItem(RESUME_DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const snapshot = JSON.parse(raw) as AdmissionDraftSnapshot;
+      if (!snapshot?.applicationId) return;
+      reset({ ...DEFAULT_VALUES, ...snapshotToFormValues(snapshot) });
+      setSubmittedApp({
+        applicationId: snapshot.applicationId,
+        status: snapshot.status,
+        firstName: snapshot.firstName,
+        lastName: snapshot.lastName,
+        gender: (snapshot.gender as AdmissionRecord["gender"]) ?? "male",
+        fatherName: snapshot.fatherName,
+        motherName: snapshot.motherName,
+        address: snapshot.address,
+        emergencyContact: snapshot.emergencyContact,
+      });
+      setStep(0);
+    } catch {
+      window.sessionStorage.removeItem(RESUME_DRAFT_KEY);
+    }
   }, [freshKey, reset]);
 
   // Keep the document title in sync with the current step for clearer
@@ -434,13 +513,17 @@ export function AdmissionForm() {
       if (submitLockRef.current) return;
       submitLockRef.current = true;
 
+      // If the parent is bouncing back to the form after already finalising,
+      // route by the actual application status (the source of truth):
+      //   - payment_pending → resume payment (full / installment)
+      //   - submitted       → custom plan awaiting principal → status page
+      //   - anything else   → status page
       if (submittedApp && submittedApp.status !== "draft") {
-        if (values.paymentMethod === "custom_payment") {
+        if (submittedApp.status === "payment_pending") {
+          setPhase("payment");
+        } else {
           router.push(`/admissions/${submittedApp.applicationId}`);
-          submitLockRef.current = false;
-          return;
         }
-        setPhase("payment");
         submitLockRef.current = false;
         return;
       }
@@ -455,6 +538,9 @@ export function AdmissionForm() {
         setSubmittedApp(response);
 
         if (values.paymentMethod === "custom_payment") {
+          // Custom hardship: register the plan request on the fees module
+          // (the application itself is already in `submitted` waiting for
+          // principal review — the server handled that transition).
           await createCustomPlan(
             response.applicationId,
             values.customPaymentAmount!,
@@ -464,6 +550,8 @@ export function AdmissionForm() {
           return;
         }
 
+        // Full payment / installment: server returns `payment_pending` —
+        // mount the PaymentPanel so the parent can pay immediately.
         setPhase("payment");
       } catch (error) {
         setErrorMessage(humanizeSubmitError(error));
@@ -500,12 +588,24 @@ export function AdmissionForm() {
 
   const saveDraft = async () => {
     if (draftLockRef.current) return;
-    draftLockRef.current = true;
 
+    const values = getValues();
+    const selectedClass = values.classAdmitted?.trim();
+    if (!selectedClass) {
+      setErrorMessage(
+        "Please select a class on the Academic Details step before saving as draft.",
+      );
+      const academicStep = FIELD_TO_STEP.classAdmitted;
+      if (academicStep !== undefined && academicStep !== step) {
+        setStep(academicStep);
+      }
+      return;
+    }
+
+    draftLockRef.current = true;
     setErrorMessage(null);
     setIsSavingDraft(true);
     try {
-      const values = getValues();
       const payload = {
         applicationId: submittedApp?.applicationId,
         ...values,
@@ -513,8 +613,6 @@ export function AdmissionForm() {
       };
       if (!payload.dateOfBirth)
         delete (payload as Record<string, unknown>).dateOfBirth;
-      if (!payload.classAdmitted)
-        delete (payload as Record<string, unknown>).classAdmitted;
       const response = await submitAdmission(payload);
       setSubmittedApp(response);
       setDraftNotification({ applicationId: response.applicationId });
@@ -544,7 +642,14 @@ export function AdmissionForm() {
         return <ReviewStep values={getValues()} />;
       case 6:
       default:
-        return <FeeStep register={register} errors={errors} watch={watch} />;
+        return (
+          <FeeStep
+            register={register}
+            errors={errors}
+            watch={watch}
+            setValue={setValue}
+          />
+        );
     }
   };
 
@@ -582,6 +687,12 @@ export function AdmissionForm() {
   // ── Form Phase ─────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-3xl">
+      {/* Top-level page heading for screen readers + landmark navigation.
+          Visually presented as the uppercase "Admission Application
+          2025-26" line so we don't change the design. */}
+      <h1 className="sr-only">
+        Admission Application{activeSessionCode ? ` ${activeSessionCode}` : ""}
+      </h1>
       <AnimatePresence mode="wait">
         <motion.div
           key={step}
@@ -592,7 +703,10 @@ export function AdmissionForm() {
         >
           <Card className="overflow-hidden">
             <div className="border-b border-surface-border bg-surface-muted px-6 pt-6 pb-5">
-              <p className="mb-5 text-center text-[11px] font-bold uppercase tracking-widest text-text-secondary">
+              <p
+                aria-hidden="true"
+                className="mb-5 text-center text-[11px] font-bold uppercase tracking-widest text-text-secondary"
+              >
                 Admission Application
                 {activeSessionCode ? ` ${activeSessionCode}` : ""}
               </p>

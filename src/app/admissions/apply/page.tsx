@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AdmissionForm } from "@/components/admission/AdmissionForm";
+import { ResumeDraftTrigger } from "@/components/admission/ResumeDraftTrigger";
 
 export const metadata: Metadata = {
   title: "Apply for Admission",
@@ -10,8 +11,11 @@ export const metadata: Metadata = {
 
 export default function AdmissionApplyPage() {
   return (
-    <Suspense fallback={null}>
-      <AdmissionForm />
-    </Suspense>
+    <div className="space-y-4">
+      <ResumeDraftTrigger />
+      <Suspense fallback={null}>
+        <AdmissionForm />
+      </Suspense>
+    </div>
   );
 }

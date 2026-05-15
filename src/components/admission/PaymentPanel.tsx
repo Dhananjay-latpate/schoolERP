@@ -262,12 +262,27 @@ export function PaymentPanel({
           </div>
           <div className="flex justify-between">
             <span className="text-text-muted">Payment Type</span>
-            <span className="font-medium text-text-primary capitalize">
+            <span className="font-medium text-text-primary">
               {application.paymentMethod === "installment"
-                ? "Installments"
-                : "Full Payment"}
+                ? "First installment"
+                : application.paymentMethod === "custom_payment"
+                  ? "Approved custom amount"
+                  : "Full payment"}
             </span>
           </div>
+          {application.payment?.amount ? (
+            <div className="mt-2 flex items-center justify-between rounded-lg border border-brand-royal/15 bg-brand-royal/5 px-3 py-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-brand-royal">
+                Amount to pay now
+              </span>
+              <span className="text-lg font-bold text-brand-royal">
+                ₹
+                {Number(application.payment.amount).toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
 

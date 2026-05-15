@@ -18,6 +18,27 @@ import {
 } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { PaymentPanel } from "@/components/admission/PaymentPanel";
+import { AlertCircle, CheckCircle, Clock, CreditCard } from "lucide-react";
+
+function formatINR(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+const READABLE_STATUS: Record<string, string> = {
+  draft: "Draft",
+  submitted: "Submitted",
+  payment_pending: "Payment Pending",
+  payment_completed: "Payment Completed",
+  under_review: "Under Review",
+  approved: "Approved",
+  admission_confirmed: "Admission Confirmed",
+  rejected: "Rejected",
+};
 
 function statusVariant(
   status: string,
@@ -70,12 +91,22 @@ export default function AdmissionStatusPage() {
   }, []);
 
   const refreshPaymentContext = async (applicationId: string) => {
-    const status = await getCustomPlanStatus(applicationId);
-    setPlanStatus(status);
+    let status: CustomPlanStatusResponse | null = null;
+    try {
+      status = await getCustomPlanStatus(applicationId);
+      setPlanStatus(status);
+    } catch {
+      setPlanStatus(null);
+      return;
+    }
 
     if (status.hasPlan) {
-      const plan = await getPaymentPlan(applicationId);
-      setPaymentPlan(plan);
+      try {
+        const plan = await getPaymentPlan(applicationId);
+        setPaymentPlan(plan);
+      } catch {
+        setPaymentPlan(null);
+      }
     } else {
       setPaymentPlan(null);
     }
@@ -88,15 +119,18 @@ export default function AdmissionStatusPage() {
       !!className;
 
     if (shouldOfferStandardFallback) {
-      const admissionYear =
-        (data as AdmissionRecord & { admissionYear?: string }).admissionYear ??
-        new Date().getFullYear().toString();
-      const structure = await getFeeStructure(
-        className as string,
-        admissionYear,
-      );
-      setFeeStructure(structure);
-      setSelectedOptionIndex(0);
+      try {
+        const admissionYear =
+          data?.admissionYear ?? new Date().getFullYear().toString();
+        const structure = await getFeeStructure(
+          className as string,
+          admissionYear,
+        );
+        setFeeStructure(structure);
+        setSelectedOptionIndex(0);
+      } catch {
+        setFeeStructure(null);
+      }
     } else {
       setFeeStructure(null);
     }
@@ -106,30 +140,47 @@ export default function AdmissionStatusPage() {
     async function load() {
       try {
         setLoading(true);
+        // The application record itself is publicly readable so parents can
+        // track status without logging in. Plan-status / payment-plan are
+        // auth-protected (financial data), so we attempt them but soft-fail
+        // when the parent is anonymous — the page still renders cleanly.
         const result = await getAdmissionById(params.id);
         setData(result);
-        const status = await getCustomPlanStatus(result.applicationId);
-        setPlanStatus(status);
 
-        if (status.hasPlan) {
-          const plan = await getPaymentPlan(result.applicationId);
-          setPaymentPlan(plan);
+        let status: CustomPlanStatusResponse | null = null;
+        try {
+          status = await getCustomPlanStatus(result.applicationId);
+          setPlanStatus(status);
+        } catch {
+          setPlanStatus(null);
+        }
+
+        if (status?.hasPlan) {
+          try {
+            const plan = await getPaymentPlan(result.applicationId);
+            setPaymentPlan(plan);
+          } catch {
+            setPaymentPlan(null);
+          }
         }
 
         if (
-          status.hasPlan &&
+          status?.hasPlan &&
           status.isCustomPlan === true &&
           status.status === "rejected" &&
           result.classAdmitted
         ) {
-          const admissionYear =
-            (result as AdmissionRecord & { admissionYear?: string })
-              .admissionYear ?? new Date().getFullYear().toString();
-          const structure = await getFeeStructure(
-            result.classAdmitted,
-            admissionYear,
-          );
-          setFeeStructure(structure);
+          try {
+            const admissionYear =
+              result.admissionYear ?? new Date().getFullYear().toString();
+            const structure = await getFeeStructure(
+              result.classAdmitted,
+              admissionYear,
+            );
+            setFeeStructure(structure);
+          } catch {
+            setFeeStructure(null);
+          }
         }
       } catch (err) {
         setError(
@@ -244,48 +295,250 @@ export default function AdmissionStatusPage() {
     }
   };
 
-  const showSuccessBanner = ["submitted", "payment_completed"].includes(
-    data.status,
-  );
+  // Status-aware banner — each state tells the parent exactly what's
+  // happening and what (if anything) they need to do next.
+  const isCustomAwaitingPrincipal =
+    data.status === "submitted" &&
+    planStatus?.hasPlan === true &&
+    planStatus.isCustomPlan === true &&
+    planStatus.status === "pending_approval";
 
-  return (
-    <Card className="mx-auto max-w-3xl p-6 sm:p-8">
-      {showSuccessBanner && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              aria-hidden="true"
-            >
-              <path d="M5 13l4 4L19 7" />
-            </svg>
+  const renderStatusBanner = () => {
+    const idChip = (
+      <span className="rounded bg-white/80 px-1.5 py-0.5 font-mono font-bold">
+        {data.applicationId}
+      </span>
+    );
+
+    if (data.status === "payment_pending") {
+      return (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+            <CreditCard size={18} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-emerald-900">
-              {data.status === "payment_completed"
-                ? "Payment received — application submitted"
-                : "Application submitted successfully"}
+            <p className="text-sm font-bold text-amber-900">
+              Action needed — complete your payment
             </p>
-            <p className="mt-0.5 text-xs text-emerald-800">
-              Save your application ID{" "}
-              <span className="rounded bg-white/80 px-1.5 py-0.5 font-mono font-bold">
-                {data.applicationId}
-              </span>{" "}
-              to track status. The principal will review your application and
-              you'll receive an admission decision soon.
-            </p>
-            <p className="mt-2 text-xs text-emerald-700">
-              You'll be able to upload required documents once the school
-              admission office contacts you.
+            <p className="mt-0.5 text-xs text-amber-800">
+              Your application {idChip}
+              {data.payment?.amount
+                ? ` is ready for a ${formatINR(Number(data.payment.amount))} payment.`
+                : " is awaiting payment."}
+              {" "}Once payment is received, the principal will review your
+              application.
             </p>
           </div>
         </div>
-      )}
+      );
+    }
+
+    if (isCustomAwaitingPrincipal) {
+      return (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
+            <Clock size={18} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-blue-900">
+              Custom payment request submitted
+            </p>
+            <p className="mt-0.5 text-xs text-blue-800">
+              Your application {idChip} is with the principal for review of
+              your proposed amount. Once approved, you'll be able to pay the
+              agreed amount here — this page will update automatically when
+              you refresh. The principal may adjust the amount before
+              approving.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (data.status === "submitted") {
+      return (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
+            <Clock size={18} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-blue-900">
+              Application submitted — awaiting principal review
+            </p>
+            <p className="mt-0.5 text-xs text-blue-800">
+              Save your application ID {idChip} to track status. The principal
+              will review and you'll receive an admission decision soon.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (data.status === "payment_completed") {
+      return (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+            <CheckCircle size={18} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-emerald-900">
+              Payment received — application submitted
+            </p>
+            <p className="mt-0.5 text-xs text-emerald-800">
+              Your application {idChip} is in the principal's queue. You'll
+              receive a decision soon.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (data.status === "under_review") {
+      return (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-4">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-white">
+            <Clock size={18} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-indigo-900">
+              Under review by the principal
+            </p>
+            <p className="mt-0.5 text-xs text-indigo-800">
+              Application {idChip} is being reviewed. We'll update this page
+              when there's a decision.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (data.status === "rejected") {
+      return (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white">
+            <AlertCircle size={18} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-rose-900">
+              Application not accepted
+            </p>
+            <p className="mt-0.5 text-xs text-rose-800">
+              The principal could not accept application {idChip} at this
+              time. Please contact the admissions office for next steps.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // Mini timeline showing where the parent is in the journey. Skipped on
+  // rejected since the journey ended. The stage order differs by flow:
+  //   - Custom (hardship): Submit → Principal approves amount → Payment → Decision
+  //   - Full / Installment: Submit → Payment → Principal Review → Decision
+  // The parent should always be able to read "what comes next" from left to
+  // right without confusion.
+  const renderTimeline = () => {
+    if (data.status === "rejected") return null;
+    const isCustomFlow =
+      data.paymentMethod === "custom_payment" || isCustomAwaitingPrincipal;
+    const stages: Array<{ key: string; label: string }> = isCustomFlow
+      ? [
+          { key: "submitted", label: "Submitted" },
+          { key: "review", label: "Principal Review" },
+          { key: "payment", label: "Payment" },
+          { key: "decision", label: "Decision" },
+        ]
+      : [
+          { key: "submitted", label: "Submitted" },
+          { key: "payment", label: "Payment" },
+          { key: "review", label: "Principal Review" },
+          { key: "decision", label: "Decision" },
+        ];
+
+    const currentIndex = (() => {
+      if (isCustomFlow) {
+        switch (data.status) {
+          case "draft":
+            return -1;
+          case "submitted":
+            return 1; // Principal reviewing the proposed amount
+          case "payment_pending":
+            return 2; // Principal approved → pay now
+          case "payment_completed":
+          case "under_review":
+            return 2; // Paid; back in principal queue (decision step is final)
+          case "approved":
+          case "admission_confirmed":
+            return 3;
+          default:
+            return 0;
+        }
+      }
+      switch (data.status) {
+        case "draft":
+          return -1;
+        case "submitted":
+          // For full / installment flow, reaching `submitted` happens AFTER
+          // a successful payment (the controller auto-promotes
+          // payment_completed → submitted). So in this flow, "submitted"
+          // means "paid + with the principal", which is step 3 — not the
+          // initial submit step.
+          return data.payment?.status === "completed" ? 2 : 0;
+        case "payment_pending":
+          return 1;
+        case "payment_completed":
+        case "under_review":
+          return 2;
+        case "approved":
+        case "admission_confirmed":
+          return 3;
+        default:
+          return 0;
+      }
+    })();
+
+    return (
+      <ol className="mb-6 grid grid-cols-4 gap-2 text-[11px]">
+        {stages.map((s, idx) => {
+          const done = idx <= currentIndex;
+          const active = idx === currentIndex;
+          return (
+            <li
+              key={s.key}
+              className={`flex flex-col items-center rounded-lg border px-2 py-2 text-center ${
+                active
+                  ? "border-brand-royal bg-brand-royal/10 text-brand-royal"
+                  : done
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                    : "border-surface-border bg-surface-muted text-text-muted"
+              }`}
+            >
+              <span
+                className={`mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                  done
+                    ? active
+                      ? "bg-brand-royal text-white"
+                      : "bg-emerald-500 text-white"
+                    : "bg-white text-text-muted border border-surface-border"
+                }`}
+              >
+                {idx + 1}
+              </span>
+              <span className="font-semibold leading-tight">{s.label}</span>
+            </li>
+          );
+        })}
+      </ol>
+    );
+  };
+
+  return (
+    <Card className="mx-auto max-w-3xl p-6 sm:p-8">
+      {renderStatusBanner()}
+      {renderTimeline()}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -299,7 +552,9 @@ export default function AdmissionStatusPage() {
             Application ID: {data.applicationId}
           </p>
         </div>
-        <Badge variant={statusVariant(data.status)}>{data.status}</Badge>
+        <Badge variant={statusVariant(data.status)}>
+          {READABLE_STATUS[data.status] ?? data.status}
+        </Badge>
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -326,6 +581,47 @@ export default function AdmissionStatusPage() {
       <div className="mt-6 rounded-xl border border-brand-sky/20 bg-brand-sky/10 p-4 text-sm text-text-secondary">
         Keep this page bookmarked to track updates from school administration.
       </div>
+
+      {/* Inline payment flow — shown whenever the application is sitting in
+          `payment_pending`. Covers both the original full / installment
+          submission and the post-principal-approval custom-payment flow,
+          so the parent always lands on the same "Pay Now" experience. */}
+      {data.status === "payment_pending" && (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-start gap-3">
+            <CreditCard
+              size={20}
+              className="mt-0.5 shrink-0 text-amber-600"
+              aria-hidden="true"
+            />
+            <div>
+              <p className="text-sm font-bold text-text-primary">
+                Complete your payment to continue
+              </p>
+              <p className="mt-0.5 text-xs text-text-secondary">
+                Pay the agreed amount through our secure gateway. Your
+                application will move into principal review automatically
+                after a successful payment.
+              </p>
+            </div>
+          </div>
+          <PaymentPanel
+            application={data}
+            onSuccess={async () => {
+              // Reload the application so the page flips to the "Payment
+              // received" banner and the PaymentPanel block hides itself
+              // without a hard navigation.
+              try {
+                const refreshed = await getAdmissionById(data.applicationId);
+                setData(refreshed);
+              } catch {
+                // Soft-fail: a stale read is fine; the banner will update
+                // on the next page load.
+              }
+            }}
+          />
+        </div>
+      )}
 
       {data.status === "approved" && (
         <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
@@ -355,17 +651,6 @@ export default function AdmissionStatusPage() {
               Download PDF
             </a>
           </div>
-        </div>
-      )}
-
-      {planStatus?.hasPlan && planStatus.status === "pending_approval" && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-800">
-            Custom fee request is pending principal review.
-          </p>
-          <p className="mt-1 text-xs text-amber-700">
-            You will be able to pay once the request is approved.
-          </p>
         </div>
       )}
 

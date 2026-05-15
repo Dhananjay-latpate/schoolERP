@@ -1,6 +1,7 @@
 import type {
   FieldErrors,
   UseFormRegister,
+  UseFormSetValue,
   UseFormWatch,
 } from "react-hook-form";
 
@@ -22,13 +23,15 @@ export type AdmissionFormValues = {
   subCaste?: string;
   adharNumber?: string;
   motherTongue?: string;
-  paymentMethod?: "full_payment" | "installment" | "custom_payment";
+  paymentMethod: "full_payment" | "installment" | "custom_payment";
   customPaymentAmount?: number;
   customPaymentReason?: string;
+  installmentOptionId?: string;
 };
 
 export type StepProps = {
   register: UseFormRegister<AdmissionFormValues>;
   errors: FieldErrors<AdmissionFormValues>;
   watch?: UseFormWatch<AdmissionFormValues>;
+  setValue?: UseFormSetValue<AdmissionFormValues>;
 };

@@ -44,16 +44,15 @@ function tryFormatLegacyDate(value: unknown): string | null {
   });
 }
 
-export function FeeStep({ register, errors, watch }: StepProps) {
+export function FeeStep({ register, errors, watch, setValue }: StepProps) {
   const selectedClass = watch?.("classAdmitted") ?? "";
   const paymentMethod = watch?.("paymentMethod") ?? "";
+  const selectedInstallmentOptionId = watch?.("installmentOptionId") ?? "";
 
   const [classes, setClasses] = useState<PublicClass[]>([]);
   const [feeStructure, setFeeStructure] = useState<FeeStructure | null>(null);
   const [feeLoading, setFeeLoading] = useState(false);
   const [feeError, setFeeError] = useState<string | null>(null);
-  const [selectedInstallmentOptionId, setSelectedInstallmentOptionId] =
-    useState<string | null>(null);
 
   useEffect(() => {
     getPublicClasses()
@@ -83,15 +82,19 @@ export function FeeStep({ register, errors, watch }: StepProps) {
       .finally(() => setFeeLoading(false));
   }, [selectedClass, classes]);
 
+  // Reset the picked installment plan whenever the fee structure changes
+  // (e.g. the parent went back and picked a different class).
   useEffect(() => {
-    setSelectedInstallmentOptionId(null);
-  }, [feeStructure]);
+    setValue?.("installmentOptionId", "", { shouldValidate: false });
+  }, [feeStructure, setValue]);
 
+  // Clear the picked plan whenever the parent switches away from
+  // "installment" — otherwise a stale id could be POSTed.
   useEffect(() => {
     if (paymentMethod !== "installment") {
-      setSelectedInstallmentOptionId(null);
+      setValue?.("installmentOptionId", "", { shouldValidate: false });
     }
-  }, [paymentMethod]);
+  }, [paymentMethod, setValue]);
 
   const selectedOption = useMemo(
     () =>
@@ -180,8 +183,10 @@ export function FeeStep({ register, errors, watch }: StepProps) {
           id="paymentMethod"
           aria-required="true"
           aria-invalid={errors.paymentMethod ? "true" : "false"}
+          className={errors.paymentMethod ? "input-error" : ""}
           {...register("paymentMethod")}
         >
+          <option value="">Select a payment method</option>
           <option value="full_payment">Pay full amount now</option>
           <option value="installment" disabled={!installmentsAvailable}>
             {installmentsAvailable
@@ -194,6 +199,11 @@ export function FeeStep({ register, errors, watch }: StepProps) {
             Request a custom payment arrangement (hardship)
           </option>
         </Select>
+        {errors.paymentMethod && (
+          <p className="mt-1 text-xs text-status-error" role="alert">
+            {errors.paymentMethod.message}
+          </p>
+        )}
         {!installmentsAvailable && !feeLoading && !feeError && (
           <p className="mt-1 text-xs text-text-muted">
             Standard installment plans are not configured for this class. You
@@ -209,8 +219,12 @@ export function FeeStep({ register, errors, watch }: StepProps) {
           <Select
             id="installmentPlan"
             value={selectedInstallmentOptionId ?? ""}
+            aria-invalid={errors.installmentOptionId ? "true" : "false"}
             onChange={(e) =>
-              setSelectedInstallmentOptionId(e.target.value || null)
+              setValue?.("installmentOptionId", e.target.value, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
             }
           >
             <option value="">Select a plan</option>
@@ -221,6 +235,11 @@ export function FeeStep({ register, errors, watch }: StepProps) {
               </option>
             ))}
           </Select>
+          {errors.installmentOptionId && (
+            <p className="mt-1 text-xs text-status-error" role="alert">
+              {errors.installmentOptionId.message as string}
+            </p>
+          )}
           {selectedOption && (
             <div className="mt-3 rounded-xl border border-surface-border bg-white px-4 py-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-royal">
