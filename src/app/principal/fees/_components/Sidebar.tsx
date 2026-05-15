@@ -10,6 +10,9 @@ import {
   Settings2,
   CheckCircle2,
   AlertCircle,
+  Inbox,
+  AlarmClock,
+  Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { FeesDashboardSummary } from "@/lib/principalApi";
@@ -24,6 +27,9 @@ const navItems = [
   { href: "/principal/fees", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/principal/fees/students", label: "Student Accounts", icon: Users },
   { href: "/principal/fees/cashier", label: "Cashier", icon: Wallet },
+  { href: "/principal/fees/approvals", label: "Approvals", icon: Inbox },
+  { href: "/principal/fees/late-fees", label: "Late Fees", icon: AlarmClock },
+  { href: "/principal/fees/refunds", label: "Refunds", icon: Undo2 },
 ];
 
 const masterItems = [

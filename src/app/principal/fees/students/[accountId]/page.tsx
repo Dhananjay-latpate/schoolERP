@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Loader2, ArrowLeft, Plus, Receipt } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Receipt, Undo2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,8 @@ import { FeesSidebar } from "../../_components/Sidebar";
 import { useFeesSession } from "../../_components/useFeesSession";
 import { ToastContainer, type ToastItem } from "../../_components/ToastContainer";
 import { RecordPaymentModal } from "../../_components/RecordPaymentModal";
+import { ConcessionRequestModal } from "../../_components/ConcessionRequestModal";
+import { RefundRequestModal } from "../../_components/RefundRequestModal";
 
 const formatINR = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
@@ -50,6 +52,8 @@ export default function AccountDetailPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [showAddCharge, setShowAddCharge] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
+  const [showConcession, setShowConcession] = useState(false);
+  const [showRefund, setShowRefund] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((type: "success" | "error", message: string) => {
@@ -158,6 +162,14 @@ export default function AccountDetailPage() {
                     <Receipt className="mr-1 h-4 w-4" /> Record payment
                   </Button>
                 )}
+                {account.totalPaid > 0 && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowRefund(true)}
+                  >
+                    <Undo2 className="mr-1 h-4 w-4" /> Refund
+                  </Button>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-2 border-b border-surface-border">
@@ -186,7 +198,12 @@ export default function AccountDetailPage() {
               )}
               {activeTab === "installments" && <InstallmentsTab account={account} />}
               {activeTab === "ledger" && <LedgerTab account={account} />}
-              {activeTab === "concessions" && <ConcessionsTab account={account} />}
+              {activeTab === "concessions" && (
+                <ConcessionsTab
+                  account={account}
+                  onRequest={() => setShowConcession(true)}
+                />
+              )}
               {activeTab === "approvals" && <ApprovalsTab account={account} />}
             </>
           )}
@@ -200,6 +217,40 @@ export default function AccountDetailPage() {
             onSuccess={() => {
               setShowAddCharge(false);
               addToast("success", "Charge added");
+              void fetchDetail();
+            }}
+          />
+        )}
+        {account && showRefund && (
+          <RefundRequestModal
+            accountId={account.id}
+            totalPaid={account.totalPaid}
+            transactions={account.installments.flatMap((i) =>
+              i.transactions.map((t) => ({
+                id: t.id,
+                amount: t.amount,
+                method: t.method,
+                paidAt: t.paidAt,
+                receiptNumber: t.receiptNumber,
+              })),
+            )}
+            token={token}
+            onClose={() => setShowRefund(false)}
+            onSuccess={() => {
+              setShowRefund(false);
+              addToast("success", "Refund request submitted");
+              void fetchDetail();
+            }}
+          />
+        )}
+        {account && showConcession && (
+          <ConcessionRequestModal
+            accountId={account.id}
+            token={token}
+            onClose={() => setShowConcession(false)}
+            onSuccess={() => {
+              setShowConcession(false);
+              addToast("success", "Concession request submitted");
               void fetchDetail();
             }}
           />
@@ -414,10 +465,21 @@ function LedgerTab({ account }: { account: FeeAccountDetail }) {
   );
 }
 
-function ConcessionsTab({ account }: { account: FeeAccountDetail }) {
+function ConcessionsTab({
+  account,
+  onRequest,
+}: {
+  account: FeeAccountDetail;
+  onRequest: () => void;
+}) {
   return (
     <Card className="p-4">
-      <h3 className="text-sm font-semibold text-text-primary">Concessions</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-text-primary">Concessions</h3>
+        <Button variant="secondary" className="h-8 text-xs" onClick={onRequest}>
+          <Plus className="mr-1 h-3.5 w-3.5" /> Request concession
+        </Button>
+      </div>
       {account.concessions.length === 0 ? (
         <p className="mt-4 text-center text-sm text-text-muted">No concessions on this account.</p>
       ) : (

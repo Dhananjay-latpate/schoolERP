@@ -892,7 +892,8 @@ export async function requestConcession(
   payload: {
     accountId: string;
     type: string;
-    amountInPaise: number;
+    amount?: number; // RUPEES
+    percentage?: number;
     reason: string;
   },
 ): Promise<PendingFeeApproval> {
@@ -1200,6 +1201,106 @@ export async function getCashbook(
     `/api/fees/cashier/sessions/${encodeURIComponent(sessionId)}/cashbook`,
     token,
   );
+}
+
+// ─── Refunds ──────────────────────────────────────────────────────────────────
+
+export type FeeRefundMethod =
+  | "online_gateway"
+  | "cash"
+  | "cheque"
+  | "bank_transfer"
+  | "other";
+
+export type FeeRefundStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "executed"
+  | "failed"
+  | "cancelled";
+
+export type FeeRefund = {
+  id: string;
+  amount: number; // RUPEES
+  reason: string;
+  method: FeeRefundMethod;
+  bankDetails: string | null;
+  status: FeeRefundStatus;
+  refundedAt: string | null;
+  refundReferenceId: string | null;
+  executionError: string | null;
+  createdAt: string;
+  updatedAt: string;
+  accountId: string;
+  originalTransactionId: string | null;
+  approvalRequestId: string | null;
+  requestedBy: { id: string; name: string; role: string } | null;
+  approvedBy: { id: string; name: string; role: string } | null;
+  executedBy: { id: string; name: string; role: string } | null;
+};
+
+export async function requestRefund(
+  token: string,
+  payload: {
+    accountId: string;
+    amount: number; // RUPEES
+    method: FeeRefundMethod;
+    reason: string;
+    bankDetails?: string;
+    originalTransactionId?: string;
+  },
+): Promise<FeeRefund> {
+  return request<FeeRefund>("/api/fees/refunds/request", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function reviewRefund(
+  token: string,
+  payload: { refundId: string; approved: boolean; comments?: string },
+): Promise<FeeRefund> {
+  return request<FeeRefund>("/api/fees/refunds/review", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function executeRefund(
+  token: string,
+  refundId: string,
+  payload?: { refundReferenceId?: string },
+): Promise<FeeRefund> {
+  return request<FeeRefund>(
+    `/api/fees/refunds/${encodeURIComponent(refundId)}/execute`,
+    token,
+    { method: "POST", body: JSON.stringify(payload ?? {}) },
+  );
+}
+
+export async function listRefunds(
+  token: string,
+  options?: { accountId?: string; status?: FeeRefundStatus; page?: number; limit?: number },
+): Promise<{ data: FeeRefund[]; total: number; currentPage: number }> {
+  const query = new URLSearchParams();
+  if (options?.accountId) query.set("accountId", options.accountId);
+  if (options?.status) query.set("status", options.status);
+  if (options?.page) query.set("page", String(options.page));
+  if (options?.limit) query.set("limit", String(options.limit));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+
+  const response = await fetch(`${API_BASE_URL}/api/fees/refunds${suffix}`, {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; total?: number; currentPage?: number; data?: FeeRefund[]; message?: string }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(body?.message || "Failed to load refunds", response.status, body);
+  }
+  return { data: body.data ?? [], total: body.total ?? 0, currentPage: body.currentPage ?? 1 };
 }
 
 // ─── Tally Export (returns XML) ───────────────────────────────────────────────
