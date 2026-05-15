@@ -12,8 +12,11 @@ import {
   getFeeAccountDetail,
   type FeeAccountDetail,
 } from "@/lib/principalApi";
+import { AddChargeModal } from "@/components/fees/AddChargeModal";
 import { FeesSidebar } from "../../_components/Sidebar";
 import { useFeesSession } from "../../_components/useFeesSession";
+import { ToastContainer, type ToastItem } from "../../_components/ToastContainer";
+import { RecordPaymentModal } from "../../_components/RecordPaymentModal";
 
 const formatINR = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
@@ -45,6 +48,15 @@ export default function AccountDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [showAddCharge, setShowAddCharge] = useState(false);
+  const [showRecordPayment, setShowRecordPayment] = useState(false);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const addToast = useCallback((type: "success" | "error", message: string) => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
+  }, []);
 
   const fetchDetail = useCallback(async () => {
     if (!token || !accountId) return;
@@ -78,6 +90,10 @@ export default function AccountDetailPage() {
     <div className="flex">
       <FeesSidebar summary={summary} isLoading={isLoadingSummary} onSignOut={signOut} />
       <main className="flex-1 lg:ml-60">
+        <ToastContainer
+          toasts={toasts}
+          onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
+        />
         <div className="mx-auto max-w-7xl space-y-4 px-4 py-6 sm:px-6 lg:px-8">
           <Link
             href="/principal/fees/students"
@@ -126,6 +142,24 @@ export default function AccountDetailPage() {
                 </div>
               </Card>
 
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowAddCharge(true)}
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Add charge
+                </Button>
+                {account.applicationId && (
+                  <Button
+                    onClick={() => setShowRecordPayment(true)}
+                    className="btn-pay"
+                    disabled={account.installments.filter((i) => !i.isPaid).length === 0}
+                  >
+                    <Receipt className="mr-1 h-4 w-4" /> Record payment
+                  </Button>
+                )}
+              </div>
+
               <div className="flex flex-wrap gap-2 border-b border-surface-border">
                 {TABS.map((tab) => {
                   const isActive = activeTab === tab.id;
@@ -147,7 +181,9 @@ export default function AccountDetailPage() {
               </div>
 
               {activeTab === "overview" && <OverviewTab account={account} />}
-              {activeTab === "charges" && <ChargesTab account={account} />}
+              {activeTab === "charges" && (
+                <ChargesTab account={account} onAddCharge={() => setShowAddCharge(true)} />
+              )}
               {activeTab === "installments" && <InstallmentsTab account={account} />}
               {activeTab === "ledger" && <LedgerTab account={account} />}
               {activeTab === "concessions" && <ConcessionsTab account={account} />}
@@ -155,6 +191,38 @@ export default function AccountDetailPage() {
             </>
           )}
         </div>
+
+        {account && showAddCharge && (
+          <AddChargeModal
+            accountId={account.id}
+            token={token}
+            onClose={() => setShowAddCharge(false)}
+            onSuccess={() => {
+              setShowAddCharge(false);
+              addToast("success", "Charge added");
+              void fetchDetail();
+            }}
+          />
+        )}
+        {account && showRecordPayment && account.applicationId && (
+          <RecordPaymentModal
+            applicationId={account.applicationId}
+            installments={account.installments.map((inst) => ({
+              id: inst.id,
+              name: inst.name,
+              dueDate: inst.dueDate,
+              amount: inst.amount,
+              isPaid: inst.isPaid,
+            }))}
+            token={token}
+            onClose={() => setShowRecordPayment(false)}
+            onSuccess={() => {
+              setShowRecordPayment(false);
+              addToast("success", "Payment recorded");
+              void fetchDetail();
+            }}
+          />
+        )}
       </main>
     </div>
   );
@@ -202,12 +270,18 @@ function OverviewTab({ account }: { account: FeeAccountDetail }) {
   );
 }
 
-function ChargesTab({ account }: { account: FeeAccountDetail }) {
+function ChargesTab({
+  account,
+  onAddCharge,
+}: {
+  account: FeeAccountDetail;
+  onAddCharge: () => void;
+}) {
   return (
     <Card className="overflow-x-auto p-0">
       <div className="flex items-center justify-between px-4 py-3">
         <h3 className="text-sm font-semibold text-text-primary">Charges</h3>
-        <Button variant="secondary" className="h-8 text-xs" disabled>
+        <Button variant="secondary" className="h-8 text-xs" onClick={onAddCharge}>
           <Plus className="mr-1 h-3.5 w-3.5" /> Add Charge
         </Button>
       </div>

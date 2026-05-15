@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
+import { Banknote } from "lucide-react";
 import {
   PrincipalApiError,
   closeCashierSession,
@@ -20,6 +21,7 @@ import {
 import { FeesSidebar } from "../_components/Sidebar";
 import { useFeesSession } from "../_components/useFeesSession";
 import { ToastContainer, type ToastItem } from "../_components/ToastContainer";
+import { QuickCollectModal } from "../_components/QuickCollectModal";
 
 const formatINR = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
@@ -35,6 +37,7 @@ export default function CashierPage() {
   const [closeNotes, setCloseNotes] = useState("");
   const [isMutating, setIsMutating] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [showQuickCollect, setShowQuickCollect] = useState(false);
 
   const addToast = useCallback((type: "success" | "error", message: string) => {
     const id = Date.now();
@@ -153,6 +156,7 @@ export default function CashierPage() {
               setCloseNotes={setCloseNotes}
               isMutating={isMutating}
               onClose={handleClose}
+              onQuickCollect={() => setShowQuickCollect(true)}
             />
           ) : (
             <OpenSessionForm
@@ -165,6 +169,18 @@ export default function CashierPage() {
             />
           )}
         </div>
+
+        {showQuickCollect && (
+          <QuickCollectModal
+            token={token}
+            onClose={() => setShowQuickCollect(false)}
+            onSuccess={() => {
+              setShowQuickCollect(false);
+              addToast("success", "Payment collected");
+              void fetchState();
+            }}
+          />
+        )}
       </main>
     </div>
   );
@@ -236,6 +252,7 @@ function ActiveSessionView({
   setCloseNotes,
   isMutating,
   onClose,
+  onQuickCollect,
 }: {
   session: CashierSessionDto;
   cashbook: CashbookDto | null;
@@ -245,6 +262,7 @@ function ActiveSessionView({
   setCloseNotes: (v: string) => void;
   isMutating: boolean;
   onClose: () => void;
+  onQuickCollect: () => void;
 }) {
   const cashCollected =
     cashbook?.summary.find((s) => s.method === "cash")?.total ?? 0;
@@ -265,11 +283,16 @@ function ActiveSessionView({
               {session.cashierName ?? "—"}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-text-muted">Opening Float</p>
-            <p className="text-lg font-semibold text-text-primary">
-              {formatINR(session.openingFloat)}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-wide text-text-muted">Opening Float</p>
+              <p className="text-lg font-semibold text-text-primary">
+                {formatINR(session.openingFloat)}
+              </p>
+            </div>
+            <Button className="btn-pay" onClick={onQuickCollect}>
+              <Banknote className="mr-1 h-4 w-4" /> Quick Collect
+            </Button>
           </div>
         </div>
 

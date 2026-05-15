@@ -24,7 +24,12 @@ const navItems = [
   { href: "/principal/fees", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/principal/fees/students", label: "Student Accounts", icon: Users },
   { href: "/principal/fees/cashier", label: "Cashier", icon: Wallet },
-  { href: "/principal/fees/masters/fee-heads", label: "Masters", icon: Settings2 },
+];
+
+const masterItems = [
+  { href: "/principal/fees/masters/fee-heads", label: "Fee Heads" },
+  { href: "/principal/fees/masters/structures", label: "Fee Structures" },
+  { href: "/principal/fees/masters/templates", label: "Installment Templates" },
 ];
 
 const formatINR = (value: number) =>
@@ -72,6 +77,28 @@ export function FeesSidebar({ summary, isLoading, onSignOut }: FeesSidebarProps)
             </Link>
           );
         })}
+
+        <div className="mt-3">
+          <div className="flex items-center gap-2.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <Settings2 className="h-3 w-3" /> Masters
+          </div>
+          {masterItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`block rounded-lg px-3 py-2 text-xs transition ${
+                  isActive
+                    ? "bg-brand-royal/10 font-semibold text-brand-royal"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
       <div className="border-t border-slate-100 p-3 space-y-2">
