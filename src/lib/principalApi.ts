@@ -1463,6 +1463,112 @@ export async function listReminderLog(
   return request<ReminderLogEntry[]>(`/api/fees/reminders/log${suffix}`, token);
 }
 
+// ─── Reconciliation ───────────────────────────────────────────────────────────
+
+export type ReconciliationStatus = "pending" | "matched" | "unmatched" | "mismatch";
+
+export type ReconciliationItem = {
+  id: string;
+  batchId: string;
+  externalPaymentId: string | null;
+  utrNumber: string | null;
+  amountInPaise: string | number;
+  paidAt: string | null;
+  payerName: string | null;
+  raw: unknown;
+  status: ReconciliationStatus;
+  mismatchReason: string | null;
+  feeTransactionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReconciliationBatch = {
+  id: string;
+  source: string;
+  statementDate: string | null;
+  status: ReconciliationStatus;
+  totalAmountInPaise: string | number;
+  matchedAmountInPaise: string | number;
+  itemCount: number;
+  matchedCount: number;
+  uploadedById: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items?: ReconciliationItem[];
+};
+
+export type ReconciliationItemInput = {
+  externalPaymentId?: string;
+  utrNumber?: string;
+  amount: number; // RUPEES
+  paidAt?: string;
+  payerName?: string;
+  raw?: unknown;
+};
+
+export async function listReconciliationBatches(
+  token: string,
+): Promise<ReconciliationBatch[]> {
+  return request<ReconciliationBatch[]>("/api/fees/reconciliation/batches", token);
+}
+
+export async function getReconciliationBatch(
+  token: string,
+  batchId: string,
+): Promise<ReconciliationBatch> {
+  return request<ReconciliationBatch>(
+    `/api/fees/reconciliation/batches/${encodeURIComponent(batchId)}`,
+    token,
+  );
+}
+
+export async function createReconciliationBatch(
+  token: string,
+  payload: {
+    source: string;
+    statementDate?: string;
+    items: ReconciliationItemInput[];
+  },
+): Promise<ReconciliationBatch> {
+  return request<ReconciliationBatch>("/api/fees/reconciliation/batches", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function manuallyMatchReconciliationItem(
+  token: string,
+  batchId: string,
+  itemId: string,
+  feeTransactionId: string,
+): Promise<ReconciliationItem> {
+  return request<ReconciliationItem>(
+    `/api/fees/reconciliation/batches/${encodeURIComponent(batchId)}/items/${encodeURIComponent(itemId)}/match`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify({ feeTransactionId }),
+    },
+  );
+}
+
+export async function markReconciliationItemMismatch(
+  token: string,
+  batchId: string,
+  itemId: string,
+  reason?: string,
+): Promise<ReconciliationItem> {
+  return request<ReconciliationItem>(
+    `/api/fees/reconciliation/batches/${encodeURIComponent(batchId)}/items/${encodeURIComponent(itemId)}/mark-mismatch`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    },
+  );
+}
+
 // ─── Reports ──────────────────────────────────────────────────────────────────
 
 export type DefaulterRow = {

@@ -15,6 +15,7 @@ import {
   Undo2,
   FileBarChart,
   BellRing,
+  FileCheck2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { FeesDashboardSummary } from "@/lib/principalApi";
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/principal/fees/refunds", label: "Refunds", icon: Undo2 },
   { href: "/principal/fees/reports", label: "Reports", icon: FileBarChart },
   { href: "/principal/fees/reminders", label: "Reminders", icon: BellRing },
+  { href: "/principal/fees/reconciliation", label: "Reconciliation", icon: FileCheck2 },
 ];
 
 const masterItems = [
