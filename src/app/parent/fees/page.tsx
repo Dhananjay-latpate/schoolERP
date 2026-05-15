@@ -12,6 +12,7 @@ import {
   type ParentOverview,
 } from "@/lib/parentFeesApi";
 import { ParentHeader } from "../_components/ParentHeader";
+import { PayInstallmentButton } from "../_components/PayInstallmentButton";
 import { useParentSession } from "../_components/useParentSession";
 
 const formatINR = (value: number) =>
@@ -22,6 +23,15 @@ export default function ParentFeesOverviewPage() {
   const [overview, setOverview] = useState<ParentOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const refresh = useCallback(async () => {
     if (!token) return;
@@ -53,6 +63,17 @@ export default function ParentFeesOverviewPage() {
     <>
       <ParentHeader studentName={overview?.studentName ?? null} onSignOut={signOut} />
       <main className="mx-auto max-w-5xl space-y-4 px-4 py-6 sm:px-6">
+        {toast && (
+          <Card
+            className={`p-3 text-sm ${
+              toast.kind === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                : "border-rose-200 bg-rose-50 text-rose-700"
+            }`}
+          >
+            {toast.message}
+          </Card>
+        )}
         {loading ? (
           <Card className="p-12 text-center">
             <Loader2 className="mx-auto h-4 w-4 animate-spin text-text-muted" />
@@ -133,7 +154,7 @@ export default function ParentFeesOverviewPage() {
                   {overview.installments.map((inst) => (
                     <li
                       key={inst.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-surface-border px-3 py-2.5"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-surface-border px-3 py-2.5"
                     >
                       <div>
                         <p className="text-sm font-medium text-text-primary">
@@ -144,13 +165,31 @@ export default function ParentFeesOverviewPage() {
                         </p>
                         <p className="text-xs text-text-muted">Due {inst.dueDate}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm font-semibold text-text-primary">
                           {formatINR(inst.amount)}
                         </span>
                         <Badge variant={inst.isPaid ? "success" : "warning"}>
                           {inst.isPaid ? "Paid" : "Pending"}
                         </Badge>
+                        {!inst.isPaid && (
+                          <PayInstallmentButton
+                            token={token}
+                            installmentId={inst.id}
+                            studentName={overview.studentName}
+                            onPaid={(receipt) => {
+                              setToast({
+                                kind: "success",
+                                message: `Payment successful. Receipt: ${receipt}`,
+                              });
+                              void refresh();
+                            }}
+                            onError={(message) =>
+                              setToast({ kind: "error", message })
+                            }
+                            label="Pay"
+                          />
+                        )}
                       </div>
                     </li>
                   ))}

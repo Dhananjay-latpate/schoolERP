@@ -8,9 +8,12 @@ import { Button } from "@/components/ui/Button";
 import {
   ParentApiError,
   getParentDues,
+  getParentOverview,
   type ParentDuesResponse,
+  type ParentOverview,
 } from "@/lib/parentFeesApi";
 import { ParentHeader } from "../../_components/ParentHeader";
+import { PayInstallmentButton } from "../../_components/PayInstallmentButton";
 import { useParentSession } from "../../_components/useParentSession";
 
 const formatINR = (value: number) =>
@@ -19,21 +22,33 @@ const formatINR = (value: number) =>
 export default function ParentDuesPage() {
   const { token, isChecking, signOut } = useParentSession();
   const [dues, setDues] = useState<ParentDuesResponse | null>(null);
+  const [overview, setOverview] = useState<ParentOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(
+    null,
+  );
 
   const refresh = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      setDues(await getParentDues(token));
+      const [d, o] = await Promise.all([getParentDues(token), getParentOverview(token)]);
+      setDues(d);
+      setOverview(o);
     } catch (err) {
       setError(err instanceof ParentApiError ? err.message : "Failed to load");
     } finally {
       setLoading(false);
     }
   }, [token]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     if (token) void refresh();
@@ -52,6 +67,17 @@ export default function ParentDuesPage() {
     <>
       <ParentHeader onSignOut={signOut} />
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-6 sm:px-6">
+        {toast && (
+          <Card
+            className={`p-3 text-sm ${
+              toast.kind === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                : "border-rose-200 bg-rose-50 text-rose-700"
+            }`}
+          >
+            {toast.message}
+          </Card>
+        )}
         <div>
           <h1 className="text-xl font-semibold text-text-primary">Outstanding Dues</h1>
           <p className="mt-1 text-sm text-text-secondary">
@@ -89,17 +115,33 @@ export default function ParentDuesPage() {
                   {dues.installments.map((inst) => (
                     <li
                       key={inst.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-surface-border px-3 py-2.5"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-surface-border px-3 py-2.5"
                     >
                       <div>
                         <p className="text-sm font-medium text-text-primary">{inst.name}</p>
                         <p className="text-xs text-text-muted">Due {inst.dueDate}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm font-semibold text-text-primary">
                           {formatINR(inst.amount)}
                         </span>
                         <Badge variant="warning">Pending</Badge>
+                        {overview && (
+                          <PayInstallmentButton
+                            token={token}
+                            installmentId={inst.id}
+                            studentName={overview.studentName}
+                            onPaid={(receipt) => {
+                              setToast({
+                                kind: "success",
+                                message: `Payment successful. Receipt: ${receipt}`,
+                              });
+                              void refresh();
+                            }}
+                            onError={(message) => setToast({ kind: "error", message })}
+                            label={`Pay ${formatINR(inst.amount)}`}
+                          />
+                        )}
                       </div>
                     </li>
                   ))}
@@ -132,13 +174,13 @@ export default function ParentDuesPage() {
               </Card>
             )}
 
-            <Card className="border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <Card className="border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
               <div className="flex items-start gap-2">
                 <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>
-                  Online payment via the parent portal is being rolled out. In the meantime,
-                  please pay at the school fee counter and ask for a receipt — it will appear
-                  in your payment history within minutes of being recorded.
+                  Pay any installment online via Razorpay using the Pay button next to it.
+                  You will receive a receipt immediately on success and it will appear in your
+                  payment history. Ad-hoc charges still need to be settled at the counter.
                 </p>
               </div>
             </Card>

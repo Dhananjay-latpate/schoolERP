@@ -154,3 +154,66 @@ export async function getParentReceipt(token: string, transactionId: string): Pr
     token,
   );
 }
+
+// ─── Payment ──────────────────────────────────────────────────────────────────
+
+export type ParentPaymentOrder = {
+  order: {
+    id: string;
+    amount: number; // paise
+    currency: string;
+  };
+  key_id: string;
+  installmentDetails: {
+    name: string;
+    amount: number; // rupees
+    dueDate: string;
+  };
+};
+
+export async function createParentPaymentOrder(
+  token: string,
+  installmentId: string,
+): Promise<ParentPaymentOrder> {
+  // Server returns the envelope at the top level (not nested under data)
+  // so we can't use the standard request helper for this one.
+  const response = await fetch(`${API_BASE_URL}/api/parent/fees/pay/order`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ installmentId }),
+    cache: "no-store",
+  });
+  const body = (await response.json().catch(() => undefined)) as
+    | (ParentPaymentOrder & { success: boolean; message?: string })
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new ParentApiError(
+      body?.message || `Order failed (${response.status})`,
+      response.status,
+      body,
+    );
+  }
+  return {
+    order: body.order,
+    key_id: body.key_id,
+    installmentDetails: body.installmentDetails,
+  };
+}
+
+export async function verifyParentPayment(
+  token: string,
+  payload: {
+    installmentId: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  },
+): Promise<{ receiptNumber: string }> {
+  return request<{ receiptNumber: string }>("/api/parent/fees/pay/verify", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
