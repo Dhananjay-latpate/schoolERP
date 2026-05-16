@@ -25,6 +25,9 @@ export default function ParentHistoryPage() {
   const [receipt, setReceipt] = useState<unknown>(null);
   const [receiptLoading, setReceiptLoading] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
+  // Receipt/PDF errors use their own slot so a failed receipt fetch never
+  // wipes the transactions table (which the page-level `error` would do).
+  const [receiptError, setReceiptError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!token) return;
@@ -48,11 +51,14 @@ export default function ParentHistoryPage() {
       if (!token) return;
       setReceiptLoading(transactionId);
       setReceipt(null);
+      setReceiptError(null);
       try {
         const data = await getParentReceipt(token, transactionId);
         setReceipt(data);
       } catch (err) {
-        setError(err instanceof ParentApiError ? err.message : "Failed to load receipt");
+        setReceiptError(
+          err instanceof ParentApiError ? err.message : "Failed to load receipt",
+        );
       } finally {
         setReceiptLoading(null);
       }
@@ -64,10 +70,13 @@ export default function ParentHistoryPage() {
     async (transactionId: string) => {
       if (!token) return;
       setPdfLoading(transactionId);
+      setReceiptError(null);
       try {
         await downloadParentReceiptPdf(token, transactionId);
       } catch (err) {
-        setError(err instanceof ParentApiError ? err.message : "Failed to download receipt");
+        setReceiptError(
+          err instanceof ParentApiError ? err.message : "Failed to download receipt",
+        );
       } finally {
         setPdfLoading(null);
       }
@@ -179,6 +188,19 @@ export default function ParentHistoryPage() {
                 ))}
               </tbody>
             </table>
+          </Card>
+        )}
+
+        {receiptError && (
+          <Card className="flex items-center justify-between gap-3 border-rose-200 bg-rose-50 p-3">
+            <p className="text-sm text-rose-700">{receiptError}</p>
+            <button
+              type="button"
+              onClick={() => setReceiptError(null)}
+              className="text-xs text-rose-600 hover:underline"
+            >
+              Dismiss
+            </button>
           </Card>
         )}
 

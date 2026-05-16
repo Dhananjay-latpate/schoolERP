@@ -15,10 +15,12 @@ export function useFeesSession() {
   const [isChecking, setIsChecking] = useState(true);
   const [summary, setSummary] = useState<FeesDashboardSummary | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   useEffect(() => {
     const existing = getPrincipalToken();
     if (!existing) {
+      setIsChecking(false);
       router.replace("/principal/login?next=%2Fprincipal%2Ffees");
       return;
     }
@@ -29,6 +31,7 @@ export function useFeesSession() {
   const refreshSummary = useCallback(async () => {
     if (!token) return;
     setIsLoadingSummary(true);
+    setSummaryError(null);
     try {
       const data = await getFeesDashboardSummary(token);
       setSummary(data);
@@ -36,7 +39,11 @@ export function useFeesSession() {
       if (err instanceof PrincipalApiError && (err.status === 401 || err.status === 403)) {
         clearPrincipalSession();
         router.replace("/principal/login?next=%2Fprincipal%2Ffees");
+        return;
       }
+      setSummaryError(
+        err instanceof PrincipalApiError ? err.message : "Could not load fee summary",
+      );
     } finally {
       setIsLoadingSummary(false);
     }
@@ -51,5 +58,13 @@ export function useFeesSession() {
     router.replace("/principal/login");
   }, [router]);
 
-  return { token, isChecking, summary, isLoadingSummary, refreshSummary, signOut };
+  return {
+    token,
+    isChecking,
+    summary,
+    isLoadingSummary,
+    summaryError,
+    refreshSummary,
+    signOut,
+  };
 }

@@ -18,7 +18,7 @@ import {
 } from "@/lib/principalApi";
 import { FeesSidebar } from "../_components/Sidebar";
 import { useFeesSession } from "../_components/useFeesSession";
-import { ToastContainer, type ToastItem } from "../_components/ToastContainer";
+import { ToastContainer, nextToastId, type ToastItem } from "../_components/ToastContainer";
 
 const STATUS_FILTERS: { value: FeeRefundStatus | ""; label: string }[] = [
   { value: "", label: "All" },
@@ -51,7 +51,7 @@ export default function RefundsPage() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((type: "success" | "error", message: string) => {
-    const id = Date.now();
+    const id = nextToastId();
     setToasts((prev) => [...prev, { id, type, message }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   }, []);

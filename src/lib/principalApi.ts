@@ -759,9 +759,14 @@ export async function reviewConcession(
   token: string,
   payload: { id: string; approved: boolean; reviewerNotes?: string },
 ): Promise<PendingFeeApproval> {
+  // Backend feeConcessionService.review expects { concessionId, approved, comments }.
   return request<PendingFeeApproval>("/api/fees/concessions/review", token, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      concessionId: payload.id,
+      approved: payload.approved,
+      comments: payload.reviewerNotes,
+    }),
   });
 }
 
@@ -769,12 +774,17 @@ export async function reviewLateFeeWaiver(
   token: string,
   payload: { id: string; approved: boolean; reviewerNotes?: string },
 ): Promise<PendingFeeApproval> {
+  // Backend lateFeeWaiverService.review expects { waiverId, approved, comments }.
   return request<PendingFeeApproval>(
     "/api/fees/late-fee-waivers/review",
     token,
     {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        waiverId: payload.id,
+        approved: payload.approved,
+        comments: payload.reviewerNotes,
+      }),
     },
   );
 }
@@ -1444,7 +1454,13 @@ export async function previewReminderRule(
 export async function dispatchReminders(
   token: string,
   payload: { ruleId: string; dryRun?: boolean },
-): Promise<{ queued: number; sent: number; failed: number; dryRun: boolean }> {
+): Promise<{
+  queued: number;
+  sent: number;
+  failed: number;
+  skipped?: number;
+  dryRun: boolean;
+}> {
   return request("/api/fees/reminders/dispatch", token, {
     method: "POST",
     body: JSON.stringify(payload),

@@ -8,6 +8,15 @@ export type ToastItem = {
   message: string;
 };
 
+// Monotonic id generator — Date.now() collides when two toasts fire within
+// the same millisecond (e.g. a Promise.all rejection or rapid clicks),
+// producing duplicate React keys and dismissing the wrong toast.
+let toastSeq = 0;
+export function nextToastId(): number {
+  toastSeq += 1;
+  return toastSeq;
+}
+
 interface ToastContainerProps {
   toasts: ToastItem[];
   onDismiss: (id: number) => void;

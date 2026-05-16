@@ -26,7 +26,8 @@ const formatINR = (value: number, opts: { compact?: boolean } = {}) =>
   })}`;
 
 export default function FeesDashboardPage() {
-  const { token, isChecking, summary, isLoadingSummary, signOut } = useFeesSession();
+  const { token, isChecking, summary, isLoadingSummary, summaryError, refreshSummary, signOut } =
+    useFeesSession();
 
   const kpis = useMemo(() => {
     if (!summary) return [] as Array<{ label: string; value: string; tone: string; icon: any }>;
@@ -101,6 +102,15 @@ export default function FeesDashboardPage() {
               </div>
             </div>
           </Card>
+
+          {summaryError && (
+            <Card className="flex flex-wrap items-center justify-between gap-3 border-rose-200 bg-rose-50 p-3">
+              <p className="text-sm text-rose-700">{summaryError}</p>
+              <Button variant="secondary" onClick={() => void refreshSummary()}>
+                Retry
+              </Button>
+            </Card>
+          )}
 
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {(isLoadingSummary || !summary

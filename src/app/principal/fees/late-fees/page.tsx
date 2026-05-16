@@ -17,7 +17,7 @@ import {
 import type { LateFeeRule, LateFeeFrequency } from "@/types/fees";
 import { FeesSidebar } from "../_components/Sidebar";
 import { useFeesSession } from "../_components/useFeesSession";
-import { ToastContainer, type ToastItem } from "../_components/ToastContainer";
+import { ToastContainer, nextToastId, type ToastItem } from "../_components/ToastContainer";
 
 const FREQUENCIES: { value: LateFeeFrequency; label: string }[] = [
   { value: "one_time", label: "One-time" },
@@ -41,7 +41,7 @@ export default function LateFeesPage() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((type: "success" | "error", message: string) => {
-    const id = Date.now();
+    const id = nextToastId();
     setToasts((prev) => [...prev, { id, type, message }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   }, []);
@@ -254,6 +254,10 @@ function LateFeeRuleModal({
         (!Number.isFinite(pct) || pct <= 0)
       ) {
         onError("Provide a fixed amount or percentage");
+        return;
+      }
+      if (Number.isFinite(pct) && pct > 100) {
+        onError("Percentage cannot exceed 100");
         return;
       }
       setSaving(true);

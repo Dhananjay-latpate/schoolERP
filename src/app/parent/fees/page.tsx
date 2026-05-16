@@ -197,16 +197,19 @@ export default function ParentFeesOverviewPage() {
               )}
             </Card>
 
-            <Card className="p-5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text-primary">Recent Payments</h3>
-                <Link
-                  href="/parent/fees/history"
-                  className="text-xs font-medium text-brand-royal hover:underline"
-                >
-                  View all →
-                </Link>
+            <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+              <div>
+                <p className="text-sm font-semibold text-text-primary">Payment history</p>
+                <p className="text-xs text-text-muted">
+                  See every recorded payment and download receipts.
+                </p>
               </div>
+              <Link
+                href="/parent/fees/history"
+                className="inline-flex items-center rounded-md border border-surface-border px-3 py-1.5 text-sm font-medium text-brand-royal hover:bg-slate-50"
+              >
+                View history →
+              </Link>
             </Card>
           </>
         )}

@@ -32,10 +32,18 @@ const TABS: Array<{ id: ReportTab; label: string; icon: typeof TrendingUp }> = [
   { id: "head-wise", label: "Head-wise", icon: FileBarChart },
 ];
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
+// Format using local date parts — toISOString() shifts to UTC and would pick
+// the wrong calendar day for IST users near midnight.
+const localISO = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+const todayISO = () => localISO(new Date());
 const monthStartISO = () => {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  return localISO(new Date(d.getFullYear(), d.getMonth(), 1));
 };
 
 export default function ReportsPage() {
@@ -58,8 +66,11 @@ export default function ReportsPage() {
     if (!token) return;
     setIsLoading(true);
     setError(null);
+    // Clear the active tab's data first so a validation error or a failed
+    // request never leaves stale rows from a previous load on screen.
     try {
       if (tab === "collection") {
+        setCollectionData(null);
         if (!fromDate || !toDate) {
           setError("Pick a date range.");
           return;
@@ -70,6 +81,7 @@ export default function ReportsPage() {
         });
         setCollectionData(data);
       } else if (tab === "aging") {
+        setAgingData(null);
         if (!academicYear) {
           setError("Set the academic year above.");
           return;
@@ -77,6 +89,7 @@ export default function ReportsPage() {
         const data = await getFeeReport<AgingBuckets>(token, "aging", { academicYear });
         setAgingData(data);
       } else if (tab === "defaulters") {
+        setDefaultersData(null);
         if (!academicYear) {
           setError("Set the academic year above.");
           return;
@@ -87,6 +100,7 @@ export default function ReportsPage() {
         });
         setDefaultersData(data);
       } else if (tab === "class-wise") {
+        setClassWiseData(null);
         if (!academicYear) {
           setError("Set the academic year above.");
           return;
@@ -96,6 +110,7 @@ export default function ReportsPage() {
         });
         setClassWiseData(data);
       } else if (tab === "head-wise") {
+        setHeadWiseData(null);
         if (!academicYear) {
           setError("Set the academic year above.");
           return;

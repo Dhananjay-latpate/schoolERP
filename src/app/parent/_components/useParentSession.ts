@@ -12,6 +12,7 @@ export function useParentSession() {
   useEffect(() => {
     const existing = getParentToken();
     if (!existing) {
+      setIsChecking(false);
       router.replace("/parent/login");
       return;
     }

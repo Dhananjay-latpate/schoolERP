@@ -29,6 +29,23 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
+// Gateway config is identical for every button on the page. Cache the
+// in-flight promise at module scope so N pending-installment buttons share
+// a single network request instead of each firing their own.
+let configCache: Promise<ParentPaymentConfig> | null = null;
+function loadPaymentConfig(token: string): Promise<ParentPaymentConfig> {
+  if (!configCache) {
+    configCache = getParentPaymentConfig(token).catch((err) => {
+      configCache = null; // allow a retry on next mount
+      throw err;
+    });
+  }
+  return configCache;
+}
+
+// Thrown internally to mark a user-cancelled checkout (no toast needed).
+class PaymentCancelled extends Error {}
+
 interface Props {
   token: string;
   installmentId: string;
@@ -39,7 +56,7 @@ interface Props {
   label?: string;
 }
 
-type Busy = "idle" | "loading_config" | "ordering" | "checkout" | "verifying";
+type Busy = "idle" | "ordering" | "checkout" | "verifying";
 
 export function PayInstallmentButton({
   token,
@@ -54,25 +71,22 @@ export function PayInstallmentButton({
   const [config, setConfig] = useState<ParentPaymentConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
 
-  // Discover which gateway is configured server-side. Done once per
-  // component mount; the result is cached for subsequent clicks.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const cfg = await getParentPaymentConfig(token);
+    loadPaymentConfig(token)
+      .then((cfg) => {
         if (cancelled) return;
         setConfig(cfg);
         if (!cfg.configured) {
           setConfigError("Online payments are not configured yet. Please pay at the counter.");
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         if (cancelled) return;
         setConfigError(
           err instanceof ParentApiError ? err.message : "Could not load payment config",
         );
-      }
-    })();
+      });
     return () => {
       cancelled = true;
     };
@@ -85,46 +99,57 @@ export function PayInstallmentButton({
     if (!order.key_id || !order.order?.id) {
       throw new Error("Razorpay is not configured on the server");
     }
-    setBusy("checkout");
     const RazorpayCtor = (window as any).Razorpay;
     if (!RazorpayCtor) throw new Error("Razorpay SDK not available");
+
     await new Promise<void>((resolve, reject) => {
-      const rzp = new RazorpayCtor({
-        key: order.key_id,
-        order_id: order.order.id,
-        amount: order.order.amount,
-        currency: order.order.currency,
-        name: "School Fees",
-        description: order.installmentDetails.name,
-        prefill: contact ? { contact } : undefined,
-        notes: {
-          student: studentName,
-          installment: order.installmentDetails.name,
-        },
-        theme: { color: "#0b6e5f" },
-        handler: async (response: any) => {
-          setBusy("verifying");
-          try {
-            const result = await verifyParentPayment(token, {
-              installmentId,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-            onPaid(result.receiptNumber);
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        },
-        modal: {
-          ondismiss: () => reject(new Error("Payment cancelled")),
-        },
-      });
-      rzp.on("payment.failed", (response: any) =>
-        reject(new Error(response?.error?.description ?? "Payment failed")),
-      );
-      rzp.open();
+      let settled = false;
+      const finish = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        fn();
+      };
+      try {
+        const rzp = new RazorpayCtor({
+          key: order.key_id,
+          order_id: order.order.id,
+          amount: order.order.amount,
+          currency: order.order.currency,
+          name: "School Fees",
+          description: order.installmentDetails.name,
+          prefill: contact ? { contact } : undefined,
+          notes: { student: studentName, installment: order.installmentDetails.name },
+          theme: { color: "#0b6e5f" },
+          handler: async (response: any) => {
+            setBusy("verifying");
+            try {
+              const result = await verifyParentPayment(token, {
+                installmentId,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              finish(() => {
+                onPaid(result.receiptNumber);
+                resolve();
+              });
+            } catch (err) {
+              finish(() => reject(err));
+            }
+          },
+          modal: {
+            ondismiss: () => finish(() => reject(new PaymentCancelled("cancelled"))),
+          },
+        });
+        rzp.on("payment.failed", (response: any) =>
+          finish(() => reject(new Error(response?.error?.description ?? "Payment failed"))),
+        );
+        setBusy("checkout");
+        rzp.open();
+      } catch (err) {
+        // rzp.open() / constructor can throw synchronously — never hang.
+        finish(() => reject(err instanceof Error ? err : new Error("Checkout failed")));
+      }
     });
   };
 
@@ -134,41 +159,33 @@ export function PayInstallmentButton({
     const order = await createParentCashfreeOrder(token, installmentId, {
       customerPhone: contact ?? undefined,
     });
-    setBusy("checkout");
     const Ctor = (window as any).Cashfree;
     if (!Ctor) throw new Error("Cashfree SDK not available");
     const cashfree = Ctor({
       mode: cashfreeEnv === "production" ? "production" : "sandbox",
     });
-    await new Promise<void>((resolve, reject) => {
-      cashfree
-        .checkout({
-          paymentSessionId: order.paymentSessionId,
-          redirectTarget: "_modal",
-        })
-        .then(async (result: any) => {
-          if (result?.error) {
-            reject(new Error(result.error.message ?? "Payment failed"));
-            return;
-          }
-          // Modal closes either after payment or cancellation. Verify
-          // server-side regardless so we never trust the client.
-          setBusy("verifying");
-          try {
-            const verified = await verifyParentCashfreePayment(token, {
-              installmentId,
-              orderId: order.orderId,
-            });
-            onPaid(verified.receiptNumber);
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        })
-        .catch((err: any) => {
-          reject(err instanceof Error ? err : new Error("Checkout failed"));
-        });
+    setBusy("checkout");
+
+    const result: any = await cashfree.checkout({
+      paymentSessionId: order.paymentSessionId,
+      redirectTarget: "_modal",
     });
+
+    if (result?.error) {
+      throw new Error(result.error.message ?? "Payment failed");
+    }
+    // The modal closed. If no payment was actually made (user closed it),
+    // there is no paymentDetails — treat that as a silent cancellation
+    // rather than verifying and surfacing a scary failure.
+    if (!result?.paymentDetails) {
+      throw new PaymentCancelled("cancelled");
+    }
+    setBusy("verifying");
+    const verified = await verifyParentCashfreePayment(token, {
+      installmentId,
+      orderId: order.orderId,
+    });
+    onPaid(verified.receiptNumber);
   };
 
   const handleClick = async () => {
@@ -187,8 +204,12 @@ export function PayInstallmentButton({
         await handleRazorpay();
       }
     } catch (err) {
-      const msg = err instanceof ParentApiError ? err.message : (err as Error).message;
-      onError?.(msg || "Could not complete payment");
+      if (err instanceof PaymentCancelled) {
+        // user closed the checkout — no error toast
+      } else {
+        const msg = err instanceof ParentApiError ? err.message : (err as Error).message;
+        onError?.(msg || "Could not complete payment");
+      }
     } finally {
       setBusy("idle");
     }

@@ -1,14 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Wallet, Clock, History } from "lucide-react";
+import { Loader2, Wallet, Clock, History, Banknote, Download } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
-import { Banknote, Download } from "lucide-react";
 import {
   PrincipalApiError,
   closeCashierSession,
@@ -21,7 +20,7 @@ import {
 } from "@/lib/principalApi";
 import { FeesSidebar } from "../_components/Sidebar";
 import { useFeesSession } from "../_components/useFeesSession";
-import { ToastContainer, type ToastItem } from "../_components/ToastContainer";
+import { ToastContainer, nextToastId, type ToastItem } from "../_components/ToastContainer";
 import { QuickCollectModal } from "../_components/QuickCollectModal";
 
 const formatINR = (value: number) =>
@@ -41,7 +40,7 @@ export default function CashierPage() {
   const [showQuickCollect, setShowQuickCollect] = useState(false);
 
   const addToast = useCallback((type: "success" | "error", message: string) => {
-    const id = Date.now();
+    const id = nextToastId();
     setToasts((prev) => [...prev, { id, type, message }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   }, []);

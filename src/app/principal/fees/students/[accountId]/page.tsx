@@ -15,7 +15,7 @@ import {
 import { AddChargeModal } from "@/components/fees/AddChargeModal";
 import { FeesSidebar } from "../../_components/Sidebar";
 import { useFeesSession } from "../../_components/useFeesSession";
-import { ToastContainer, type ToastItem } from "../../_components/ToastContainer";
+import { ToastContainer, nextToastId, type ToastItem } from "../../_components/ToastContainer";
 import { RecordPaymentModal } from "../../_components/RecordPaymentModal";
 import { ConcessionRequestModal } from "../../_components/ConcessionRequestModal";
 import { RefundRequestModal } from "../../_components/RefundRequestModal";
@@ -59,7 +59,7 @@ export default function AccountDetailPage() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((type: "success" | "error", message: string) => {
-    const id = Date.now();
+    const id = nextToastId();
     setToasts((prev) => [...prev, { id, type, message }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   }, []);

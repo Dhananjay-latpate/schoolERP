@@ -1,3 +1,5 @@
+import { clearParentSession } from "./parentSession";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
 
@@ -22,6 +24,16 @@ async function parseBody(response: Response): Promise<unknown> {
   }
 }
 
+// An expired/invalid parent token: clear the stale session and bounce to
+// login. Centralised here so every page doesn't need its own 401 branch.
+function handleUnauthorized(): void {
+  if (typeof window === "undefined") return;
+  clearParentSession();
+  if (!window.location.pathname.startsWith("/parent/login")) {
+    window.location.href = "/parent/login";
+  }
+}
+
 async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -34,6 +46,7 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
   });
   const body = (await parseBody(response)) as ApiEnvelope<T> | undefined;
   if (!response.ok || !body?.success) {
+    if (response.status === 401) handleUnauthorized();
     throw new ParentApiError(
       body?.message || `Request failed (${response.status})`,
       response.status,
