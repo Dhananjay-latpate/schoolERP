@@ -20,6 +20,7 @@ import {
   ConciergeBell,
   Home,
   Bus,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { FeesDashboardSummary } from "@/lib/principalApi";
@@ -31,19 +32,33 @@ interface FeesSidebarProps {
 }
 
 const navItems = [
-  { href: "/principal/fees", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  {
+    href: "/principal/fees",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    exact: true,
+  },
   { href: "/principal/fees/students", label: "Student Accounts", icon: Users },
   { href: "/principal/fees/families", label: "Families", icon: Home },
   { href: "/principal/fees/cashier", label: "Cashier", icon: Wallet },
   { href: "/principal/fees/approvals", label: "Approvals", icon: Inbox },
   { href: "/principal/fees/services", label: "Services", icon: ConciergeBell },
   { href: "/principal/fees/transport", label: "Transport", icon: Bus },
+  { href: "/principal/fees/tax", label: "Tax & GST", icon: FileText },
   { href: "/principal/fees/late-fees", label: "Late Fees", icon: AlarmClock },
   { href: "/principal/fees/refunds", label: "Refunds", icon: Undo2 },
   { href: "/principal/fees/reports", label: "Reports", icon: FileBarChart },
   { href: "/principal/fees/reminders", label: "Reminders", icon: BellRing },
-  { href: "/principal/fees/reconciliation", label: "Reconciliation", icon: FileCheck2 },
-  { href: "/principal/fees/settings", label: "Payment Account", icon: Landmark },
+  {
+    href: "/principal/fees/reconciliation",
+    label: "Reconciliation",
+    icon: FileCheck2,
+  },
+  {
+    href: "/principal/fees/settings",
+    label: "Payment Account",
+    icon: Landmark,
+  },
 ];
 
 const masterItems = [
@@ -55,7 +70,11 @@ const masterItems = [
 const formatINR = (value: number) =>
   `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-export function FeesSidebar({ summary, isLoading, onSignOut }: FeesSidebarProps) {
+export function FeesSidebar({
+  summary,
+  isLoading,
+  onSignOut,
+}: FeesSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -64,7 +83,9 @@ export function FeesSidebar({ summary, isLoading, onSignOut }: FeesSidebarProps)
         <p className="text-[10px] font-bold uppercase tracking-widest text-brand-royal">
           Principal
         </p>
-        <h1 className="mt-1 text-base font-bold text-slate-900">Fees & Accounts</h1>
+        <h1 className="mt-1 text-base font-bold text-slate-900">
+          Fees & Accounts
+        </h1>
       </div>
 
       <nav className="flex-1 space-y-0.5 p-2">

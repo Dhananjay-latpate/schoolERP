@@ -2427,3 +2427,120 @@ export async function generateTransportBilling(
   }
   return { message: body.message ?? "Transport billing generated", data: body.data };
 }
+
+// ── Tax & GST ────────────────────────────────────────────────────────────────
+
+export interface TaxCertificate {
+  studentName: string;
+  applicationId: string;
+  academicYear: string;
+  totalPaidInPaise: number;
+  breakdown: Array<{ chargeName: string; amountInPaise: number; paidInPaise: number }>;
+  generatedAt: string;
+}
+
+export interface GstReportLine {
+  feeHeadId: string | null;
+  headName: string;
+  gstRatePercent: number;
+  baseAmountInPaise: number;
+  taxAmountInPaise: number;
+  totalAmountInPaise: number;
+}
+
+export interface GstReport {
+  academicYear: string;
+  totalGstCollectedInPaise: number;
+  breakdown: GstReportLine[];
+}
+
+export async function getTaxCertificate(
+  token: string,
+  applicationId: string,
+  year: string,
+): Promise<TaxCertificate> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/fees/tax-certificate/${encodeURIComponent(applicationId)}?year=${encodeURIComponent(year)}`,
+    { headers: buildAuthHeaders(token), cache: "no-store" },
+  );
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; message?: string; data?: TaxCertificate }
+    | undefined;
+  if (!response.ok || !body?.success || !body.data) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to fetch tax certificate",
+      response.status,
+      body,
+    );
+  }
+  return body.data;
+}
+
+export async function getGstReport(
+  token: string,
+  year: string,
+): Promise<GstReport> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/fees/gst-report?year=${encodeURIComponent(year)}`,
+    { headers: buildAuthHeaders(token), cache: "no-store" },
+  );
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; message?: string; data?: GstReport }
+    | undefined;
+  if (!response.ok || !body?.success || !body.data) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to fetch GST report",
+      response.status,
+      body,
+    );
+  }
+  return body.data;
+}
+
+export async function applyProRata(
+  token: string,
+  body: { accountId: string; joinDate: string; termStart: string; termEnd: string },
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/fees/pro-rata/apply`, {
+    method: "POST",
+    headers: buildAuthHeaders(token),
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+  const parsed = (await parseErrorBody(response)) as
+    | { success: boolean; message?: string }
+    | undefined;
+  if (!response.ok || !parsed?.success) {
+    throw new PrincipalApiError(
+      parsed?.message || "Failed to apply pro-rata",
+      response.status,
+      parsed,
+    );
+  }
+}
+
+export async function bulkCarryForwardArrears(
+  token: string,
+  body: { fromYear: string; toYear: string },
+): Promise<{ processed: number }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/fees/arrears/bulk-carry-forward`,
+    {
+      method: "POST",
+      headers: buildAuthHeaders(token),
+      body: JSON.stringify(body),
+      cache: "no-store",
+    },
+  );
+  const parsed = (await parseErrorBody(response)) as
+    | { success: boolean; message?: string; data?: { processed: number } }
+    | undefined;
+  if (!response.ok || !parsed?.success || !parsed.data) {
+    throw new PrincipalApiError(
+      parsed?.message || "Failed to carry forward arrears",
+      response.status,
+      parsed,
+    );
+  }
+  return parsed.data;
+}
