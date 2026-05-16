@@ -7,9 +7,19 @@ test.describe("Fees & Accounts module", () => {
   test("dashboard renders with KPI cards and sidebar", async ({ page }) => {
     await page.goto("/principal/fees");
 
-    await expect(
-      page.getByRole("heading", { name: "Collections Overview" }),
-    ).toBeVisible({ timeout: 15_000 });
+    const heading = page.getByRole("heading", { name: "Collections Overview" });
+    await expect(heading).toBeVisible({ timeout: 15_000 });
+
+    // The dashboard hero sits on a dark brand-gradient panel, so its heading
+    // must render light — guards against headings being forced dark-on-dark.
+    const color = await heading.evaluate(
+      (el) => getComputedStyle(el).color,
+    );
+    const [r, g, b] = (color.match(/\d+/g) ?? ["0", "0", "0"]).map(Number);
+    expect(
+      r > 200 && g > 200 && b > 200,
+      `heading colour ${color} should be light on the dark panel`,
+    ).toBe(true);
 
     // Sidebar navigation is present.
     for (const label of [

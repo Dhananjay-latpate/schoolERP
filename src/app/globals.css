@@ -169,7 +169,12 @@
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.018em;
-    color: var(--color-text-primary);
+    /* Inherit the surrounding text colour. `body` already sets
+       --color-text-primary, so headings on normal pages are unchanged —
+       but headings inside a dark `text-white` panel (login hero, the
+       dashboard headers) now correctly render white instead of being
+       forced dark-on-dark by an element-level rule. */
+    color: inherit;
     text-wrap: balance;
   }
 
