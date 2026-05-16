@@ -2,15 +2,21 @@ import { defineConfig, devices } from "@playwright/test";
 
 // End-to-end browser tests for the School ERP frontend.
 //
-// Prerequisites when running locally:
+// Local run:
 //   1. Backend API running on :3001 with a seeded database
 //      (cd ../server && npm run seed && npm start)
 //   2. This config starts the Next.js frontend itself (webServer below).
 //
-// In CI the workflow provisions Postgres, the backend, and the browsers;
-// see .github/workflows/e2e.yml.
+// CI run (.github/workflows/e2e.yml): E2E_BASE_URL points at the deployed
+// staging environment, so no local server is started — tests drive the
+// live stack directly.
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+
+// Only manage a local Next.js server when the target is localhost. Against a
+// deployed environment (staging) the app is already running.
+const isLocalTarget =
+  BASE_URL.includes("localhost") || BASE_URL.includes("127.0.0.1");
 
 export default defineConfig({
   testDir: "./e2e",
@@ -46,10 +52,12 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: "npm run start",
-    url: BASE_URL,
-    timeout: 120_000,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: isLocalTarget
+    ? {
+        command: "npm run start",
+        url: BASE_URL,
+        timeout: 120_000,
+        reuseExistingServer: !process.env.CI,
+      }
+    : undefined,
 });
