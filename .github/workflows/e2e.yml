@@ -1,0 +1,114 @@
+name: E2E
+
+# Browser end-to-end tests (Playwright). Provisions Postgres, builds and
+# seeds the backend API, starts the frontend, then drives real Chromium
+# through the login, Fees & Accounts, Payment Account and Parent portal
+# flows.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "claude/**"]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: erp
+          POSTGRES_PASSWORD: erp
+          POSTGRES_DB: phoenix_school
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U erp"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://erp:erp@localhost:5432/phoenix_school"
+      NEXT_PUBLIC_API_BASE_URL: "http://localhost:3001"
+      E2E_BASE_URL: "http://localhost:3000"
+      CI: "true"
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+
+      # The backend lives in a separate repo. For a private repo, set the
+      # SERVER_REPO_TOKEN secret to a PAT with read access.
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          repository: dhananjay-latpate/server
+          ref: main
+          path: server
+          token: ${{ secrets.SERVER_REPO_TOKEN || github.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      # ── Backend: build, migrate, seed, start ───────────────────────────────
+      - name: Backend deps
+        working-directory: server
+        run: npm ci
+
+      - name: Backend prisma push + seed
+        working-directory: server
+        run: |
+          npx prisma db push --skip-generate
+          npm run seed
+
+      - name: Backend build
+        working-directory: server
+        run: npm run build
+
+      - name: Start backend
+        working-directory: server
+        env:
+          NODE_ENV: production
+          PORT: "3001"
+          JWT_ACCESS_SECRET: "ci-access-secret-not-for-production-000000001"
+          JWT_REFRESH_SECRET: "ci-refresh-secret-not-for-production-00000001"
+          JWT_TOKEN_HASH_SECRET: "ci-hash-secret-not-for-production-0000000001"
+          DISABLE_LATE_FEE_CRON: "true"
+        run: |
+          node dist/app.js &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3001/ >/dev/null && echo "backend up" && exit 0
+            sleep 2
+          done
+          echo "backend did not start in time" && exit 1
+
+      # ── Frontend: build, install browsers, run E2E ─────────────────────────
+      - name: Frontend deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Frontend build
+        run: npm run build
+
+      - name: Run Playwright E2E
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

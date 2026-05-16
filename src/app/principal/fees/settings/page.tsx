@@ -12,7 +12,6 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -537,11 +536,15 @@ export default function PaymentAccountPage() {
   );
 }
 
+// Renders a real <label> wrapping its control, so the field is associated
+// with its caption for assistive tech (and addressable by accessible name).
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <Label className="text-xs">{label}</Label>
+    <label className="block">
+      <span className="text-[0.8125rem] font-medium text-text-secondary">
+        {label}
+      </span>
       <div className="mt-1">{children}</div>
-    </div>
+    </label>
   );
 }
