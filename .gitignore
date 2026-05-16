@@ -9,6 +9,7 @@ logs/
 *.log
 .next/
 out/
+tsconfig.tsbuildinfo
 
 # Playwright
 /test-results/
