@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2, Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Loader2, Search, ChevronLeft, ChevronRight, Filter, Users } from "lucide-react";
+import { SkeletonTable } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -143,33 +145,29 @@ export default function StudentAccountsPage() {
           )}
 
           <Card className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-border text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Class</th>
-                  <th className="px-4 py-3 text-right">Charged</th>
-                  <th className="px-4 py-3 text-right">Paid</th>
-                  <th className="px-4 py-3 text-right">Due</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center">
-                      <Loader2 className="mx-auto h-4 w-4 animate-spin text-text-muted" />
-                    </td>
+            {isLoading ? (
+              <SkeletonTable rows={8} columns={7} />
+            ) : data.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="No accounts match"
+                description="Try a different search term or clear the due-status filter."
+              />
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-surface-border text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
+                    <th className="px-4 py-3">Student</th>
+                    <th className="px-4 py-3">Class</th>
+                    <th className="px-4 py-3 text-right">Charged</th>
+                    <th className="px-4 py-3 text-right">Paid</th>
+                    <th className="px-4 py-3 text-right">Due</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3" />
                   </tr>
-                ) : data.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-sm text-text-muted">
-                      No accounts match the current filters.
-                    </td>
-                  </tr>
-                ) : (
-                  data.map((account) => (
+                </thead>
+                <tbody>
+                  {data.map((account) => (
                     <tr key={account.id} className="border-b border-gray-100 last:border-0">
                       <td className="px-4 py-3">
                         <p className="font-medium text-text-primary">{account.studentName}</p>
@@ -215,10 +213,10 @@ export default function StudentAccountsPage() {
                         </Link>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </Card>
 
           {pages > 1 && (

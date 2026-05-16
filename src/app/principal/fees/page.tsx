@@ -13,11 +13,13 @@ import {
   ArrowRight,
   Receipt,
   Landmark,
+  ShieldCheck,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { getPayoutAccount } from "@/lib/principalApi";
+import { StatCard, type StatTone } from "@/components/ui/StatCard";
+import { getIntegrityFindings, getPayoutAccount } from "@/lib/principalApi";
 import { FeesSidebar } from "./_components/Sidebar";
 import { useFeesSession } from "./_components/useFeesSession";
 
@@ -32,6 +34,8 @@ export default function FeesDashboardPage() {
     useFeesSession();
   // null = unknown/loading; true/false = whether a payout gateway is active.
   const [payoutActive, setPayoutActive] = useState<boolean | null>(null);
+  // Count of open data-integrity findings (null while loading).
+  const [integrityOpen, setIntegrityOpen] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -46,41 +50,55 @@ export default function FeesDashboardPage() {
       .catch(() => {
         if (!cancelled) setPayoutActive(null);
       });
+    getIntegrityFindings(token, "open")
+      .then((r) => {
+        if (!cancelled) setIntegrityOpen(r.findings.length);
+      })
+      .catch(() => {
+        if (!cancelled) setIntegrityOpen(null);
+      });
     return () => {
       cancelled = true;
     };
   }, [token]);
 
   const kpis = useMemo(() => {
-    if (!summary) return [] as Array<{ label: string; value: string; tone: string; icon: any }>;
+    if (!summary)
+      return [] as Array<{
+        label: string;
+        value: string;
+        tone: StatTone;
+        icon: typeof TrendingUp;
+        meta: string;
+      }>;
     return [
       {
         label: "Today's Collection",
         value: formatINR(summary.todayCollection, { compact: true }),
-        tone: "text-emerald-700",
+        tone: "emerald" as StatTone,
         icon: TrendingUp,
-        meta: `${summary.todayTransactionCount} txns`,
+        meta: `${summary.todayTransactionCount} transactions`,
       },
       {
         label: "Outstanding Dues",
         value: formatINR(summary.totalDue, { compact: true }),
-        tone: "text-amber-700",
+        tone: "amber" as StatTone,
         icon: AlertTriangle,
         meta: `${summary.overdueCharges} overdue`,
       },
       {
         label: "Collected (MTD)",
         value: formatINR(summary.monthCollection, { compact: true }),
-        tone: "text-brand-royal",
+        tone: "brand" as StatTone,
         icon: CalendarCheck2,
-        meta: `${summary.monthTransactionCount} txns`,
+        meta: `${summary.monthTransactionCount} transactions`,
       },
       {
         label: "Active Accounts",
         value: String(summary.totalAccounts),
-        tone: "text-slate-800",
+        tone: "neutral" as StatTone,
         icon: Users,
-        meta: `${summary.pendingApprovals} approvals`,
+        meta: `${summary.pendingApprovals} approvals pending`,
       },
     ];
   }, [summary]);
@@ -153,24 +171,51 @@ export default function FeesDashboardPage() {
           )}
 
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {(isLoadingSummary || !summary
-              ? Array.from({ length: 4 }).map((_, i) => ({ key: i }))
-              : kpis
-            ).map((kpi: any, idx) => (
-              <Card key={kpi.label ?? idx} className="border border-surface-border p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs uppercase tracking-wide text-text-muted">
-                    {kpi.label ?? "Loading…"}
-                  </p>
-                  {kpi.icon && <kpi.icon className="h-4 w-4 text-text-muted" />}
-                </div>
-                <p className={`mt-2 text-2xl font-bold ${kpi.tone ?? "text-text-primary"}`}>
-                  {kpi.value ?? "..."}
-                </p>
-                {kpi.meta && <p className="mt-1 text-xs text-text-muted">{kpi.meta}</p>}
-              </Card>
-            ))}
+            {isLoadingSummary || !summary
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <StatCard key={i} loading label="" value="" />
+                ))
+              : kpis.map((kpi) => (
+                  <StatCard
+                    key={kpi.label}
+                    label={kpi.label}
+                    value={kpi.value}
+                    meta={kpi.meta}
+                    icon={kpi.icon}
+                    tone={kpi.tone}
+                  />
+                ))}
           </section>
+
+          {/* Data-integrity health strip */}
+          <Card
+            className={`flex flex-wrap items-center justify-between gap-3 p-3 ${
+              integrityOpen && integrityOpen > 0
+                ? "border-amber-200 bg-amber-50"
+                : "border-emerald-200 bg-emerald-50"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {integrityOpen && integrityOpen > 0 ? (
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
+              ) : (
+                <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-700" />
+              )}
+              <p
+                className={`text-sm ${
+                  integrityOpen && integrityOpen > 0
+                    ? "text-amber-800"
+                    : "text-emerald-800"
+                }`}
+              >
+                {integrityOpen === null
+                  ? "Checking ledger integrity…"
+                  : integrityOpen > 0
+                    ? `${integrityOpen} data-integrity finding${integrityOpen === 1 ? "" : "s"} need review — account totals have drifted from the ledger.`
+                    : "All account totals reconcile with the ledger."}
+              </p>
+            </div>
+          </Card>
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Card className="card-interactive p-5">

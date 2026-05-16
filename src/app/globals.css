@@ -707,6 +707,77 @@
     from { background-position: 200% 0; }
     to { background-position: -200% 0; }
   }
+
+  /* ─── Premium components ──────────────────────────────────────────────
+     Richer surfaces layered on the calm base — KPI tiles, showcase cards
+     and key actions in the Fees & Accounts module. */
+
+  /* Premium metric tile: soft top-down wash + layered shadow + hover lift. */
+  .kpi-tile {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--color-surface-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(
+      180deg,
+      var(--color-surface-card) 0%,
+      var(--color-surface-muted) 100%
+    );
+    box-shadow: var(--shadow-card);
+    transition:
+      box-shadow var(--duration-normal) var(--ease-brand),
+      transform var(--duration-normal) var(--ease-brand),
+      border-color var(--duration-normal) var(--ease-brand);
+  }
+  .kpi-tile:hover {
+    box-shadow: var(--shadow-raised);
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--color-brand-royal) 24%, var(--color-surface-border));
+  }
+  /* A 3px accent strip down the left edge of a KPI tile. */
+  .kpi-tile-accent::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--kpi-accent, var(--color-brand-royal));
+  }
+
+  /* Premium card: layered depth, gentle hover. */
+  .card-premium {
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-surface-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-raised);
+    transition:
+      box-shadow var(--duration-normal) var(--ease-brand),
+      transform var(--duration-normal) var(--ease-brand);
+  }
+  .card-premium:hover {
+    box-shadow: var(--shadow-modal);
+    transform: translateY(-1px);
+  }
+
+  /* Skeleton shape helpers — pair with the .skeleton shimmer. */
+  .skeleton-line {
+    height: 0.75rem;
+    border-radius: var(--radius-xs);
+  }
+  .skeleton-circle { border-radius: var(--radius-full); }
+
+  /* Soft pulse ring for live/attention chips. */
+  .pulse-dot { position: relative; }
+  .pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 0 rgb(26 122 69 / 0.5);
+    animation: pulse-ring 2s var(--ease-brand) infinite;
+  }
+  @keyframes pulse-ring {
+    to { box-shadow: 0 0 0 7px rgb(26 122 69 / 0); }
+  }
 }
 
 /* ─── Utilities ──────────────────────────────────────────────────────── */

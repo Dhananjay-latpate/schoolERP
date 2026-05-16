@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Loader2, ArrowLeft, Plus, Receipt, Undo2, RefreshCcw } from "lucide-react";
+import { Skeleton, SkeletonTable } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -109,13 +111,29 @@ export default function AccountDetailPage() {
           </Link>
 
           {isLoading ? (
-            <Card className="p-12 text-center">
-              <Loader2 className="mx-auto h-5 w-5 animate-spin text-text-muted" />
-            </Card>
+            <div className="space-y-4">
+              <Card className="space-y-3 p-6">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-7 w-56" />
+                <Skeleton className="h-3 w-72" />
+                <div className="grid gap-3 pt-2 sm:grid-cols-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              </Card>
+              <Card className="p-0">
+                <SkeletonTable rows={5} columns={5} />
+              </Card>
+            </div>
           ) : error ? (
             <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</Card>
           ) : !account ? (
-            <Card className="p-6 text-sm text-text-muted">Account not found.</Card>
+            <EmptyState
+              icon={ArrowLeft}
+              title="Account not found"
+              description="This fee account may have been removed, or the link is out of date."
+            />
           ) : (
             <>
               <Card className="overflow-hidden p-0">

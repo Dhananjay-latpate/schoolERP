@@ -1851,3 +1851,70 @@ export async function listPayoutTransfers(
   }
   return { data: body.data ?? [], total: body.total ?? 0 };
 }
+
+// ─── Data Integrity Audit ─────────────────────────────────────────────────────
+
+export type IntegrityFinding = {
+  id: string;
+  accountId: string;
+  checkType: string;
+  field: string;
+  storedValue: string;
+  expectedValue: string;
+  detail: string | null;
+  status: "open" | "acknowledged" | "resolved";
+  detectedAt: string;
+  resolvedAt: string | null;
+};
+
+export type IntegrityRun = {
+  id: string;
+  accountsChecked: number;
+  findingsCount: number;
+  durationMs: number;
+  triggeredBy: string;
+  createdAt: string;
+};
+
+export async function getIntegrityFindings(
+  token: string,
+  status?: "open" | "acknowledged" | "resolved",
+): Promise<{ findings: IntegrityFinding[]; runs: IntegrityRun[] }> {
+  const qs = status ? `?status=${status}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/fees/integrity/findings${qs}`, {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; data?: IntegrityFinding[]; runs?: IntegrityRun[]; message?: string }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to load integrity findings",
+      response.status,
+      body,
+    );
+  }
+  return { findings: body.data ?? [], runs: body.runs ?? [] };
+}
+
+export async function runIntegrityAudit(
+  token: string,
+): Promise<{ accountsChecked: number; findingsCount: number; durationMs: number }> {
+  return request("/api/fees/integrity/run", token, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function updateIntegrityFinding(
+  token: string,
+  id: string,
+  status: "acknowledged" | "resolved",
+): Promise<IntegrityFinding> {
+  return request<IntegrityFinding>(
+    `/api/fees/integrity/findings/${encodeURIComponent(id)}`,
+    token,
+    { method: "POST", body: JSON.stringify({ status }) },
+  );
+}
