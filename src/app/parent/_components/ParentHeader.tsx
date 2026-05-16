@@ -11,6 +11,7 @@ interface Props {
 const NAV = [
   { href: "/parent/fees", label: "Overview", exact: true },
   { href: "/parent/fees/dues", label: "Dues" },
+  { href: "/parent/fees/services", label: "Services" },
   { href: "/parent/fees/history", label: "Payment History" },
 ];
 

@@ -19,6 +19,7 @@ import { FeesSidebar } from "../../_components/Sidebar";
 import { useFeesSession } from "../../_components/useFeesSession";
 import { ToastContainer, nextToastId, type ToastItem } from "../../_components/ToastContainer";
 import { RecordPaymentModal } from "../../_components/RecordPaymentModal";
+import { RecordChargePaymentModal } from "../../_components/RecordChargePaymentModal";
 import { ConcessionRequestModal } from "../../_components/ConcessionRequestModal";
 import { RefundRequestModal } from "../../_components/RefundRequestModal";
 import { RestructurePlanModal } from "../../_components/RestructurePlanModal";
@@ -58,6 +59,9 @@ export default function AccountDetailPage() {
   const [showConcession, setShowConcession] = useState(false);
   const [showRefund, setShowRefund] = useState(false);
   const [showRestructure, setShowRestructure] = useState(false);
+  const [recordCharge, setRecordCharge] = useState<
+    { id: string; name: string; due: number } | null
+  >(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((type: "success" | "error", message: string) => {
@@ -214,7 +218,11 @@ export default function AccountDetailPage() {
 
               {activeTab === "overview" && <OverviewTab account={account} />}
               {activeTab === "charges" && (
-                <ChargesTab account={account} onAddCharge={() => setShowAddCharge(true)} />
+                <ChargesTab
+                  account={account}
+                  onAddCharge={() => setShowAddCharge(true)}
+                  onRecordPayment={(c) => setRecordCharge(c)}
+                />
               )}
               {activeTab === "installments" && (
                 <InstallmentsTab
@@ -318,6 +326,18 @@ export default function AccountDetailPage() {
             }}
           />
         )}
+        {account && recordCharge && (
+          <RecordChargePaymentModal
+            charge={recordCharge}
+            token={token}
+            onClose={() => setRecordCharge(null)}
+            onSuccess={() => {
+              setRecordCharge(null);
+              addToast("success", "Payment recorded");
+              void fetchDetail();
+            }}
+          />
+        )}
       </main>
     </div>
   );
@@ -368,10 +388,19 @@ function OverviewTab({ account }: { account: FeeAccountDetail }) {
 function ChargesTab({
   account,
   onAddCharge,
+  onRecordPayment,
 }: {
   account: FeeAccountDetail;
   onAddCharge: () => void;
+  onRecordPayment: (charge: { id: string; name: string; due: number }) => void;
 }) {
+  // A standalone charge (service / ad-hoc — not derived from a plan
+  // installment) can be settled here at the counter.
+  const isCounterPayable = (charge: FeeAccountDetail["charges"][number]) =>
+    !charge.paymentInstallmentId &&
+    charge.due > 0 &&
+    (charge.status === "pending" || charge.status === "partial");
+
   return (
     <Card className="overflow-x-auto p-0">
       <div className="flex items-center justify-between px-4 py-3">
@@ -393,6 +422,7 @@ function ChargesTab({
               <th className="px-4 py-3 text-right">Due</th>
               <th className="px-4 py-3">Due Date</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -408,6 +438,25 @@ function ChargesTab({
                 <td className="px-4 py-3 text-text-secondary">{charge.dueDate ?? "—"}</td>
                 <td className="px-4 py-3">
                   <Badge variant={STATUS_VARIANT[charge.status] ?? "default"}>{charge.status}</Badge>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  {isCounterPayable(charge) ? (
+                    <Button
+                      variant="secondary"
+                      className="h-8 text-xs"
+                      onClick={() =>
+                        onRecordPayment({
+                          id: charge.id,
+                          name: charge.name,
+                          due: charge.due,
+                        })
+                      }
+                    >
+                      <Receipt className="mr-1 h-3.5 w-3.5" /> Record payment
+                    </Button>
+                  ) : (
+                    <span className="text-text-muted">—</span>
+                  )}
                 </td>
               </tr>
             ))}

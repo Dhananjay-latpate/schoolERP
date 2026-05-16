@@ -14,6 +14,7 @@ import {
 } from "@/lib/parentFeesApi";
 import { ParentHeader } from "../../_components/ParentHeader";
 import { PayInstallmentButton } from "../../_components/PayInstallmentButton";
+import { PayChargeButton } from "../../_components/PayChargeButton";
 import { useParentSession } from "../../_components/useParentSession";
 
 const formatINR = (value: number) =>
@@ -156,7 +157,7 @@ export default function ParentDuesPage() {
                   {dues.adHocCharges.map((charge) => (
                     <li
                       key={charge.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-surface-border px-3 py-2.5"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-surface-border px-3 py-2.5"
                     >
                       <div>
                         <p className="text-sm font-medium text-text-primary">{charge.name}</p>
@@ -165,9 +166,26 @@ export default function ParentDuesPage() {
                           {charge.dueDate ? ` · due ${charge.dueDate}` : ""}
                         </p>
                       </div>
-                      <span className="text-sm font-semibold text-rose-700">
-                        {formatINR(charge.due)}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-sm font-semibold text-rose-700">
+                          {formatINR(charge.due)}
+                        </span>
+                        {charge.due > 0 && (
+                          <PayChargeButton
+                            token={token}
+                            chargeId={charge.id}
+                            onPaid={() => {
+                              setToast({
+                                kind: "success",
+                                message: "Payment successful. Charge cleared.",
+                              });
+                              void refresh();
+                            }}
+                            onError={(message) => setToast({ kind: "error", message })}
+                            label={`Pay ${formatINR(charge.due)}`}
+                          />
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -178,9 +196,9 @@ export default function ParentDuesPage() {
               <div className="flex items-start gap-2">
                 <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>
-                  Pay any installment online via Razorpay using the Pay button next to it.
-                  You will receive a receipt immediately on success and it will appear in your
-                  payment history. Ad-hoc charges still need to be settled at the counter.
+                  Pay any installment or other charge online using the Pay button next to it.
+                  You will receive a receipt on success and it will appear in your payment
+                  history. You can also settle any payment at the school counter.
                 </p>
               </div>
             </Card>

@@ -330,3 +330,130 @@ export async function verifyParentPayment(
     body: JSON.stringify(payload),
   });
 }
+
+// ─── Service Catalogue & Requests ─────────────────────────────────────────────
+
+export type ServiceItem = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  amount: number;
+  requiresApproval: boolean;
+  isActive: boolean;
+  feeHeadId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ServiceRequest = {
+  id: string;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  amount: number;
+  note: string | null;
+  reviewComments: string | null;
+  requestedByName: string | null;
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  serviceName: string | null;
+  serviceCode: string | null;
+  requiresApproval: boolean | null;
+  accountId: string | null;
+  studentName: string | null;
+  applicationId: string | null;
+  charge: { id: string; status: string; amount: number; paid: number; due: number } | null;
+};
+
+export async function getServiceCatalog(token: string): Promise<ServiceItem[]> {
+  return request<ServiceItem[]>("/api/parent/fees/service-catalog", token);
+}
+
+export async function getServiceRequests(token: string): Promise<ServiceRequest[]> {
+  return request<ServiceRequest[]>("/api/parent/fees/service-requests", token);
+}
+
+export async function createServiceRequest(
+  token: string,
+  payload: { serviceItemId: string; note?: string },
+): Promise<ServiceRequest> {
+  return request<ServiceRequest>("/api/parent/fees/service-requests", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ─── Ad-hoc Charge Payment (Cashfree) ─────────────────────────────────────────
+
+export type ChargeCashfreeOrder = {
+  orderId: string;
+  paymentSessionId: string;
+  cashfreeEnv: "sandbox" | "production" | string;
+  charge: { id: string; name: string; amount: number };
+};
+
+export async function createChargePaymentOrder(
+  token: string,
+  payload: { chargeId: string; customerPhone?: string; customerEmail?: string },
+): Promise<ChargeCashfreeOrder> {
+  // The server returns the envelope at the top level (orderId/paymentSessionId
+  // are not nested under `data`), so the standard request helper can't be used.
+  const response = await fetch(
+    `${API_BASE_URL}/api/parent/fees/charges/pay/cashfree-order`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+  );
+  const body = (await response.json().catch(() => undefined)) as
+    | (ChargeCashfreeOrder & { success: boolean; message?: string })
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new ParentApiError(
+      body?.message || `Order failed (${response.status})`,
+      response.status,
+      body,
+    );
+  }
+  return {
+    orderId: body.orderId,
+    paymentSessionId: body.paymentSessionId,
+    cashfreeEnv: body.cashfreeEnv,
+    charge: body.charge,
+  };
+}
+
+export async function verifyChargePayment(
+  token: string,
+  payload: { chargeId: string; orderId: string },
+): Promise<{ message: string; data: unknown }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/parent/fees/charges/pay/cashfree-verify`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+  );
+  const body = (await response.json().catch(() => undefined)) as
+    | { success: boolean; message?: string; data?: unknown }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    if (response.status === 401) handleUnauthorized();
+    throw new ParentApiError(
+      body?.message || `Verification failed (${response.status})`,
+      response.status,
+      body,
+    );
+  }
+  return { message: body.message ?? "Payment verified", data: body.data };
+}

@@ -789,6 +789,128 @@ export async function reviewLateFeeWaiver(
   );
 }
 
+// ─── Service Catalogue & Requests ─────────────────────────────────────────────
+
+export type ServiceItem = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  amount: number;
+  requiresApproval: boolean;
+  isActive: boolean;
+  feeHeadId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ServiceRequest = {
+  id: string;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  amount: number;
+  note: string | null;
+  reviewComments: string | null;
+  requestedByName: string | null;
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  serviceName: string | null;
+  serviceCode: string | null;
+  requiresApproval: boolean | null;
+  accountId: string | null;
+  studentName: string | null;
+  applicationId: string | null;
+  charge: { id: string; status: string; amount: number; paid: number; due: number } | null;
+};
+
+export async function listServiceItems(
+  token: string,
+  activeOnly = false,
+): Promise<ServiceItem[]> {
+  const qs = `?activeOnly=${activeOnly ? "true" : "false"}`;
+  return request<ServiceItem[]>(`/api/fees/service-items${qs}`, token);
+}
+
+export async function upsertServiceItem(
+  token: string,
+  payload: {
+    id?: string;
+    name: string;
+    code?: string;
+    description?: string;
+    amount: number;
+    requiresApproval: boolean;
+    feeHeadId?: string;
+  },
+): Promise<ServiceItem> {
+  return request<ServiceItem>("/api/fees/service-items", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function setServiceItemActive(
+  token: string,
+  id: string,
+  isActive: boolean,
+): Promise<ServiceItem> {
+  return request<ServiceItem>(
+    `/api/fees/service-items/${encodeURIComponent(id)}/active`,
+    token,
+    { method: "POST", body: JSON.stringify({ isActive }) },
+  );
+}
+
+// Record a counter (cash/cheque/etc.) payment that settles a standalone
+// service or ad-hoc charge in full.
+export async function recordChargePayment(
+  token: string,
+  chargeId: string,
+  payload: { method?: string; transactionId?: string; notes?: string },
+): Promise<unknown> {
+  return request(
+    `/api/fees/charges/${encodeURIComponent(chargeId)}/record-payment`,
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export async function listServiceRequests(
+  token: string,
+  status?: "pending" | "approved" | "rejected",
+): Promise<ServiceRequest[]> {
+  const qs = status ? `?status=${status}` : "";
+  return request<ServiceRequest[]>(`/api/fees/service-requests${qs}`, token);
+}
+
+export async function reviewServiceRequest(
+  token: string,
+  payload: {
+    requestId: string;
+    approved: boolean;
+    amount?: number;
+    comments?: string;
+  },
+): Promise<{ message: string; data: ServiceRequest }> {
+  const response = await fetch(`${API_BASE_URL}/api/fees/service-requests/review`, {
+    method: "POST",
+    headers: buildAuthHeaders(token),
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; message?: string; data?: ServiceRequest }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to review service request",
+      response.status,
+      body,
+    );
+  }
+  return { message: body.message ?? "Reviewed", data: body.data as ServiceRequest };
+}
+
 // ─── Fee Heads ────────────────────────────────────────────────────────────────
 
 export async function listFeeHeads(token: string): Promise<FeeHead[]> {
@@ -1917,4 +2039,391 @@ export async function updateIntegrityFinding(
     token,
     { method: "POST", body: JSON.stringify({ status }) },
   );
+}
+
+// ─── Families (sibling households) ────────────────────────────────────────────
+
+export type Family = {
+  id: string;
+  name: string;
+  primaryContact: string;
+  primaryEmail: string | null;
+  siblingConcessionPercent: number;
+  memberCount: number;
+  combinedDue: number;
+  createdAt: string;
+};
+
+export type FamilyMember = {
+  applicationId: string;
+  internalId: string;
+  studentName: string;
+  className: string | null;
+  isPrimary: boolean;
+  account: {
+    id: string;
+    totalCharged: number;
+    totalConcession: number;
+    totalPaid: number;
+    totalDue: number;
+    hasSiblingConcession: boolean;
+  } | null;
+};
+
+export type FamilyDetail = {
+  id: string;
+  name: string;
+  primaryContact: string;
+  primaryEmail: string | null;
+  address: string | null;
+  siblingConcessionPercent: number;
+  members: FamilyMember[];
+  combined: {
+    charged: number;
+    concession: number;
+    paid: number;
+    due: number;
+  };
+};
+
+export type FamilySuggestionGroup = {
+  contact: string;
+  suggestedName: string;
+  members: Array<{
+    applicationId: string;
+    studentName: string;
+    className: string | null;
+    alreadyLinked: boolean;
+  }>;
+};
+
+export async function listFamilies(token: string): Promise<Family[]> {
+  return request<Family[]>("/api/fees/families", token);
+}
+
+export async function getFamily(
+  token: string,
+  id: string,
+): Promise<FamilyDetail> {
+  return request<FamilyDetail>(
+    `/api/fees/families/${encodeURIComponent(id)}`,
+    token,
+  );
+}
+
+export async function createFamily(
+  token: string,
+  payload: {
+    name: string;
+    primaryContact: string;
+    primaryEmail?: string;
+    address?: string;
+    siblingConcessionPercent?: number;
+  },
+): Promise<Family> {
+  return request<Family>("/api/fees/families", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateFamily(
+  token: string,
+  id: string,
+  payload: {
+    name?: string;
+    primaryContact?: string;
+    primaryEmail?: string;
+    address?: string;
+    siblingConcessionPercent?: number;
+  },
+): Promise<FamilyDetail> {
+  return request<FamilyDetail>(
+    `/api/fees/families/${encodeURIComponent(id)}`,
+    token,
+    { method: "PATCH", body: JSON.stringify(payload) },
+  );
+}
+
+export async function getFamilySuggestions(
+  token: string,
+): Promise<FamilySuggestionGroup[]> {
+  return request<FamilySuggestionGroup[]>(
+    "/api/fees/families/suggestions",
+    token,
+  );
+}
+
+export async function linkFamilyMember(
+  token: string,
+  familyId: string,
+  applicationId: string,
+): Promise<FamilyDetail> {
+  return request<FamilyDetail>(
+    `/api/fees/families/${encodeURIComponent(familyId)}/members`,
+    token,
+    { method: "POST", body: JSON.stringify({ applicationId }) },
+  );
+}
+
+export async function unlinkFamilyMember(
+  token: string,
+  familyId: string,
+  applicationId: string,
+): Promise<FamilyDetail> {
+  return request<FamilyDetail>(
+    `/api/fees/families/${encodeURIComponent(familyId)}/members/unlink`,
+    token,
+    { method: "POST", body: JSON.stringify({ applicationId }) },
+  );
+}
+
+// Applies the family's sibling concession to every non-primary member.
+// Mirrors reviewServiceRequest's raw-fetch style because the caller needs
+// the `message` field the backend returns alongside `data`.
+export async function applySiblingConcession(
+  token: string,
+  familyId: string,
+): Promise<{ message: string; applied: number }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/fees/families/${encodeURIComponent(familyId)}/apply-sibling-concession`,
+    {
+      method: "POST",
+      headers: buildAuthHeaders(token),
+      body: JSON.stringify({}),
+      cache: "no-store",
+    },
+  );
+  const body = (await parseErrorBody(response)) as
+    | {
+        success: boolean;
+        message?: string;
+        data?: { applied: number; message: string };
+      }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to apply sibling concession",
+      response.status,
+      body,
+    );
+  }
+  return {
+    message: body.data?.message ?? body.message ?? "Sibling concession applied",
+    applied: body.data?.applied ?? 0,
+  };
+}
+
+// ─── Transport (routes, stops, assignments, monthly billing) ──────────────────
+
+export type TransportStop = {
+  id: string;
+  name: string;
+  distanceKm: number | null;
+  monthlyFee: number; // RUPEES
+  isActive: boolean;
+};
+
+export type TransportRoute = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  vehicleNumber: string | null;
+  driverName: string | null;
+  driverContact: string | null;
+  isActive: boolean;
+  stopCount: number;
+  stops: TransportStop[];
+};
+
+export type TransportAssignment = {
+  id: string;
+  status: "active" | "stopped";
+  startMonth: string;
+  endMonth: string | null;
+  applicationId: string;
+  studentName: string;
+  className: string | null;
+  stopId: string;
+  stopName: string;
+  routeName: string;
+  monthlyFee: number; // RUPEES
+};
+
+export type TransportBillingResult = {
+  month: string;
+  monthLabel: string;
+  eligible: number;
+  generated: number;
+  skipped: number;
+  totalBilled: number; // RUPEES
+};
+
+export async function listTransportRoutes(
+  token: string,
+): Promise<TransportRoute[]> {
+  return request<TransportRoute[]>("/api/fees/transport/routes", token);
+}
+
+export async function createTransportRoute(
+  token: string,
+  payload: {
+    name: string;
+    code?: string;
+    description?: string;
+    vehicleNumber?: string;
+    driverName?: string;
+    driverContact?: string;
+  },
+): Promise<TransportRoute> {
+  return request<TransportRoute>("/api/fees/transport/routes", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateTransportRoute(
+  token: string,
+  id: string,
+  payload: {
+    name?: string;
+    description?: string;
+    vehicleNumber?: string;
+    driverName?: string;
+    driverContact?: string;
+    isActive?: boolean;
+  },
+): Promise<TransportRoute> {
+  return request<TransportRoute>(
+    `/api/fees/transport/routes/${encodeURIComponent(id)}`,
+    token,
+    { method: "PATCH", body: JSON.stringify(payload) },
+  );
+}
+
+export async function createTransportStop(
+  token: string,
+  payload: {
+    routeId: string;
+    name: string;
+    distanceKm?: number;
+    monthlyFee: number;
+  },
+): Promise<TransportStop> {
+  return request<TransportStop>("/api/fees/transport/stops", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateTransportStop(
+  token: string,
+  id: string,
+  payload: {
+    name?: string;
+    distanceKm?: number;
+    monthlyFee?: number;
+    isActive?: boolean;
+  },
+): Promise<TransportStop> {
+  return request<TransportStop>(
+    `/api/fees/transport/stops/${encodeURIComponent(id)}`,
+    token,
+    { method: "PATCH", body: JSON.stringify(payload) },
+  );
+}
+
+export async function listTransportAssignments(
+  token: string,
+  status?: "active" | "stopped",
+): Promise<TransportAssignment[]> {
+  const qs = status ? `?status=${status}` : "";
+  return request<TransportAssignment[]>(
+    `/api/fees/transport/assignments${qs}`,
+    token,
+  );
+}
+
+// Mirrors reviewServiceRequest's raw-fetch style because the caller needs
+// the `message` field the backend returns alongside `data`.
+export async function assignTransport(
+  token: string,
+  payload: { applicationId: string; stopId: string; startMonth: string },
+): Promise<{ message: string; data: unknown }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/fees/transport/assignments`,
+    {
+      method: "POST",
+      headers: buildAuthHeaders(token),
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+  );
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; message?: string; data?: unknown }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to assign transport",
+      response.status,
+      body,
+    );
+  }
+  return { message: body.message ?? "Student assigned", data: body.data };
+}
+
+// Raw-fetch style so the backend `message` is preserved.
+export async function endTransportAssignment(
+  token: string,
+  id: string,
+  endMonth: string,
+): Promise<{ message: string; data: unknown }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/fees/transport/assignments/${encodeURIComponent(id)}/end`,
+    {
+      method: "POST",
+      headers: buildAuthHeaders(token),
+      body: JSON.stringify({ endMonth }),
+      cache: "no-store",
+    },
+  );
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; message?: string; data?: unknown }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to end assignment",
+      response.status,
+      body,
+    );
+  }
+  return { message: body.message ?? "Assignment ended", data: body.data };
+}
+
+// Raw-fetch style so the backend `message` is preserved alongside `data`.
+export async function generateTransportBilling(
+  token: string,
+  month: string,
+): Promise<{ message: string; data: TransportBillingResult }> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/fees/transport/billing/generate`,
+    {
+      method: "POST",
+      headers: buildAuthHeaders(token),
+      body: JSON.stringify({ month }),
+      cache: "no-store",
+    },
+  );
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; message?: string; data?: TransportBillingResult }
+    | undefined;
+  if (!response.ok || !body?.success || !body.data) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to generate transport billing",
+      response.status,
+      body,
+    );
+  }
+  return { message: body.message ?? "Transport billing generated", data: body.data };
 }
