@@ -1,6 +1,7 @@
 # node module
 node_modules/
 .env
+.env*.local
 dist/
 build/
 coverage/
@@ -8,4 +9,3 @@ logs/
 *.log
 .next/
 out/
-.env
