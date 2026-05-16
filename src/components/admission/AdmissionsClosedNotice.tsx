@@ -33,7 +33,26 @@ const REASON_DETAILS: Record<
     icon: Lock,
     tone: "amber",
   },
+  before_open: {
+    title: "Admissions haven't opened yet",
+    icon: Calendar,
+    tone: "amber",
+  },
+  after_close: {
+    title: "Admissions have closed",
+    icon: Lock,
+    tone: "amber",
+  },
 };
+
+const formatWindowDate = (iso?: string | null): string | null =>
+  iso
+    ? new Date(iso).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
 
 export function AdmissionsClosedNotice({
   status,
@@ -83,6 +102,20 @@ export function AdmissionsClosedNotice({
         <p className="mt-4 text-xs text-text-muted">
           {status.classesWithFeeStructures} of {status.totalClasses} classes
           ready
+        </p>
+      )}
+
+      {status.reason === "before_open" && formatWindowDate(status.opensAt) && (
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-amber-light px-3 py-1 text-xs font-semibold text-brand-amber">
+          <Calendar size={12} aria-hidden="true" />
+          Opens {formatWindowDate(status.opensAt)}
+        </p>
+      )}
+
+      {status.reason === "after_close" && formatWindowDate(status.closesAt) && (
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-amber-light px-3 py-1 text-xs font-semibold text-brand-amber">
+          <Lock size={12} aria-hidden="true" />
+          Closed {formatWindowDate(status.closesAt)}
         </p>
       )}
 

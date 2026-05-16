@@ -23,12 +23,115 @@ import {
   getAdmissionSessionReadiness,
   initializeAdmissionSession,
   listAdmissionSessions,
+  updateAdmissionSessionWindow,
   PrincipalApiError,
   type AdmissionSessionReadiness,
   type PrincipalAdmissionSession,
   type PrincipalClass,
   type PrincipalFeeStructure,
 } from "@/lib/principalApi";
+
+// Editor for a session's admission open/close window. Persists immediately
+// on Save; either date may be left blank for an open-ended window.
+function AdmissionWindowEditor({
+  token,
+  session,
+  addToast,
+  onSaved,
+}: {
+  token: string;
+  session: PrincipalAdmissionSession;
+  addToast: (type: "success" | "error", message: string) => void;
+  onSaved: () => Promise<void> | void;
+}) {
+  const toDateInput = (iso?: string | null) => (iso ? iso.slice(0, 10) : "");
+  const [openDate, setOpenDate] = useState(
+    toDateInput(session.admissionOpenDate),
+  );
+  const [closeDate, setCloseDate] = useState(
+    toDateInput(session.admissionCloseDate),
+  );
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setOpenDate(toDateInput(session.admissionOpenDate));
+    setCloseDate(toDateInput(session.admissionCloseDate));
+  }, [session.admissionOpenDate, session.admissionCloseDate]);
+
+  const dirty =
+    openDate !== toDateInput(session.admissionOpenDate) ||
+    closeDate !== toDateInput(session.admissionCloseDate);
+
+  const handleSave = async () => {
+    if (openDate && closeDate && closeDate < openDate) {
+      addToast("error", "Close date cannot be before the open date.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateAdmissionSessionWindow(token, session.id, {
+        admissionOpenDate: openDate || null,
+        admissionCloseDate: closeDate || null,
+      });
+      addToast("success", "Admission dates saved.");
+      await onSaved();
+    } catch (err) {
+      addToast(
+        "error",
+        err instanceof PrincipalApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to save admission dates.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 rounded-xl border border-surface-border bg-white p-3">
+      <p className="text-xs font-semibold text-slate-700">
+        Admission dates (optional)
+      </p>
+      <p className="mt-0.5 text-[11px] text-slate-500">
+        The application form only accepts submissions inside this window.
+        Leave a field blank for an open-ended window.
+      </p>
+      <div className="mt-2 grid gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor={`open-${session.id}`}>Opens on</Label>
+          <Input
+            id={`open-${session.id}`}
+            type="date"
+            value={openDate}
+            onChange={(e) => setOpenDate(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`close-${session.id}`}>Closes on</Label>
+          <Input
+            id={`close-${session.id}`}
+            type="date"
+            value={closeDate}
+            min={openDate || undefined}
+            onChange={(e) => setCloseDate(e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="mt-2 flex items-center justify-end">
+        <Button
+          variant="secondary"
+          className="h-8 px-3 text-xs"
+          disabled={saving || !dirty}
+          onClick={() => void handleSave()}
+        >
+          {saving ? "Saving…" : "Save dates"}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 interface AdmissionInitWizardProps {
   token: string;
@@ -484,49 +587,83 @@ export function AdmissionInitWizard({
                     )}
 
                     {step === "commence" && isActive && targetSession && (
-                      <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                        <p className="text-sm font-semibold text-emerald-900">
-                          Ready to open admissions for{" "}
-                          {targetSession.sessionCode}
-                        </p>
-                        <p className="mt-0.5 text-xs text-emerald-800">
-                          {sessionClasses.length} class
-                          {sessionClasses.length === 1 ? "" : "es"},{" "}
-                          {sessionFeeStructures.length} fee structure
-                          {sessionFeeStructures.length === 1 ? "" : "s"}{" "}
-                          configured.
-                        </p>
-                        <Button
-                          className="mt-3"
-                          disabled={working}
-                          onClick={() => void handleCommence()}
-                        >
-                          {working ? "Opening…" : "Commence Admissions"}
-                        </Button>
-                      </div>
+                      <>
+                        <AdmissionWindowEditor
+                          token={token}
+                          session={targetSession}
+                          addToast={addToast}
+                          onSaved={refresh}
+                        />
+                        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                          <p className="text-sm font-semibold text-emerald-900">
+                            Ready to open admissions for{" "}
+                            {targetSession.sessionCode}
+                          </p>
+                          <p className="mt-0.5 text-xs text-emerald-800">
+                            {sessionClasses.length} class
+                            {sessionClasses.length === 1 ? "" : "es"},{" "}
+                            {sessionFeeStructures.length} fee structure
+                            {sessionFeeStructures.length === 1 ? "" : "s"}{" "}
+                            configured.
+                          </p>
+                          <Button
+                            className="mt-3"
+                            disabled={working}
+                            onClick={() => void handleCommence()}
+                          >
+                            {working ? "Opening…" : "Commence Admissions"}
+                          </Button>
+                        </div>
+                      </>
                     )}
 
                     {step === "complete" && isActive && targetSession && (
-                      <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                        <p className="text-sm font-semibold text-emerald-900">
-                          Admissions are open for {targetSession.sessionCode}.
-                        </p>
-                        <p className="mt-0.5 text-xs text-emerald-800">
-                          Parents can apply at{" "}
-                          <code className="rounded bg-white/60 px-1">
-                            /admissions/apply
-                          </code>
-                          .
-                        </p>
-                        {readiness && (
-                          <p className="mt-2 text-[11px] text-emerald-700">
-                            {readiness.totalActiveClasses} class
-                            {readiness.totalActiveClasses === 1 ? "" : "es"} ·{" "}
-                            {readiness.classesWithFeeStructures} with fee
-                            structures
+                      <>
+                        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                          <p className="text-sm font-semibold text-emerald-900">
+                            Admissions are open for {targetSession.sessionCode}.
                           </p>
-                        )}
-                      </div>
+                          <p className="mt-0.5 text-xs text-emerald-800">
+                            Parents can apply at{" "}
+                            <code className="rounded bg-white/60 px-1">
+                              /admissions/apply
+                            </code>
+                            .
+                          </p>
+                          <p className="mt-1 text-[11px] text-emerald-700">
+                            {targetSession.admissionOpenDate ||
+                            targetSession.admissionCloseDate
+                              ? `Application window: ${
+                                  targetSession.admissionOpenDate
+                                    ? new Date(
+                                        targetSession.admissionOpenDate,
+                                      ).toLocaleDateString("en-IN")
+                                    : "open now"
+                                } → ${
+                                  targetSession.admissionCloseDate
+                                    ? new Date(
+                                        targetSession.admissionCloseDate,
+                                      ).toLocaleDateString("en-IN")
+                                    : "no end date"
+                                }`
+                              : "No date window set — admissions accept submissions until closed."}
+                          </p>
+                          {readiness && (
+                            <p className="mt-2 text-[11px] text-emerald-700">
+                              {readiness.totalActiveClasses} class
+                              {readiness.totalActiveClasses === 1 ? "" : "es"} ·{" "}
+                              {readiness.classesWithFeeStructures} with fee
+                              structures
+                            </p>
+                          )}
+                        </div>
+                        <AdmissionWindowEditor
+                          token={token}
+                          session={targetSession}
+                          addToast={addToast}
+                          onSaved={refresh}
+                        />
+                      </>
                     )}
                   </div>
                 </li>

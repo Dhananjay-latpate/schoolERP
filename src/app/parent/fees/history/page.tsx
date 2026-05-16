@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Receipt, Download } from "lucide-react";
+import {
+  Loader2,
+  Receipt,
+  Download,
+  ShieldCheck,
+  ExternalLink,
+} from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -17,12 +23,70 @@ import { useParentSession } from "../../_components/useParentSession";
 const formatINR = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 
+const formatDateTime = (iso?: string | null) =>
+  iso
+    ? new Date(iso).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+
+// Shape returned by the verifiable-receipt builder on the server.
+type ParentReceipt = {
+  verification?: {
+    receiptNo: string;
+    token: string;
+    url: string;
+    issuedAt: string;
+  };
+  receipt: {
+    receiptNumber: string;
+    transactionId: string;
+    paymentTransactionId?: string | null;
+    razorpayPaymentId?: string | null;
+    amount: number;
+    method: string;
+    notes?: string | null;
+    recordedByName?: string | null;
+    paidAt: string;
+  };
+  lineItem?: { kind: string; label: string; dueDate?: string | null };
+  student?: {
+    name: string;
+    applicationId: string;
+    academicYear: string;
+    className?: string | null;
+    grNumber?: string | null;
+  };
+  school?: { schoolName?: string | null; schoolAddress?: string | null } | null;
+};
+
+function ReceiptDetail({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <dt className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">
+        {label}
+      </dt>
+      <dd className="mt-0.5 text-sm text-text-primary">{children}</dd>
+    </div>
+  );
+}
+
 export default function ParentHistoryPage() {
   const { token, isChecking, signOut } = useParentSession();
   const [transactions, setTransactions] = useState<ParentTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [receipt, setReceipt] = useState<unknown>(null);
+  const [receipt, setReceipt] = useState<ParentReceipt | null>(null);
   const [receiptLoading, setReceiptLoading] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
   // Receipt/PDF errors use their own slot so a failed receipt fetch never
@@ -54,7 +118,7 @@ export default function ParentHistoryPage() {
       setReceiptError(null);
       try {
         const data = await getParentReceipt(token, transactionId);
-        setReceipt(data);
+        setReceipt(data as ParentReceipt);
       } catch (err) {
         setReceiptError(
           err instanceof ParentApiError ? err.message : "Failed to load receipt",
@@ -122,7 +186,7 @@ export default function ParentHistoryPage() {
               <thead>
                 <tr className="border-b border-surface-border text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
                   <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Installment</th>
+                  <th className="px-4 py-3">Paid for</th>
                   <th className="px-4 py-3">Method</th>
                   <th className="px-4 py-3 text-right">Amount</th>
                   <th className="px-4 py-3">Receipt</th>
@@ -205,20 +269,94 @@ export default function ParentHistoryPage() {
         )}
 
         {receipt !== null && (
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-text-primary">Receipt</h3>
+          <Card className="overflow-hidden p-0">
+            <div className="flex items-center gap-3 border-b border-surface-border bg-emerald-50 px-5 py-4">
+              <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white">
+                <ShieldCheck size={20} aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-emerald-900">
+                  {receipt.school?.schoolName ?? "Fee Receipt"}
+                </h3>
+                <p className="text-xs text-emerald-700">
+                  Verifiable receipt ·{" "}
+                  <span className="font-mono font-semibold">
+                    {receipt.verification?.receiptNo ??
+                      receipt.receipt.receiptNumber}
+                  </span>
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setReceipt(null)}
-                className="text-xs text-text-muted hover:text-text-primary"
+                className="ml-auto text-xs text-text-muted hover:text-text-primary"
               >
                 Close
               </button>
             </div>
-            <pre className="mt-3 max-h-96 overflow-auto rounded-md bg-slate-50 p-3 text-xs text-text-primary">
-              {JSON.stringify(receipt, null, 2)}
-            </pre>
+
+            <div className="space-y-4 px-5 py-4">
+              <div className="rounded-xl bg-surface-muted/70 px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">
+                  Amount paid
+                </p>
+                <p className="mt-0.5 text-2xl font-bold text-emerald-700">
+                  {formatINR(receipt.receipt.amount)}
+                </p>
+                {receipt.lineItem && (
+                  <p className="mt-0.5 text-xs text-text-secondary">
+                    for {receipt.lineItem.label}
+                  </p>
+                )}
+              </div>
+
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                <ReceiptDetail label="Paid by">
+                  {receipt.student?.name ?? "—"}
+                </ReceiptDetail>
+                <ReceiptDetail label="Application ID">
+                  <span className="font-mono">
+                    {receipt.student?.applicationId ?? "—"}
+                  </span>
+                </ReceiptDetail>
+                <ReceiptDetail label="Method">
+                  {receipt.receipt.method.toUpperCase()}
+                </ReceiptDetail>
+                <ReceiptDetail label="Paid on">
+                  {formatDateTime(receipt.receipt.paidAt)}
+                </ReceiptDetail>
+                {receipt.receipt.paymentTransactionId && (
+                  <ReceiptDetail label="Reference">
+                    <span className="font-mono text-xs">
+                      {receipt.receipt.paymentTransactionId}
+                    </span>
+                  </ReceiptDetail>
+                )}
+                {receipt.receipt.recordedByName && (
+                  <ReceiptDetail label="Recorded by">
+                    {receipt.receipt.recordedByName}
+                  </ReceiptDetail>
+                )}
+              </dl>
+
+              {receipt.verification?.url && (
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-surface-border pt-3">
+                  <p className="text-xs text-text-muted">
+                    Scan the QR on the PDF or open the link to verify this
+                    receipt independently.
+                  </p>
+                  <a
+                    href={receipt.verification.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-royal hover:underline"
+                  >
+                    <ExternalLink size={13} aria-hidden="true" />
+                    Verify receipt
+                  </a>
+                </div>
+              )}
+            </div>
           </Card>
         )}
       </main>

@@ -280,10 +280,19 @@ export async function getActiveAdmissionSessionPublic(): Promise<ActiveAdmission
 
 export type AdmissionSetupStatus = {
   isOpen: boolean;
-  reason: "ready" | "no_session" | "no_classes" | "missing_fee_structures";
+  reason:
+    | "ready"
+    | "no_session"
+    | "no_classes"
+    | "missing_fee_structures"
+    | "before_open"
+    | "after_close";
   sessionCode: string | null;
   totalClasses: number;
   classesWithFeeStructures: number;
+  /** Admission window dates (ISO), when the principal has configured them. */
+  opensAt?: string | null;
+  closesAt?: string | null;
   message: string;
 };
 
@@ -293,6 +302,48 @@ export type AdmissionSetupStatus = {
 // the form is hidden behind a "coming soon" panel.
 export async function getAdmissionSetupStatus(): Promise<AdmissionSetupStatus> {
   return request<AdmissionSetupStatus>("/api/admissions/public/setup-status");
+}
+
+export type ReceiptVerification = {
+  valid: boolean;
+  receiptNo?: string;
+  issuedAt?: string;
+  amount?: number;
+  method?: string;
+  paidAt?: string;
+  paidFor?: string;
+  student?: {
+    name: string;
+    applicationId: string;
+    academicYear: string;
+    className: string | null;
+  };
+  school?: { name?: string | null; address?: string | null } | null;
+};
+
+// Public, login-free verification of a fee receipt by its token (the value
+// encoded in the receipt's QR code). A 404 is a normal outcome — an unknown
+// token simply means the receipt is not genuine — so it resolves to
+// `{ valid: false }` rather than throwing.
+export async function verifyReceipt(
+  token: string,
+): Promise<ReceiptVerification> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/admissions/public/receipts/verify/${encodeURIComponent(token)}`,
+    { cache: "no-store" },
+  );
+  const body = (await response.json().catch(() => ({}))) as {
+    success?: boolean;
+    data?: ReceiptVerification;
+    message?: string;
+  };
+  if (response.ok && body?.success && body?.data) {
+    return body.data;
+  }
+  if (response.status === 404) {
+    return { valid: false };
+  }
+  throw new Error(body?.message || "Could not verify this receipt");
 }
 
 export async function getFeeStructure(

@@ -92,6 +92,8 @@ export type PrincipalAdmissionSession = {
   initializedAt?: string | null;
   commencedAt?: string | null;
   closedAt?: string | null;
+  admissionOpenDate?: string | null;
+  admissionCloseDate?: string | null;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -516,13 +518,38 @@ export async function listAdmissionSessions(
 
 export async function createAdmissionSession(
   token: string,
-  payload: { sessionCode: string; notes?: string },
+  payload: {
+    sessionCode: string;
+    notes?: string;
+    admissionOpenDate?: string | null;
+    admissionCloseDate?: string | null;
+  },
 ): Promise<PrincipalAdmissionSession> {
   return request<PrincipalAdmissionSession>(
     "/api/principal/admissions/sessions",
     token,
     {
       method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+// Set / clear the admission open & close dates for a session. Pass `null`
+// for a field to clear it; omit a field to leave it unchanged.
+export async function updateAdmissionSessionWindow(
+  token: string,
+  sessionId: string,
+  payload: {
+    admissionOpenDate?: string | null;
+    admissionCloseDate?: string | null;
+  },
+): Promise<PrincipalAdmissionSession> {
+  return request<PrincipalAdmissionSession>(
+    `/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}/window`,
+    token,
+    {
+      method: "PATCH",
       body: JSON.stringify(payload),
     },
   );
