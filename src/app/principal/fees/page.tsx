@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Banknote,
@@ -12,10 +12,12 @@ import {
   Loader2,
   ArrowRight,
   Receipt,
+  Landmark,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { getPayoutAccount } from "@/lib/principalApi";
 import { FeesSidebar } from "./_components/Sidebar";
 import { useFeesSession } from "./_components/useFeesSession";
 
@@ -28,6 +30,26 @@ const formatINR = (value: number, opts: { compact?: boolean } = {}) =>
 export default function FeesDashboardPage() {
   const { token, isChecking, summary, isLoadingSummary, summaryError, refreshSummary, signOut } =
     useFeesSession();
+  // null = unknown/loading; true/false = whether a payout gateway is active.
+  const [payoutActive, setPayoutActive] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    getPayoutAccount(token)
+      .then((acc) => {
+        if (cancelled) return;
+        setPayoutActive(
+          !!acc && acc.gatewayLinks.some((l) => l.status === "active"),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setPayoutActive(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const kpis = useMemo(() => {
     if (!summary) return [] as Array<{ label: string; value: string; tone: string; icon: any }>;
@@ -109,6 +131,24 @@ export default function FeesDashboardPage() {
               <Button variant="secondary" onClick={() => void refreshSummary()}>
                 Retry
               </Button>
+            </Card>
+          )}
+
+          {payoutActive === false && (
+            <Card className="flex flex-wrap items-center justify-between gap-3 border-amber-200 bg-amber-50 p-3">
+              <div className="flex items-start gap-2">
+                <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                <p className="text-sm text-amber-800">
+                  No payment gateway is active — online collections are not yet routing to
+                  the school's bank account. Set up the Payment Account to enable routing.
+                </p>
+              </div>
+              <Link
+                href="/principal/fees/settings"
+                className="inline-flex items-center rounded-md bg-amber-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-800"
+              >
+                Set up <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
             </Card>
           )}
 

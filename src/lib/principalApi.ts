@@ -1717,3 +1717,137 @@ export async function exportTallyDaybook(
   if (!res.ok) throw new PrincipalApiError(`Tally export failed`, res.status);
   return res.text();
 }
+
+// ─── School Payout Account (Razorpay Route / Cashfree Easy Split) ─────────────
+
+export type PayoutGateway = "razorpay" | "cashfree";
+
+export type PayoutAccountStatus =
+  | "not_onboarded"
+  | "created"
+  | "verification_pending"
+  | "active"
+  | "rejected"
+  | "suspended";
+
+export type PayoutGatewayLink = {
+  gateway: PayoutGateway;
+  status: PayoutAccountStatus;
+  statusDetail: string | null;
+  gatewayAccountId: string | null;
+  verifiedAt: string | null;
+  lastSyncedAt: string | null;
+};
+
+export type PayoutAccount = {
+  id: string;
+  accountHolderName: string;
+  accountNumberMasked: string;
+  ifsc: string;
+  accountType: string;
+  legalBusinessName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  businessType: string | null;
+  pan: string | null;
+  gstin: string | null;
+  addressLine: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  isActive: boolean;
+  updatedAt: string;
+  gatewayLinks: PayoutGatewayLink[];
+};
+
+export type PayoutAccountInput = {
+  accountHolderName: string;
+  accountNumber: string;
+  ifsc: string;
+  accountType: string;
+  legalBusinessName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  businessType?: string;
+  pan?: string;
+  gstin?: string;
+  addressLine?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+};
+
+export type PayoutTransfer = {
+  id: string;
+  gateway: PayoutGateway;
+  gatewayTransferId: string | null;
+  amount: number;
+  status: string;
+  sourceType: string;
+  sourceId: string;
+  createdAt: string;
+};
+
+export async function getPayoutAccount(token: string): Promise<PayoutAccount | null> {
+  return request<PayoutAccount | null>("/api/fees/payout/account", token);
+}
+
+export async function savePayoutAccount(
+  token: string,
+  payload: PayoutAccountInput,
+): Promise<PayoutAccount> {
+  return request<PayoutAccount>("/api/fees/payout/account", token, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function onboardPayoutGateway(
+  token: string,
+  gateway: PayoutGateway,
+): Promise<PayoutGatewayLink> {
+  return request<PayoutGatewayLink>(
+    `/api/fees/payout/${gateway}/onboard`,
+    token,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
+export async function refreshPayoutGateway(
+  token: string,
+  gateway: PayoutGateway,
+): Promise<PayoutGatewayLink> {
+  return request<PayoutGatewayLink>(
+    `/api/fees/payout/${gateway}/refresh`,
+    token,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
+export async function listPayoutTransfers(
+  token: string,
+  options?: { gateway?: PayoutGateway; page?: number; limit?: number },
+): Promise<{ data: PayoutTransfer[]; total: number }> {
+  const query = new URLSearchParams();
+  if (options?.gateway) query.set("gateway", options.gateway);
+  if (options?.page) query.set("page", String(options.page));
+  if (options?.limit) query.set("limit", String(options.limit));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/fees/payout/transfers${suffix}`, {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; total?: number; data?: PayoutTransfer[]; message?: string }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(
+      body?.message || "Failed to load settlements",
+      response.status,
+      body,
+    );
+  }
+  return { data: body.data ?? [], total: body.total ?? 0 };
+}

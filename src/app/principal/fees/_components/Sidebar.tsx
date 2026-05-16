@@ -16,6 +16,7 @@ import {
   FileBarChart,
   BellRing,
   FileCheck2,
+  Landmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { FeesDashboardSummary } from "@/lib/principalApi";
@@ -36,6 +37,7 @@ const navItems = [
   { href: "/principal/fees/reports", label: "Reports", icon: FileBarChart },
   { href: "/principal/fees/reminders", label: "Reminders", icon: BellRing },
   { href: "/principal/fees/reconciliation", label: "Reconciliation", icon: FileCheck2 },
+  { href: "/principal/fees/settings", label: "Payment Account", icon: Landmark },
 ];
 
 const masterItems = [
