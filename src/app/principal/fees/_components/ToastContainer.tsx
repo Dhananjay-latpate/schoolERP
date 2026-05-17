@@ -33,8 +33,8 @@ export function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
           onClick={() => onDismiss(toast.id)}
           className={`pointer-events-auto flex max-w-md items-start gap-2 rounded-lg border px-4 py-2.5 text-sm shadow-md transition hover:shadow-lg ${
             toast.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-rose-200 bg-rose-50 text-rose-800"
+              ? "border-brand-emerald/25 bg-brand-emerald-light text-status-success"
+              : "border-brand-rose/25 bg-brand-rose-light text-status-error"
           }`}
         >
           {toast.type === "success" ? (

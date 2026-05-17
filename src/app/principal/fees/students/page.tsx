@@ -141,7 +141,7 @@ export default function StudentAccountsPage() {
           </Card>
 
           {error && (
-            <Card className="border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</Card>
+            <Card className="border-brand-rose/25 bg-brand-rose-light p-3 text-sm text-status-error">{error}</Card>
           )}
 
           <Card className="overflow-x-auto p-0">
@@ -168,7 +168,7 @@ export default function StudentAccountsPage() {
                 </thead>
                 <tbody>
                   {data.map((account) => (
-                    <tr key={account.id} className="border-b border-gray-100 last:border-0">
+                    <tr key={account.id} className="border-b border-surface-divider last:border-0">
                       <td className="px-4 py-3">
                         <p className="font-medium text-text-primary">{account.studentName}</p>
                         <p className="text-xs text-text-muted">
@@ -189,12 +189,12 @@ export default function StudentAccountsPage() {
                       <td className="px-4 py-3 text-right text-text-secondary">
                         {formatINR(account.totalCharged)}
                       </td>
-                      <td className="px-4 py-3 text-right text-emerald-700">
+                      <td className="px-4 py-3 text-right text-status-success">
                         {formatINR(account.totalPaid)}
                       </td>
                       <td
                         className={`px-4 py-3 text-right font-semibold ${
-                          account.totalDue > 0 ? "text-rose-700" : "text-emerald-700"
+                          account.totalDue > 0 ? "text-status-error" : "text-status-success"
                         }`}
                       >
                         {formatINR(account.totalDue)}

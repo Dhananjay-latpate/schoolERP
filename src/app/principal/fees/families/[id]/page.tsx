@@ -182,7 +182,7 @@ export default function FamilyDetailPage() {
               </Card>
             </div>
           ) : error ? (
-            <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</Card>
+            <Card className="border-brand-rose/25 bg-brand-rose-light p-4 text-sm text-status-error">{error}</Card>
           ) : !family ? (
             <EmptyState
               icon={ArrowLeft}
@@ -220,7 +220,7 @@ export default function FamilyDetailPage() {
                   <SummaryTile
                     label="Concession"
                     value={formatINR(family.combined.concession)}
-                    tone="text-emerald-700"
+                    tone="text-status-success"
                   />
                   <SummaryTile
                     label="Paid"
@@ -230,7 +230,7 @@ export default function FamilyDetailPage() {
                   <SummaryTile
                     label="Outstanding"
                     value={formatINR(family.combined.due)}
-                    tone={family.combined.due > 0 ? "text-rose-700" : "text-emerald-700"}
+                    tone={family.combined.due > 0 ? "text-status-error" : "text-status-success"}
                   />
                 </div>
               </Card>
@@ -336,7 +336,7 @@ export default function FamilyDetailPage() {
                       {family.members.map((member) => (
                         <tr
                           key={member.internalId}
-                          className="border-b border-gray-100 last:border-0"
+                          className="border-b border-surface-divider last:border-0"
                         >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -362,14 +362,14 @@ export default function FamilyDetailPage() {
                               <td className="px-4 py-3 text-right text-text-secondary">
                                 {formatINR(member.account.totalCharged)}
                               </td>
-                              <td className="px-4 py-3 text-right text-emerald-700">
+                              <td className="px-4 py-3 text-right text-status-success">
                                 {formatINR(member.account.totalPaid)}
                               </td>
                               <td
                                 className={`px-4 py-3 text-right font-semibold ${
                                   member.account.totalDue > 0
-                                    ? "text-rose-700"
-                                    : "text-emerald-700"
+                                    ? "text-status-error"
+                                    : "text-status-success"
                                 }`}
                               >
                                 {formatINR(member.account.totalDue)}
@@ -388,7 +388,7 @@ export default function FamilyDetailPage() {
                               type="button"
                               onClick={() => void handleUnlink(member.applicationId)}
                               disabled={unlinkingId === member.applicationId}
-                              className="inline-flex items-center text-xs font-medium text-rose-700 hover:underline disabled:opacity-50"
+                              className="inline-flex items-center text-xs font-medium text-status-error hover:underline disabled:opacity-50"
                             >
                               {unlinkingId === member.applicationId ? (
                                 <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />

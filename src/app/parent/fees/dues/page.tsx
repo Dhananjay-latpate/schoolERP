@@ -72,8 +72,8 @@ export default function ParentDuesPage() {
           <Card
             className={`p-3 text-sm ${
               toast.kind === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                : "border-rose-200 bg-rose-50 text-rose-700"
+                ? "border-brand-emerald/25 bg-brand-emerald-light text-status-success"
+                : "border-brand-rose/25 bg-brand-rose-light text-status-error"
             }`}
           >
             {toast.message}
@@ -91,11 +91,11 @@ export default function ParentDuesPage() {
             <Loader2 className="mx-auto h-4 w-4 animate-spin text-text-muted" />
           </Card>
         ) : error ? (
-          <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <Card className="border-brand-rose/25 bg-brand-rose-light p-4 text-sm text-status-error">
             {error}
           </Card>
         ) : !dues ? null : dues.totalDue === 0 ? (
-          <Card className="border-emerald-200 bg-emerald-50 p-6 text-center text-sm text-emerald-900">
+          <Card className="border-brand-emerald/25 bg-brand-emerald-light p-6 text-center text-sm text-status-success">
             🎉 No outstanding dues. Thank you for staying current on payments.
           </Card>
         ) : (
@@ -105,7 +105,7 @@ export default function ParentDuesPage() {
                 <p className="text-xs uppercase tracking-wide text-text-muted">
                   Total outstanding
                 </p>
-                <p className="text-2xl font-bold text-rose-700">{formatINR(dues.totalDue)}</p>
+                <p className="text-2xl font-bold text-status-error">{formatINR(dues.totalDue)}</p>
               </div>
             </Card>
 
@@ -154,7 +154,7 @@ export default function ParentDuesPage() {
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="text-sm font-semibold text-rose-700">
+                        <span className="text-sm font-semibold text-status-error">
                           {formatINR(charge.due)}
                         </span>
                         {charge.due > 0 && (
@@ -179,7 +179,7 @@ export default function ParentDuesPage() {
               </Card>
             )}
 
-            <Card className="border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+            <Card className="border-brand-emerald/25 bg-brand-emerald-light p-4 text-sm text-status-success">
               <div className="flex items-start gap-2">
                 <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>
@@ -226,7 +226,7 @@ function InstallmentDueRow({
           <p className="text-sm font-medium text-text-primary">{inst.name}</p>
           <p className="text-xs text-text-muted">Due {inst.dueDate}</p>
           {partial && (
-            <p className="text-xs text-emerald-700">
+            <p className="text-xs text-status-success">
               {formatINR(paid)} paid · {formatINR(outstanding)} left
             </p>
           )}
@@ -258,7 +258,7 @@ function InstallmentDueRow({
         </div>
       </div>
       {amount !== "" && !valid && (
-        <p className="mt-1 text-xs text-rose-600">
+        <p className="mt-1 text-xs text-status-error">
           Enter an amount between ₹1 and {formatINR(outstanding)}.
         </p>
       )}

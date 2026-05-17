@@ -109,7 +109,7 @@ export default function ParentHistoryPage() {
             <Loader2 className="mx-auto h-4 w-4 animate-spin text-text-muted" />
           </Card>
         ) : error ? (
-          <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <Card className="border-brand-rose/25 bg-brand-rose-light p-4 text-sm text-status-error">
             {error}
           </Card>
         ) : transactions.length === 0 ? (
@@ -131,7 +131,7 @@ export default function ParentHistoryPage() {
               </thead>
               <tbody>
                 {transactions.map((t) => (
-                  <tr key={t.id} className="border-b border-gray-100 last:border-0">
+                  <tr key={t.id} className="border-b border-surface-divider last:border-0">
                     <td className="px-4 py-3 text-text-secondary">
                       {new Date(t.paidAt).toLocaleDateString("en-IN")}
                     </td>
@@ -148,7 +148,7 @@ export default function ParentHistoryPage() {
                     <td className="px-4 py-3">
                       <Badge variant="default">{t.method}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-emerald-700">
+                    <td className="px-4 py-3 text-right font-semibold text-status-success">
                       {formatINR(t.amount)}
                     </td>
                     <td className="px-4 py-3 text-xs text-text-muted">
@@ -192,12 +192,12 @@ export default function ParentHistoryPage() {
         )}
 
         {receiptError && (
-          <Card className="flex items-center justify-between gap-3 border-rose-200 bg-rose-50 p-3">
-            <p className="text-sm text-rose-700">{receiptError}</p>
+          <Card className="flex items-center justify-between gap-3 border-brand-rose/25 bg-brand-rose-light p-3">
+            <p className="text-sm text-status-error">{receiptError}</p>
             <button
               type="button"
               onClick={() => setReceiptError(null)}
-              className="text-xs text-rose-600 hover:underline"
+              className="text-xs text-status-error hover:underline"
             >
               Dismiss
             </button>
@@ -216,7 +216,7 @@ export default function ParentHistoryPage() {
                 Close
               </button>
             </div>
-            <pre className="mt-3 max-h-96 overflow-auto rounded-md bg-slate-50 p-3 text-xs text-text-primary">
+            <pre className="mt-3 max-h-96 overflow-auto rounded-md bg-surface-muted p-3 text-xs text-text-primary">
               {JSON.stringify(receipt, null, 2)}
             </pre>
           </Card>

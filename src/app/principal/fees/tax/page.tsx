@@ -139,7 +139,7 @@ export default function TaxGstPage() {
               </Card>
 
               {gstError && (
-                <p className="text-sm text-red-600">{gstError}</p>
+                <p className="text-sm text-status-error">{gstError}</p>
               )}
 
               {gstReport && (
@@ -173,7 +173,7 @@ export default function TaxGstPage() {
                               <td className="py-2 pr-4 text-text-primary">{row.headName}</td>
                               <td className="py-2 pr-4 text-right text-text-secondary">{row.gstRatePercent}%</td>
                               <td className="py-2 pr-4 text-right">{formatINR(row.baseAmountInPaise)}</td>
-                              <td className="py-2 pr-4 text-right text-green-700">{formatINR(row.taxAmountInPaise)}</td>
+                              <td className="py-2 pr-4 text-right text-status-success">{formatINR(row.taxAmountInPaise)}</td>
                               <td className="py-2 text-right font-medium">{formatINR(row.totalAmountInPaise)}</td>
                             </tr>
                           ))}
@@ -181,7 +181,7 @@ export default function TaxGstPage() {
                         <tfoot>
                           <tr className="border-t-2 border-border-default font-semibold">
                             <td className="pt-2 pr-4 text-text-primary" colSpan={3}>Total</td>
-                            <td className="pt-2 pr-4 text-right text-green-700">
+                            <td className="pt-2 pr-4 text-right text-status-success">
                               {formatINR(gstReport.breakdown.reduce((s, r) => s + r.taxAmountInPaise, 0))}
                             </td>
                             <td className="pt-2 text-right">
@@ -230,7 +230,7 @@ export default function TaxGstPage() {
               </Card>
 
               {certError && (
-                <p className="text-sm text-red-600">{certError}</p>
+                <p className="text-sm text-status-error">{certError}</p>
               )}
 
               {certificate && (

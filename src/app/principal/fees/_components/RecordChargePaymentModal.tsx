@@ -57,7 +57,7 @@ export function RecordChargePaymentModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="font-semibold text-text-primary">Record Charge Payment</h2>
           <button
             type="button"
@@ -120,7 +120,7 @@ export function RecordChargePaymentModal({
             />
           </div>
 
-          {error && <p className="text-sm text-rose-600">{error}</p>}
+          {error && <p className="text-sm text-status-error">{error}</p>}
 
           <div className="flex justify-end gap-3 pt-1">
             <Button

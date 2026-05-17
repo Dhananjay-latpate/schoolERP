@@ -121,7 +121,7 @@ export default function ReconciliationListPage() {
                 </thead>
                 <tbody>
                   {batches.map((b) => (
-                    <tr key={b.id} className="border-b border-gray-100 last:border-0">
+                    <tr key={b.id} className="border-b border-surface-divider last:border-0">
                       <td className="px-4 py-3 font-medium text-text-primary">{b.source}</td>
                       <td className="px-4 py-3 text-text-secondary">
                         {b.statementDate
@@ -131,7 +131,7 @@ export default function ReconciliationListPage() {
                       <td className="px-4 py-3 text-right text-text-secondary">
                         {b.itemCount}
                       </td>
-                      <td className="px-4 py-3 text-right text-emerald-700">
+                      <td className="px-4 py-3 text-right text-status-success">
                         {b.matchedCount}
                       </td>
                       <td className="px-4 py-3 text-right text-text-secondary">
@@ -219,7 +219,7 @@ function UploadStatementModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-xl rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="font-semibold text-text-primary">Upload statement</h2>
           <button type="button" onClick={onClose} className="text-text-muted">
             <X className="h-5 w-5" />
@@ -289,11 +289,11 @@ function UploadStatementModal({
             />
             <p className="mt-1 text-xs text-text-muted">
               First line is the header. Recognised columns:{" "}
-              <code className="rounded bg-slate-100 px-1">amount</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">externalPaymentId</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">utrNumber</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">payerName</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">paidAt</code>.
+              <code className="rounded bg-surface-muted px-1">amount</code>,{" "}
+              <code className="rounded bg-surface-muted px-1">externalPaymentId</code>,{" "}
+              <code className="rounded bg-surface-muted px-1">utrNumber</code>,{" "}
+              <code className="rounded bg-surface-muted px-1">payerName</code>,{" "}
+              <code className="rounded bg-surface-muted px-1">paidAt</code>.
               {parseCount !== null && (
                 <span className="ml-2 text-text-secondary">
                   Detected {parseCount} valid row{parseCount === 1 ? "" : "s"}.

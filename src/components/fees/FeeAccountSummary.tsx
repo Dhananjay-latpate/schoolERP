@@ -10,21 +10,21 @@ export function FeeAccountSummary({ feeAccount }: Props) {
     {
       label: "Total Charged",
       value: feeAccount.totalCharged,
-      color: "text-gray-900",
+      color: "text-text-primary",
     },
     {
       label: "Concessions",
       value: feeAccount.totalConcession,
-      color: "text-emerald-700",
+      color: "text-status-success",
     },
-    { label: "Paid", value: feeAccount.totalPaid, color: "text-blue-700" },
+    { label: "Paid", value: feeAccount.totalPaid, color: "text-brand-royal" },
     {
       label: "Balance Due",
       value: feeAccount.totalDue,
       color:
         feeAccount.totalDue > 0
-          ? "text-red-600 font-bold"
-          : "text-green-600 font-bold",
+          ? "text-status-error font-bold"
+          : "text-status-success font-bold",
     },
   ];
 
@@ -35,7 +35,7 @@ export function FeeAccountSummary({ feeAccount }: Props) {
           key={item.label}
           className="rounded-lg border border-surface-border bg-surface-card p-4 text-center"
         >
-          <p className="text-xs text-gray-500 mb-1">{item.label}</p>
+          <p className="text-xs text-text-secondary mb-1">{item.label}</p>
           <p className={`text-lg ${item.color}`}>
             {/* amounts are already in RUPEES from getStudentAccount */}₹
             {item.value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}

@@ -159,7 +159,7 @@ export default function ReconciliationBatchDetailPage() {
                   <Tile
                     label="Matched"
                     value={`${batch.matchedCount}/${batch.itemCount}`}
-                    tone="text-emerald-700"
+                    tone="text-status-success"
                   />
                   <Tile
                     label="Total"
@@ -169,7 +169,7 @@ export default function ReconciliationBatchDetailPage() {
                   <Tile
                     label="Matched amount"
                     value={formatINRPaise(batch.matchedAmountInPaise)}
-                    tone="text-emerald-700"
+                    tone="text-status-success"
                   />
                 </div>
               </Card>
@@ -194,13 +194,13 @@ export default function ReconciliationBatchDetailPage() {
                     </thead>
                     <tbody>
                       {batch.items.map((item) => (
-                        <tr key={item.id} className="border-b border-gray-100 last:border-0 align-top">
+                        <tr key={item.id} className="border-b border-surface-divider last:border-0 align-top">
                           <td className="px-4 py-3">
                             <Badge variant={STATUS_VARIANT[item.status] ?? "default"}>
                               {item.status}
                             </Badge>
                             {item.mismatchReason && (
-                              <p className="mt-1 text-xs text-rose-600">
+                              <p className="mt-1 text-xs text-status-error">
                                 {item.mismatchReason}
                               </p>
                             )}
@@ -226,7 +226,7 @@ export default function ReconciliationBatchDetailPage() {
                           </td>
                           <td className="px-4 py-3">
                             {item.status === "matched" ? (
-                              <span className="text-xs text-emerald-700">✓ matched</span>
+                              <span className="text-xs text-status-success">✓ matched</span>
                             ) : (
                               <div className="flex flex-wrap items-center gap-2">
                                 <div className="flex items-center gap-1">

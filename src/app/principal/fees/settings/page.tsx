@@ -264,9 +264,9 @@ export default function PaymentAccountPage() {
           ) : (
             <>
               {!anyActive && (
-                <Card className="flex items-start gap-2 border-amber-200 bg-amber-50 p-3">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
-                  <p className="text-sm text-amber-800">
+                <Card className="flex items-start gap-2 border-brand-amber/30 bg-brand-amber-light p-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" />
+                  <p className="text-sm text-status-warning">
                     No gateway is active yet. Save the bank details below, then onboard a
                     gateway and wait for verification before online payments route to the
                     school's account.
@@ -438,7 +438,7 @@ export default function PaymentAccountPage() {
                         </p>
                       )}
                       {link.verifiedAt && (
-                        <p className="mt-1 inline-flex items-center text-xs text-emerald-700">
+                        <p className="mt-1 inline-flex items-center text-xs text-status-success">
                           <CheckCircle2 className="mr-1 h-3 w-3" />
                           Verified {new Date(link.verifiedAt).toLocaleDateString("en-IN")}
                         </p>
@@ -502,14 +502,14 @@ export default function PaymentAccountPage() {
                     </thead>
                     <tbody>
                       {transfers.map((t) => (
-                        <tr key={t.id} className="border-b border-gray-100 last:border-0">
+                        <tr key={t.id} className="border-b border-surface-divider last:border-0">
                           <td className="px-4 py-3 text-text-secondary">
                             {new Date(t.createdAt).toLocaleString("en-IN")}
                           </td>
                           <td className="px-4 py-3">
                             <Badge variant="default">{t.gateway}</Badge>
                           </td>
-                          <td className="px-4 py-3 text-right text-emerald-700">
+                          <td className="px-4 py-3 text-right text-status-success">
                             {formatINR(t.amount)}
                           </td>
                           <td className="px-4 py-3">
