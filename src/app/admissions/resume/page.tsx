@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 
 export default function AdmissionResumePage() {
   return (
-    <div className="mx-auto max-w-lg space-y-6">
+    <div className="mx-auto max-w-lg space-y-7">
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
           Resume your draft
         </h1>
         <p className="text-sm text-text-secondary">
@@ -22,7 +22,7 @@ export default function AdmissionResumePage() {
         </p>
       </header>
 
-      <Card className="p-6">
+      <Card className="p-7 sm:p-8">
         <ResumeDraftFormCard />
       </Card>
     </div>

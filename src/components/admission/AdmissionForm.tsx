@@ -697,27 +697,24 @@ export function AdmissionForm() {
           transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
         >
           <Card className="overflow-hidden">
-            <div className="border-b border-surface-border bg-surface-muted px-6 pt-6 pb-5">
-              <p
-                aria-hidden="true"
-                className="mb-5 text-center text-[11px] font-bold uppercase tracking-widest text-text-secondary"
-              >
+            <div className="border-b border-surface-border px-7 pb-7 pt-7 sm:px-9">
+              <p aria-hidden="true" className="eyebrow mb-6 text-center">
                 Admission Application
-                {activeSessionCode ? ` ${activeSessionCode}` : ""}
+                {activeSessionCode ? ` · ${activeSessionCode}` : ""}
               </p>
               <FormStepper currentStep={step} onStepClick={goToStep} />
             </div>
 
-            <div className="border-b border-surface-border px-6 py-4">
-              <h2 className="text-lg font-bold text-text-primary">
+            <div className="px-7 pt-8 sm:px-9">
+              <h2 className="text-xl font-semibold tracking-tight text-text-primary">
                 {STEPS[step]}
               </h2>
-              <p className="mt-0.5 text-sm text-text-secondary">
+              <p className="mt-1.5 text-sm text-text-secondary">
                 {STEP_DESCRIPTIONS[step]}
               </p>
             </div>
 
-            <div className="p-6 sm:p-7">
+            <div className="px-7 pb-8 pt-6 sm:px-9 sm:pb-9">
               {/* Draft saved notification */}
               <AnimatePresence>
                 {draftNotification && (
@@ -729,19 +726,19 @@ export function AdmissionForm() {
                     className="overflow-hidden"
                   >
                     <div
-                      className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3"
+                      className="callout callout-success flex items-start gap-3"
                       role="status"
                       aria-live="polite"
                     >
                       <CheckCircle2
                         size={18}
-                        className="mt-0.5 shrink-0 text-emerald-600"
+                        className="mt-0.5 shrink-0"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-emerald-800">
+                        <p className="text-sm font-semibold">
                           Draft saved successfully
                         </p>
-                        <p className="mt-0.5 text-xs text-emerald-700">
+                        <p className="mt-0.5 text-xs opacity-90">
                           Application ID:{" "}
                           <span className="font-mono font-bold">
                             {draftNotification.applicationId}
@@ -752,7 +749,7 @@ export function AdmissionForm() {
                       <button
                         type="button"
                         onClick={() => setDraftNotification(null)}
-                        className="shrink-0 rounded-md p-0.5 text-emerald-600 transition-colors hover:bg-emerald-100"
+                        className="shrink-0 rounded-md p-0.5 transition-colors hover:bg-black/5"
                         aria-label="Dismiss notification"
                       >
                         <X size={14} />
@@ -773,26 +770,26 @@ export function AdmissionForm() {
                     className="overflow-hidden"
                   >
                     <div
-                      className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3"
+                      className="callout callout-error flex items-start gap-3"
                       role="alert"
                       aria-live="assertive"
                     >
                       <AlertCircle
                         size={18}
-                        className="mt-0.5 shrink-0 text-rose-600"
+                        className="mt-0.5 shrink-0"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-rose-800">
+                        <p className="text-sm font-semibold">
                           Something went wrong
                         </p>
-                        <p className="mt-0.5 text-xs text-rose-700">
+                        <p className="mt-0.5 text-xs opacity-90">
                           {errorMessage}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setErrorMessage(null)}
-                        className="shrink-0 rounded-md p-0.5 text-rose-600 transition-colors hover:bg-rose-100"
+                        className="shrink-0 rounded-md p-0.5 transition-colors hover:bg-black/5"
                         aria-label="Dismiss error"
                       >
                         <X size={14} />
@@ -803,16 +800,13 @@ export function AdmissionForm() {
               </AnimatePresence>
 
               {isAlreadySubmitted && step === STEPS.length - 1 && (
-                <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <AlertCircle
-                    size={18}
-                    className="mt-0.5 shrink-0 text-amber-600"
-                  />
+                <div className="callout callout-warning mb-5 flex items-start gap-3">
+                  <AlertCircle size={18} className="mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-sm font-semibold text-amber-800">
+                    <p className="text-sm font-semibold">
                       Application already submitted
                     </p>
-                    <p className="mt-0.5 text-xs text-amber-700">
+                    <p className="mt-0.5 text-xs opacity-90">
                       Application ID:{" "}
                       <span className="font-mono font-bold">
                         {submittedApp?.applicationId}
@@ -824,7 +818,7 @@ export function AdmissionForm() {
                 </div>
               )}
 
-              <form onSubmit={onSubmit} noValidate className="space-y-6">
+              <form onSubmit={onSubmit} noValidate className="space-y-7">
                 {renderStep()}
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-surface-border pt-5">

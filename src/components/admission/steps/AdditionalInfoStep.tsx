@@ -4,7 +4,7 @@ import type { StepProps } from "../types";
 
 export function AdditionalInfoStep({ register, errors }: StepProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-5 sm:grid-cols-2">
       <div>
         <Label htmlFor="religion">Religion</Label>
         <Input id="religion" placeholder="Optional" {...register("religion")} />
@@ -35,7 +35,7 @@ export function AdditionalInfoStep({ register, errors }: StepProps) {
         {errors.adharNumber && (
           <p
             id="adharNumber-error"
-            className="mt-1 text-xs text-status-error"
+            className="form-error"
             role="alert"
           >
             {errors.adharNumber.message}

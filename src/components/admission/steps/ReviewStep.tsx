@@ -105,7 +105,7 @@ export function ReviewStep({ values }: ReviewStepProps) {
   const sections = buildSections(values);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <p className="text-sm text-text-secondary">
         Review your details before continuing to fees and payment. You can go
         back to any earlier step from the progress bar above.
@@ -119,16 +119,14 @@ export function ReviewStep({ values }: ReviewStepProps) {
 
         return (
           <div key={section.title}>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-text-secondary">
-              {section.title}
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <p className="eyebrow mb-2.5">{section.title}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
               {visibleItems.map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-lg border border-surface-border bg-white p-3"
+                  className="rounded-md border border-surface-border bg-surface-card px-3.5 py-3"
                 >
-                  <p className="text-xs uppercase tracking-wide text-text-muted">
+                  <p className="text-[0.6875rem] uppercase tracking-wide text-text-muted">
                     {item.label}
                   </p>
                   <p className="mt-1 text-sm font-medium text-text-primary break-words">

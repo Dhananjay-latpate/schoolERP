@@ -21,7 +21,7 @@ export function StudentInfoStep({ register, errors }: StepProps) {
   const { min: dobMin, max: dobMax } = useMemo(dobBounds, []);
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-5 sm:grid-cols-2">
       <div>
         <Label htmlFor="firstName">First Name *</Label>
         <Input
@@ -35,7 +35,7 @@ export function StudentInfoStep({ register, errors }: StepProps) {
           className={errors.firstName ? "input-error" : ""}
         />
         {errors.firstName && (
-          <p id="firstName-error" className="mt-1 text-xs text-[#e11d48]" role="alert">
+          <p id="firstName-error" className="form-error" role="alert">
             {errors.firstName.message}
           </p>
         )}
@@ -51,7 +51,7 @@ export function StudentInfoStep({ register, errors }: StepProps) {
           className={errors.middleName ? "input-error" : ""}
         />
         {errors.middleName && (
-          <p className="mt-1 text-xs text-[#e11d48]" role="alert">
+          <p className="form-error" role="alert">
             {errors.middleName.message}
           </p>
         )}
@@ -69,7 +69,7 @@ export function StudentInfoStep({ register, errors }: StepProps) {
           className={errors.lastName ? "input-error" : ""}
         />
         {errors.lastName && (
-          <p id="lastName-error" className="mt-1 text-xs text-[#e11d48]" role="alert">
+          <p id="lastName-error" className="form-error" role="alert">
             {errors.lastName.message}
           </p>
         )}
@@ -90,7 +90,7 @@ export function StudentInfoStep({ register, errors }: StepProps) {
           <option value="other">Other</option>
         </Select>
         {errors.gender && (
-          <p id="gender-error" className="mt-1 text-xs text-[#e11d48]" role="alert">
+          <p id="gender-error" className="form-error" role="alert">
             {errors.gender.message}
           </p>
         )}
@@ -109,11 +109,11 @@ export function StudentInfoStep({ register, errors }: StepProps) {
           {...register("dateOfBirth")}
           className={errors.dateOfBirth ? "input-error" : ""}
         />
-        <p id="dateOfBirth-help" className="mt-1 text-xs text-text-muted">
+        <p id="dateOfBirth-help" className="mt-1.5 text-xs text-text-muted">
           Student must be between 3 and 25 years old.
         </p>
         {errors.dateOfBirth && (
-          <p className="mt-1 text-xs text-[#e11d48]" role="alert">
+          <p className="form-error" role="alert">
             {errors.dateOfBirth.message}
           </p>
         )}

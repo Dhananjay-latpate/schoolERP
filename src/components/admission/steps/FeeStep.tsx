@@ -110,18 +110,16 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
   if (!selectedClass) {
     return (
       <div
-        className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm"
+        className="callout callout-warning flex items-start gap-3 text-sm"
         role="status"
       >
-        <div className="flex items-start gap-3">
-          <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-600" />
-          <div>
-            <p className="font-semibold text-amber-800">No class selected</p>
-            <p className="mt-0.5 text-xs text-amber-700">
-              Go back to Academic Details and pick a class to view the fee
-              structure.
-            </p>
-          </div>
+        <AlertCircle size={18} className="mt-0.5 shrink-0" />
+        <div>
+          <p className="font-semibold">No class selected</p>
+          <p className="mt-0.5 text-xs opacity-90">
+            Go back to Academic Details and pick a class to view the fee
+            structure.
+          </p>
         </div>
       </div>
     );
@@ -138,10 +136,10 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
           </div>
         ) : feeError ? (
           <div className="text-sm" role="alert">
-            <p className="font-semibold text-amber-800">
+            <p className="font-semibold text-status-warning">
               Fee structure not yet configured
             </p>
-            <p className="mt-1 text-xs text-amber-700">
+            <p className="mt-1 text-xs text-text-secondary">
               The fee structure for <strong>{selectedClass}</strong> hasn't been
               set by the school yet, so we can't show fees here. Please contact
               the admissions office to confirm fees, or come back after the
@@ -150,8 +148,8 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
           </div>
         ) : feeStructure ? (
           <>
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wider text-brand-royal">
+            <div className="mb-2.5 flex items-center justify-between">
+              <p className="eyebrow eyebrow-accent">
                 Fee Structure — {feeStructure.academicYear}
               </p>
               <span className="badge-base badge-blue">{selectedClass}</span>
@@ -236,13 +234,13 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
             ))}
           </Select>
           {errors.installmentOptionId && (
-            <p className="mt-1 text-xs text-status-error" role="alert">
+            <p className="form-error" role="alert">
               {errors.installmentOptionId.message as string}
             </p>
           )}
           {selectedOption && (
-            <div className="mt-3 rounded-xl border border-surface-border bg-white px-4 py-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-royal">
+            <div className="mt-3 rounded-md border border-surface-border bg-surface-card px-4 py-3.5">
+              <p className="eyebrow eyebrow-accent mb-2.5">
                 {selectedOption.name} — Schedule
               </p>
               {selectedOption.installments.map((inst) => {
@@ -274,14 +272,14 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
 
       {/* Custom hardship request */}
       {paymentMethod === "custom_payment" && (
-        <div className="space-y-3">
-          <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-            <Heart size={18} className="mt-0.5 shrink-0 text-blue-600" />
+        <div className="space-y-4">
+          <div className="callout callout-info flex items-start gap-3">
+            <Heart size={18} className="mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-blue-900">
+              <p className="text-sm font-semibold">
                 Request a custom payment arrangement
               </p>
-              <p className="mt-0.5 text-xs text-blue-800">
+              <p className="mt-0.5 text-xs opacity-90">
                 If your family is unable to pay even the standard installment
                 plan, you can propose a custom amount and explain your
                 situation. The principal will review your request — and may
@@ -306,7 +304,7 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
               {...register("customPaymentAmount", { valueAsNumber: true })}
             />
             {errors.customPaymentAmount && (
-              <p className="mt-1 text-xs text-status-error" role="alert">
+              <p className="form-error" role="alert">
                 {errors.customPaymentAmount.message}
               </p>
             )}
@@ -322,11 +320,11 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
               placeholder="Share why you need a custom arrangement — the principal will read this before deciding."
               aria-required="true"
               aria-invalid={errors.customPaymentReason ? "true" : "false"}
-              className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-royal/40"
+              className="input-base resize-y"
               {...register("customPaymentReason")}
             />
             {errors.customPaymentReason && (
-              <p className="mt-1 text-xs text-status-error" role="alert">
+              <p className="form-error" role="alert">
                 {errors.customPaymentReason.message}
               </p>
             )}
@@ -335,13 +333,13 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
       )}
 
       {paymentMethod === "full_payment" && (
-        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm">
-          <Wallet size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+        <div className="callout callout-success flex items-start gap-3 text-sm">
+          <Wallet size={18} className="mt-0.5 shrink-0" />
           <div>
-            <p className="font-semibold text-emerald-900">
+            <p className="font-semibold">
               Pay full amount on submission
             </p>
-            <p className="mt-0.5 text-xs text-emerald-800">
+            <p className="mt-0.5 text-xs opacity-90">
               You'll be taken to a secure payment screen after submitting. Once
               the payment is verified, your admission moves into review.
             </p>
@@ -351,15 +349,15 @@ export function FeeStep({ register, errors, watch, setValue }: StepProps) {
 
       {paymentMethod === "installment" && !installmentsAvailable && (
         <div
-          className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm"
+          className="callout callout-warning flex items-start gap-3 text-sm"
           role="alert"
         >
-          <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
           <div>
-            <p className="font-semibold text-amber-900">
+            <p className="font-semibold">
               Installment plans not available
             </p>
-            <p className="mt-0.5 text-xs text-amber-800">
+            <p className="mt-0.5 text-xs opacity-90">
               Please choose &ldquo;Pay full amount now&rdquo; or
               &ldquo;Request a custom payment arrangement&rdquo;.
             </p>

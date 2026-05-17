@@ -125,7 +125,7 @@ export function PaymentPanel({
       prefill: {
         name: `${application.firstName} ${application.lastName}`,
       },
-      theme: { color: "#1A4DAD" },
+      theme: { color: "#0071e3" },
       handler: async (response) => {
         if (!mounted.current) return;
         setStatus("verifying");
@@ -236,10 +236,10 @@ export function PaymentPanel({
   return (
     <div className="mx-auto w-full max-w-lg space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-text-primary">
+        <h2 className="text-2xl font-semibold tracking-tight text-text-primary">
           Complete Payment
         </h2>
-        <p className="mt-1 text-sm text-text-muted">
+        <p className="mt-1.5 text-sm text-text-muted">
           Application{" "}
           <span className="font-mono text-brand-royal">
             {application.applicationId}
@@ -248,9 +248,7 @@ export function PaymentPanel({
       </div>
 
       <div className="card-accent">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-brand-royal">
-          Application Summary
-        </p>
+        <p className="eyebrow eyebrow-accent mb-3">Application Summary</p>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-text-muted">Applicant</span>
@@ -293,21 +291,21 @@ export function PaymentPanel({
       </div>
 
       {status === "success" && (
-        <div className="flex items-center gap-3 rounded-xl border border-brand-emerald bg-brand-emerald-light px-4 py-3 text-sm font-medium text-emerald-800">
-          <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" />
+        <div className="callout callout-success flex items-center gap-3 text-sm font-medium">
+          <CheckCircle className="h-5 w-5 shrink-0" />
           {statusMessage}
         </div>
       )}
 
       {status === "failed" && (
-        <div className="flex items-center gap-3 rounded-xl border border-brand-rose bg-brand-rose-light px-4 py-3 text-sm font-medium text-rose-800">
-          <XCircle className="h-5 w-5 shrink-0 text-rose-600" />
+        <div className="callout callout-error flex items-center gap-3 text-sm font-medium">
+          <XCircle className="h-5 w-5 shrink-0" />
           {error || statusMessage}
         </div>
       )}
 
       {isBusy && (
-        <div className="flex items-center gap-3 rounded-xl border border-surface-divider bg-surface-muted px-4 py-3 text-sm text-text-muted">
+        <div className="callout flex items-center gap-3 text-sm text-text-secondary">
           <Loader2 className="h-4 w-4 animate-spin shrink-0 text-brand-royal" />
           {statusMessage}
         </div>
