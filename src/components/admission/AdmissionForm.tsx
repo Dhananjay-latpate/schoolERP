@@ -18,7 +18,6 @@ import { z } from "zod";
 
 import {
   submitAdmission,
-  createCustomPlan,
   getActiveAdmissionSessionPublic,
   getAdmissionSetupStatus,
   type AdmissionDraftSnapshot,
@@ -538,14 +537,9 @@ export function AdmissionForm() {
         setSubmittedApp(response);
 
         if (values.paymentMethod === "custom_payment") {
-          // Custom hardship: register the plan request on the fees module
-          // (the application itself is already in `submitted` waiting for
-          // principal review — the server handled that transition).
-          await createCustomPlan(
-            response.applicationId,
-            values.customPaymentAmount!,
-            values.customPaymentReason!,
-          );
+          // Custom hardship: the server already created the pending custom
+          // plan during submission — send the parent to the status page,
+          // where they track principal approval and then pay.
           router.push(`/admissions/${response.applicationId}`);
           return;
         }
@@ -672,6 +666,7 @@ export function AdmissionForm() {
       <div className="mx-auto max-w-2xl py-8">
         <PaymentPanel
           application={submittedApp}
+          paymentMethod={getValues("paymentMethod")}
           onSuccess={() =>
             router.push(`/admissions/${submittedApp.applicationId}`)
           }

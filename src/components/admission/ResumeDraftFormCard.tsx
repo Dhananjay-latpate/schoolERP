@@ -59,6 +59,13 @@ export function ResumeDraftFormCard({
     setSubmitting(true);
     try {
       const snapshot = await resumeAdmissionDraft(trimmedId, trimmedMobile);
+      if (snapshot.status && snapshot.status !== "draft") {
+        // Already submitted — it can't be edited from the form. Send the
+        // parent to the application's status page, where they track principal
+        // review and complete payment (e.g. after a custom plan is approved).
+        router.push(`/admissions/${snapshot.applicationId}`);
+        return;
+      }
       window.sessionStorage.setItem(RESUME_DRAFT_KEY, JSON.stringify(snapshot));
       router.push(redirectTo);
     } catch (error) {
@@ -139,7 +146,7 @@ export function ResumeDraftFormCard({
             </Button>
           )}
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Loading draft…" : "Resume draft"}
+            {submitting ? "Loading…" : "Resume application"}
           </Button>
         </div>
       </div>

@@ -24,6 +24,10 @@ type PaymentStatus =
 
 interface PaymentPanelProps {
   application: AdmissionRecord;
+  // The payment method the parent chose on the form. Passed explicitly because
+  // the submit response doesn't carry it, and the payment row's method isn't
+  // reliably populated yet at this point.
+  paymentMethod?: string;
   onSuccess: () => void;
   onBack?: () => void;
 }
@@ -57,9 +61,11 @@ function loadScriptOnce(src: string): Promise<void> {
 
 export function PaymentPanel({
   application,
+  paymentMethod,
   onSuccess,
   onBack,
 }: PaymentPanelProps) {
+  const chosenMethod = paymentMethod ?? application.paymentMethod;
   const [status, setStatus] = useState<PaymentStatus>("loading_config");
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<PaymentConfigResponse | null>(null);
@@ -263,9 +269,9 @@ export function PaymentPanel({
           <div className="flex justify-between">
             <span className="text-text-muted">Payment Type</span>
             <span className="font-medium text-text-primary">
-              {application.paymentMethod === "installment"
+              {chosenMethod === "installment"
                 ? "First installment"
-                : application.paymentMethod === "custom_payment"
+                : chosenMethod === "custom_payment"
                   ? "Approved custom amount"
                   : "Full payment"}
             </span>

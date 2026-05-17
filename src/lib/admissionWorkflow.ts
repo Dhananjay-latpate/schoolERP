@@ -63,13 +63,10 @@ const ALLOWED_TRANSITIONS: Record<ApplicationStatus, PrincipalAction[]> = {
   approved: ["on_hold", "needs_correction", "cancelled"],
   // Rejected can be reopened directly back into review.
   rejected: ["under_review", "on_hold", "cancelled"],
-  on_hold: [
-    "under_review",
-    "approved",
-    "rejected",
-    "needs_correction",
-    "cancelled",
-  ],
+  // From on_hold the principal resumes review first; needs_correction is
+  // reachable from under_review, not directly from on_hold (the server state
+  // machine rejects on_hold -> needs_correction).
+  on_hold: ["under_review", "approved", "rejected", "cancelled"],
   needs_correction: ["under_review", "on_hold", "cancelled"],
   // Cancelled is recoverable — "Revive" pushes the application back to on_hold.
   cancelled: ["on_hold"],

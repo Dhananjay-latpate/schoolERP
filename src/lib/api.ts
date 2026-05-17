@@ -441,19 +441,15 @@ export type CustomPlanStatusResponse = {
 
 /**
  * Creates a custom payment plan request for an existing application.
- * Sends a single placeholder installment — the principal edits the schedule
- * before approving.
+ * `requestedAmount` is what the parent can pay up front; the server builds
+ * the full schedule (up-front amount + remaining balance against the full
+ * class fee) and the principal can re-shape it before approving.
  */
 export async function createCustomPlan(
   applicationId: string,
   requestedAmount: number,
   reason: string,
 ) {
-  // Due date placeholder: 30 days from today
-  const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
   // Use the public admission mirror so the anonymous parent flow can create
   // the custom plan right after submission without needing an auth token.
   return request<{ id: string; status: CustomPlanStatus }>(
@@ -464,9 +460,6 @@ export async function createCustomPlan(
         applicationId,
         requestedAmount,
         reason,
-        installments: [
-          { name: "Requested Payment", dueDate, amount: requestedAmount },
-        ],
       }),
     },
   );
