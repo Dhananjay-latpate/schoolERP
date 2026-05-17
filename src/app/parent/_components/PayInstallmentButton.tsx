@@ -51,6 +51,10 @@ interface Props {
   installmentId: string;
   studentName: string;
   contact?: string | null;
+  // Amount to pay for this installment. Omit to pay the full installment;
+  // pass a smaller value for a partial payment.
+  amount?: number;
+  disabled?: boolean;
   onPaid: (receiptNumber: string) => void;
   onError?: (message: string) => void;
   label?: string;
@@ -63,6 +67,8 @@ export function PayInstallmentButton({
   installmentId,
   studentName,
   contact,
+  amount,
+  disabled: disabledProp = false,
   onPaid,
   onError,
   label = "Pay now",
@@ -95,7 +101,7 @@ export function PayInstallmentButton({
   const handleRazorpay = async () => {
     setBusy("ordering");
     await loadScript(RAZORPAY_SCRIPT_URL);
-    const order = await createParentPaymentOrder(token, installmentId);
+    const order = await createParentPaymentOrder(token, installmentId, amount);
     if (!order.key_id || !order.order?.id) {
       throw new Error("Razorpay is not configured on the server");
     }
@@ -125,6 +131,7 @@ export function PayInstallmentButton({
             try {
               const result = await verifyParentPayment(token, {
                 installmentId,
+                amount,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
@@ -156,9 +163,12 @@ export function PayInstallmentButton({
   const handleCashfree = async (cashfreeEnv: string) => {
     setBusy("ordering");
     await loadScript(CASHFREE_SCRIPT_URL);
-    const order = await createParentCashfreeOrder(token, installmentId, {
-      customerPhone: contact ?? undefined,
-    });
+    const order = await createParentCashfreeOrder(
+      token,
+      installmentId,
+      { customerPhone: contact ?? undefined },
+      amount,
+    );
     const Ctor = (window as any).Cashfree;
     if (!Ctor) throw new Error("Cashfree SDK not available");
     const cashfree = Ctor({
@@ -184,6 +194,7 @@ export function PayInstallmentButton({
     const verified = await verifyParentCashfreePayment(token, {
       installmentId,
       orderId: order.orderId,
+      amount,
     });
     onPaid(verified.receiptNumber);
   };
@@ -216,7 +227,8 @@ export function PayInstallmentButton({
   };
 
   const isWorking = busy !== "idle";
-  const disabled = isWorking || !!configError || !config?.configured;
+  const disabled =
+    isWorking || !!configError || !config?.configured || disabledProp;
 
   return (
     <Button

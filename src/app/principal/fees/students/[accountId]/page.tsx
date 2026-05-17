@@ -316,6 +316,7 @@ export default function AccountDetailPage() {
               dueDate: inst.dueDate,
               amount: inst.amount,
               isPaid: inst.isPaid,
+              paidAmount: inst.paidAmount,
             }))}
             token={token}
             onClose={() => setShowRecordPayment(false)}
@@ -518,9 +519,18 @@ function InstallmentsTab({
                   {formatINR(inst.paidAmount ?? 0)}
                 </td>
                 <td className="px-4 py-3">
-                  <Badge variant={inst.isPaid ? "success" : "warning"}>
-                    {inst.isPaid ? "Paid" : "Pending"}
-                  </Badge>
+                  {(() => {
+                    const partial = !inst.isPaid && (inst.paidAmount ?? 0) > 0;
+                    return (
+                      <Badge
+                        variant={
+                          inst.isPaid ? "success" : partial ? "info" : "warning"
+                        }
+                      >
+                        {inst.isPaid ? "Paid" : partial ? "Partial" : "Pending"}
+                      </Badge>
+                    );
+                  })()}
                 </td>
                 <td className="px-4 py-3 text-xs text-text-muted">
                   {inst.receiptNumber ?? "—"}

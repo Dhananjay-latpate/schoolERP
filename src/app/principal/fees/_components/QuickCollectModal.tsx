@@ -27,6 +27,10 @@ const METHODS = ["cash", "cheque", "neft", "upi", "dd", "other"];
 const formatINR = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 
+// What is still owed on an installment — face amount minus what is paid.
+const outstandingOf = (i: { amount: number; paidAmount: number | null }) =>
+  Math.max(0, Math.round((i.amount - (i.paidAmount ?? 0)) * 100) / 100);
+
 export function QuickCollectModal({ token, onClose, onSuccess }: Props) {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -84,7 +88,7 @@ export function QuickCollectModal({ token, onClose, onSuccess }: Props) {
       const firstUnpaid = detail.installments.find((i) => !i.isPaid);
       if (firstUnpaid) {
         setInstallmentId(firstUnpaid.id);
-        setAmount(firstUnpaid.amount.toString());
+        setAmount(outstandingOf(firstUnpaid).toString());
       } else {
         setInstallmentId("");
         setAmount("");
@@ -99,7 +103,7 @@ export function QuickCollectModal({ token, onClose, onSuccess }: Props) {
   const handleInstallmentChange = (id: string) => {
     setInstallmentId(id);
     const inst = selected?.installments.find((i) => i.id === id);
-    if (inst) setAmount(inst.amount.toString());
+    if (inst) setAmount(outstandingOf(inst).toString());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,6 +115,12 @@ export function QuickCollectModal({ token, onClose, onSuccess }: Props) {
     const rupees = parseFloat(amount);
     if (isNaN(rupees) || rupees <= 0) {
       setError("Amount must be greater than zero.");
+      return;
+    }
+    if (rupees > outstanding + 0.01) {
+      setError(
+        `Amount can't exceed the ${formatINR(outstanding)} outstanding on this installment.`,
+      );
       return;
     }
     setIsSubmitting(true);
@@ -133,6 +143,12 @@ export function QuickCollectModal({ token, onClose, onSuccess }: Props) {
   };
 
   const unpaid = selected?.installments.filter((i) => !i.isPaid) ?? [];
+  const selectedInstallment = selected?.installments.find(
+    (i) => i.id === installmentId,
+  );
+  const outstanding = selectedInstallment
+    ? outstandingOf(selectedInstallment)
+    : 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
@@ -236,7 +252,7 @@ export function QuickCollectModal({ token, onClose, onSuccess }: Props) {
                     >
                       {unpaid.map((i) => (
                         <option key={i.id} value={i.id}>
-                          {i.name} · due {i.dueDate} · {formatINR(i.amount)}
+                          {i.name} · due {i.dueDate} · {formatINR(outstandingOf(i))} outstanding
                         </option>
                       ))}
                     </Select>
@@ -249,12 +265,16 @@ export function QuickCollectModal({ token, onClose, onSuccess }: Props) {
                         id="qc-amount"
                         type="number"
                         min="1"
+                        max={outstanding}
                         step="0.01"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         disabled={isSubmitting}
                         className="mt-1"
                       />
+                      <p className="mt-1 text-xs text-text-muted">
+                        {formatINR(outstanding)} outstanding — a partial payment is fine.
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="qc-method">Method *</Label>

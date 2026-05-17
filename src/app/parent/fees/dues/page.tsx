@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
   ParentApiError,
   getParentDues,
@@ -112,39 +112,26 @@ export default function ParentDuesPage() {
             {dues.installments.length > 0 && (
               <Card className="p-5">
                 <h3 className="text-sm font-semibold text-text-primary">Installments</h3>
+                <p className="mt-1 text-xs text-text-muted">
+                  Pay the full amount, or change the amount to pay a part of it now —
+                  the rest stays due.
+                </p>
                 <ul className="mt-3 space-y-2">
                   {dues.installments.map((inst) => (
-                    <li
+                    <InstallmentDueRow
                       key={inst.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-surface-border px-3 py-2.5"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-text-primary">{inst.name}</p>
-                        <p className="text-xs text-text-muted">Due {inst.dueDate}</p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="text-sm font-semibold text-text-primary">
-                          {formatINR(inst.amount)}
-                        </span>
-                        <Badge variant="warning">Pending</Badge>
-                        {overview && (
-                          <PayInstallmentButton
-                            token={token}
-                            installmentId={inst.id}
-                            studentName={overview.studentName}
-                            onPaid={(receipt) => {
-                              setToast({
-                                kind: "success",
-                                message: `Payment successful. Receipt: ${receipt}`,
-                              });
-                              void refresh();
-                            }}
-                            onError={(message) => setToast({ kind: "error", message })}
-                            label={`Pay ${formatINR(inst.amount)}`}
-                          />
-                        )}
-                      </div>
-                    </li>
+                      inst={inst}
+                      token={token}
+                      studentName={overview?.studentName ?? ""}
+                      onPaid={(receipt) => {
+                        setToast({
+                          kind: "success",
+                          message: `Payment successful. Receipt: ${receipt}`,
+                        });
+                        void refresh();
+                      }}
+                      onError={(message) => setToast({ kind: "error", message })}
+                    />
                   ))}
                 </ul>
               </Card>
@@ -206,5 +193,75 @@ export default function ParentDuesPage() {
         )}
       </main>
     </>
+  );
+}
+
+// One outstanding installment, with an editable amount so the parent can pay
+// the whole thing or just a part of it. The amount is capped at what is still
+// owed; the server is the final authority and rejects anything larger.
+function InstallmentDueRow({
+  inst,
+  token,
+  studentName,
+  onPaid,
+  onError,
+}: {
+  inst: ParentDuesResponse["installments"][number];
+  token: string;
+  studentName: string;
+  onPaid: (receipt: string) => void;
+  onError: (message: string) => void;
+}) {
+  const paid = inst.paidAmount ?? 0;
+  const outstanding = Math.max(0, Math.round((inst.amount - paid) * 100) / 100);
+  const partial = paid > 0;
+  const [amount, setAmount] = useState(outstanding.toString());
+  const parsed = parseFloat(amount);
+  const valid = !isNaN(parsed) && parsed > 0 && parsed <= outstanding + 0.01;
+
+  return (
+    <li className="rounded-md border border-surface-border px-3 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-text-primary">{inst.name}</p>
+          <p className="text-xs text-text-muted">Due {inst.dueDate}</p>
+          {partial && (
+            <p className="text-xs text-emerald-700">
+              {formatINR(paid)} paid · {formatINR(outstanding)} left
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={partial ? "info" : "warning"}>
+            {partial ? "Partial" : "Pending"}
+          </Badge>
+          <Input
+            type="number"
+            min="1"
+            max={outstanding}
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-28"
+            aria-label={`Amount to pay for ${inst.name}`}
+          />
+          <PayInstallmentButton
+            token={token}
+            installmentId={inst.id}
+            studentName={studentName}
+            amount={valid ? parsed : undefined}
+            disabled={!valid}
+            onPaid={onPaid}
+            onError={onError}
+            label={`Pay ${formatINR(valid ? parsed : outstanding)}`}
+          />
+        </div>
+      </div>
+      {amount !== "" && !valid && (
+        <p className="mt-1 text-xs text-rose-600">
+          Enter an amount between ₹1 and {formatINR(outstanding)}.
+        </p>
+      )}
+    </li>
   );
 }

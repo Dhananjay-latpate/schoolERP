@@ -15,6 +15,7 @@ interface InstallmentChoice {
   dueDate: string;
   amount: number;
   isPaid: boolean;
+  paidAmount: number | null;
 }
 
 interface Props {
@@ -30,6 +31,11 @@ const METHODS = ["cash", "cheque", "neft", "upi", "dd", "other"];
 const formatINR = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 
+// What is still owed on an installment = face amount minus whatever has
+// already been paid against it. A partial payment leaves a positive balance.
+const outstandingOf = (i: { amount: number; paidAmount: number | null }) =>
+  Math.max(0, Math.round((i.amount - (i.paidAmount ?? 0)) * 100) / 100);
+
 export function RecordPaymentModal({
   applicationId,
   installments,
@@ -39,17 +45,26 @@ export function RecordPaymentModal({
 }: Props) {
   const unpaid = installments.filter((i) => !i.isPaid);
   const [installmentId, setInstallmentId] = useState(unpaid[0]?.id ?? "");
-  const [amount, setAmount] = useState(unpaid[0]?.amount.toString() ?? "");
+  const [amount, setAmount] = useState(
+    unpaid[0] ? outstandingOf(unpaid[0]).toString() : "",
+  );
   const [method, setMethod] = useState("cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const selectedInstallment = installments.find((i) => i.id === installmentId);
+  const outstanding = selectedInstallment ? outstandingOf(selectedInstallment) : 0;
+  const isPartial =
+    selectedInstallment != null &&
+    (selectedInstallment.paidAmount ?? 0) > 0 &&
+    !selectedInstallment.isPaid;
+
   const handleInstallmentChange = (id: string) => {
     setInstallmentId(id);
     const inst = installments.find((i) => i.id === id);
-    if (inst) setAmount(inst.amount.toString());
+    if (inst) setAmount(outstandingOf(inst).toString());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,6 +78,12 @@ export function RecordPaymentModal({
     const rupees = parseFloat(amount);
     if (isNaN(rupees) || rupees <= 0) {
       setError("Enter a valid amount.");
+      return;
+    }
+    if (rupees > outstanding + 0.01) {
+      setError(
+        `Amount can't exceed the ${formatINR(outstanding)} outstanding on this installment.`,
+      );
       return;
     }
 
@@ -103,7 +124,7 @@ export function RecordPaymentModal({
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 p-5">
           {unpaid.length === 0 ? (
             <p className="text-sm text-text-muted">
-              All installments are already marked as paid.
+              All installments are already fully paid.
             </p>
           ) : (
             <>
@@ -118,7 +139,7 @@ export function RecordPaymentModal({
                 >
                   {unpaid.map((i) => (
                     <option key={i.id} value={i.id}>
-                      {i.name} · due {i.dueDate} · {formatINR(i.amount)}
+                      {i.name} · due {i.dueDate} · {formatINR(outstandingOf(i))} outstanding
                     </option>
                   ))}
                 </Select>
@@ -130,6 +151,7 @@ export function RecordPaymentModal({
                   id="pay-amount"
                   type="number"
                   min="1"
+                  max={outstanding}
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
@@ -137,7 +159,11 @@ export function RecordPaymentModal({
                   className="mt-1"
                 />
                 <p className="mt-1 text-xs text-text-muted">
-                  Installments must be paid in full.
+                  {formatINR(outstanding)} outstanding
+                  {isPartial && selectedInstallment
+                    ? ` (${formatINR(selectedInstallment.paidAmount ?? 0)} already paid)`
+                    : ""}
+                  . A partial payment is fine — the balance stays due.
                 </p>
               </div>
 

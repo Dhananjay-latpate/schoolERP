@@ -164,19 +164,44 @@ export default function ParentFeesOverviewPage() {
                           )}
                         </p>
                         <p className="text-xs text-text-muted">Due {inst.dueDate}</p>
+                        {!inst.isPaid && (inst.paidAmount ?? 0) > 0 && (
+                          <p className="text-xs text-emerald-700">
+                            {formatINR(inst.paidAmount ?? 0)} paid ·{" "}
+                            {formatINR(inst.amount - (inst.paidAmount ?? 0))} left
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm font-semibold text-text-primary">
                           {formatINR(inst.amount)}
                         </span>
-                        <Badge variant={inst.isPaid ? "success" : "warning"}>
-                          {inst.isPaid ? "Paid" : "Pending"}
-                        </Badge>
+                        {(() => {
+                          const partial =
+                            !inst.isPaid && (inst.paidAmount ?? 0) > 0;
+                          return (
+                            <Badge
+                              variant={
+                                inst.isPaid
+                                  ? "success"
+                                  : partial
+                                    ? "info"
+                                    : "warning"
+                              }
+                            >
+                              {inst.isPaid
+                                ? "Paid"
+                                : partial
+                                  ? "Partial"
+                                  : "Pending"}
+                            </Badge>
+                          );
+                        })()}
                         {!inst.isPaid && (
                           <PayInstallmentButton
                             token={token}
                             installmentId={inst.id}
                             studentName={overview.studentName}
+                            amount={inst.amount - (inst.paidAmount ?? 0)}
                             onPaid={(receipt) => {
                               setToast({
                                 kind: "success",
@@ -187,7 +212,9 @@ export default function ParentFeesOverviewPage() {
                             onError={(message) =>
                               setToast({ kind: "error", message })
                             }
-                            label="Pay"
+                            label={`Pay ${formatINR(
+                              inst.amount - (inst.paidAmount ?? 0),
+                            )}`}
                           />
                         )}
                       </div>

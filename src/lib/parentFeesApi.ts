@@ -126,6 +126,7 @@ export type ParentDuesResponse = {
     dueDate: string;
     amount: number;
     isPaid: boolean;
+    paidAmount?: number | null;
   }>;
   adHocCharges: Array<{
     id: string;
@@ -242,6 +243,7 @@ export async function createParentCashfreeOrder(
   token: string,
   installmentId: string,
   customer?: { customerEmail?: string; customerPhone?: string },
+  amount?: number,
 ): Promise<ParentCashfreeOrder> {
   const response = await fetch(`${API_BASE_URL}/api/parent/fees/pay/cashfree-order`, {
     method: "POST",
@@ -249,7 +251,7 @@ export async function createParentCashfreeOrder(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ installmentId, ...customer }),
+    body: JSON.stringify({ installmentId, amount, ...customer }),
     cache: "no-store",
   });
   const body = (await response.json().catch(() => undefined)) as
@@ -272,7 +274,7 @@ export async function createParentCashfreeOrder(
 
 export async function verifyParentCashfreePayment(
   token: string,
-  payload: { installmentId: string; orderId: string },
+  payload: { installmentId: string; orderId: string; amount?: number },
 ): Promise<{ receiptNumber: string }> {
   return request<{ receiptNumber: string }>(
     "/api/parent/fees/pay/cashfree-verify",
@@ -287,6 +289,7 @@ export async function verifyParentCashfreePayment(
 export async function createParentPaymentOrder(
   token: string,
   installmentId: string,
+  amount?: number,
 ): Promise<ParentPaymentOrder> {
   // Server returns the envelope at the top level (not nested under data)
   // so we can't use the standard request helper for this one.
@@ -296,7 +299,7 @@ export async function createParentPaymentOrder(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ installmentId }),
+    body: JSON.stringify({ installmentId, amount }),
     cache: "no-store",
   });
   const body = (await response.json().catch(() => undefined)) as
@@ -320,6 +323,7 @@ export async function verifyParentPayment(
   token: string,
   payload: {
     installmentId: string;
+    amount?: number;
     razorpay_order_id: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
