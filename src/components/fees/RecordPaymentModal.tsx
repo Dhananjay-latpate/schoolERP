@@ -5,35 +5,71 @@ import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { recordManualPayment, PrincipalApiError } from "@/lib/principalApi";
+
+export interface InstallmentChoice {
+  id: string;
+  name: string;
+  dueDate: string;
+  amount: number;
+  isPaid: boolean;
+}
 
 interface Props {
   applicationId: string;
   token: string;
   onClose: () => void;
   onSuccess: () => void;
+  /**
+   * When provided, the modal runs in installment mode: the cashier picks an
+   * unpaid installment and the payment is recorded against it. When omitted,
+   * it records a free-amount manual payment (used from the admission flow,
+   * before a plan's installments are settled one-by-one).
+   */
+  installments?: InstallmentChoice[];
 }
 
 const METHODS = ["cash", "cheque", "neft", "upi", "dd", "other"];
+
+const formatINR = (value: number) =>
+  `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 
 export function RecordPaymentModal({
   applicationId,
   token,
   onClose,
   onSuccess,
+  installments,
 }: Props) {
-  const [amount, setAmount] = useState("");
+  const installmentMode = installments !== undefined;
+  const unpaid = (installments ?? []).filter((i) => !i.isPaid);
+
+  const [installmentId, setInstallmentId] = useState(unpaid[0]?.id ?? "");
+  const [amount, setAmount] = useState(
+    installmentMode ? (unpaid[0]?.amount.toString() ?? "") : "",
+  );
   const [method, setMethod] = useState("cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleInstallmentChange = (id: string) => {
+    setInstallmentId(id);
+    const inst = (installments ?? []).find((i) => i.id === id);
+    if (inst) setAmount(inst.amount.toString());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    if (installmentMode && !installmentId) {
+      setError("Select an installment to record payment against.");
+      return;
+    }
     const rupees = parseFloat(amount);
     if (isNaN(rupees) || rupees <= 0) {
       setError("Enter a valid amount.");
@@ -42,9 +78,10 @@ export function RecordPaymentModal({
 
     setLoading(true);
     try {
-      // recordManualPayment expects RUPEES (legacy Float backend)
+      // recordManualPayment expects RUPEES (legacy Float backend).
       await recordManualPayment(token, {
         applicationId,
+        ...(installmentMode ? { installmentId } : {}),
         amount: rupees,
         method,
         transactionId: reference || undefined,
@@ -62,90 +99,127 @@ export function RecordPaymentModal({
     }
   };
 
+  const allInstallmentsPaid = installmentMode && unpaid.length === 0;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-          <h2 className="font-semibold text-gray-900">Record Manual Payment</h2>
+          <h2 className="font-semibold text-text-primary">Record Payment</h2>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-text-muted hover:text-text-primary"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={(e) => void handleSubmit(e)} className="p-5 space-y-4">
-          <div>
-            <Label htmlFor="pay-amount">Amount (₹) *</Label>
-            <Input
-              id="pay-amount"
-              type="number"
-              min="1"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              disabled={loading}
-            />
-          </div>
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 p-5">
+          {allInstallmentsPaid ? (
+            <p className="text-sm text-text-muted">
+              All installments are already marked as paid.
+            </p>
+          ) : (
+            <>
+              {installmentMode && (
+                <div>
+                  <Label htmlFor="pay-installment">Installment *</Label>
+                  <Select
+                    id="pay-installment"
+                    value={installmentId}
+                    onChange={(e) => handleInstallmentChange(e.target.value)}
+                    disabled={loading}
+                    className="mt-1"
+                  >
+                    {unpaid.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name} · due {i.dueDate} · {formatINR(i.amount)}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
 
-          <div>
-            <Label htmlFor="pay-method">Payment Method *</Label>
-            <select
-              id="pay-method"
-              value={method}
-              onChange={(e) => setMethod(e.target.value)}
-              disabled={loading}
-              className="mt-1 block w-full rounded-md border border-surface-border bg-surface-card px-3 py-2 text-sm shadow-sm focus:border-brand-royal focus:outline-none focus:ring-1 focus:ring-brand-royal"
-            >
-              {METHODS.map((m) => (
-                <option key={m} value={m} className="capitalize">
-                  {m.toUpperCase()}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <Label htmlFor="pay-amount">Amount (₹) *</Label>
+                <Input
+                  id="pay-amount"
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  disabled={loading}
+                  placeholder="0.00"
+                  className="mt-1"
+                />
+                {installmentMode && (
+                  <p className="mt-1 text-xs text-text-muted">
+                    Installments must be paid in full.
+                  </p>
+                )}
+              </div>
 
-          <div>
-            <Label htmlFor="pay-ref">Reference / Receipt No.</Label>
-            <Input
-              id="pay-ref"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              placeholder="Optional"
-              disabled={loading}
-            />
-          </div>
+              <div>
+                <Label htmlFor="pay-method">Method *</Label>
+                <Select
+                  id="pay-method"
+                  value={method}
+                  onChange={(e) => setMethod(e.target.value)}
+                  disabled={loading}
+                  className="mt-1"
+                >
+                  {METHODS.map((m) => (
+                    <option key={m} value={m}>
+                      {m.toUpperCase()}
+                    </option>
+                  ))}
+                </Select>
+              </div>
 
-          <div>
-            <Label htmlFor="pay-notes">Notes</Label>
-            <Textarea
-              id="pay-notes"
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional"
-              disabled={loading}
-            />
-          </div>
+              <div>
+                <Label htmlFor="pay-ref">Reference / Receipt #</Label>
+                <Input
+                  id="pay-ref"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  disabled={loading}
+                  placeholder="Optional cheque/UPI ref"
+                  className="mt-1"
+                />
+              </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+              <div>
+                <Label htmlFor="pay-notes">Notes</Label>
+                <Textarea
+                  id="pay-notes"
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  disabled={loading}
+                  className="mt-1"
+                />
+              </div>
 
-          <div className="flex justify-end gap-3 pt-1">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Record Payment
-            </Button>
-          </div>
+              {error && <p className="text-sm text-rose-600">{error}</p>}
+
+              <div className="flex justify-end gap-3 pt-1">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onClose}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading} className="btn-pay">
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Record payment
+                </Button>
+              </div>
+            </>
+          )}
         </form>
       </div>
     </div>

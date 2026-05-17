@@ -18,7 +18,7 @@ import { AddChargeModal } from "@/components/fees/AddChargeModal";
 import { FeesSidebar } from "../../_components/Sidebar";
 import { useFeesSession } from "../../_components/useFeesSession";
 import { ToastContainer, nextToastId, type ToastItem } from "../../_components/ToastContainer";
-import { RecordPaymentModal } from "../../_components/RecordPaymentModal";
+import { RecordPaymentModal } from "@/components/fees/RecordPaymentModal";
 import { RecordChargePaymentModal } from "../../_components/RecordChargePaymentModal";
 import { ConcessionRequestModal } from "../../_components/ConcessionRequestModal";
 import { RefundRequestModal } from "../../_components/RefundRequestModal";
