@@ -112,7 +112,7 @@ export default function FeeHeadsPage() {
           </div>
 
           {error && (
-            <Card className="border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</Card>
+            <Card className="border-brand-rose/25 bg-brand-rose-light p-3 text-sm text-status-error">{error}</Card>
           )}
 
           <Card className="overflow-x-auto p-0">
@@ -137,7 +137,7 @@ export default function FeeHeadsPage() {
                 </thead>
                 <tbody>
                   {heads.map((head) => (
-                    <tr key={head.id} className="border-b border-gray-100 last:border-0">
+                    <tr key={head.id} className="border-b border-surface-divider last:border-0">
                       <td className="px-4 py-3 font-mono text-xs text-text-secondary">{head.code}</td>
                       <td className="px-4 py-3 font-medium text-text-primary">{head.name}</td>
                       <td className="px-4 py-3">
@@ -154,7 +154,7 @@ export default function FeeHeadsPage() {
                         <button
                           type="button"
                           onClick={() => handleArchive(head.id)}
-                          className="text-xs font-medium text-rose-700 hover:underline"
+                          className="text-xs font-medium text-status-error hover:underline"
                         >
                           Archive
                         </button>
@@ -228,7 +228,7 @@ function FeeHeadModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="text-base font-semibold text-text-primary">New fee head</h2>
           <button type="button" onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X className="h-4 w-4" />

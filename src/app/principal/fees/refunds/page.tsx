@@ -222,7 +222,7 @@ export default function RefundsPage() {
                                   </p>
                                 )}
                                 {refund.executionError && (
-                                  <p className="mt-1 text-xs text-rose-600">
+                                  <p className="mt-1 text-xs text-status-error">
                                     Error: {refund.executionError}
                                   </p>
                                 )}

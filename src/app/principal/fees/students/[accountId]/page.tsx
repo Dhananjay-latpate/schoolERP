@@ -131,7 +131,7 @@ export default function AccountDetailPage() {
               </Card>
             </div>
           ) : error ? (
-            <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</Card>
+            <Card className="border-brand-rose/25 bg-brand-rose-light p-4 text-sm text-status-error">{error}</Card>
           ) : !account ? (
             <EmptyState
               icon={ArrowLeft}
@@ -160,12 +160,12 @@ export default function AccountDetailPage() {
                 </div>
                 <div className="grid gap-3 p-4 sm:grid-cols-4">
                   <SummaryTile label="Total Charged" value={formatINR(account.totalCharged)} tone="text-text-primary" />
-                  <SummaryTile label="Concessions" value={formatINR(account.totalConcession)} tone="text-emerald-700" />
+                  <SummaryTile label="Concessions" value={formatINR(account.totalConcession)} tone="text-status-success" />
                   <SummaryTile label="Paid" value={formatINR(account.totalPaid)} tone="text-brand-royal" />
                   <SummaryTile
                     label="Balance Due"
                     value={formatINR(account.totalDue)}
-                    tone={account.totalDue > 0 ? "text-rose-700" : "text-emerald-700"}
+                    tone={account.totalDue > 0 ? "text-status-error" : "text-status-success"}
                   />
                 </div>
               </Card>
@@ -428,12 +428,12 @@ function ChargesTab({
           </thead>
           <tbody>
             {account.charges.map((charge) => (
-              <tr key={charge.id} className="border-b border-gray-100 last:border-0">
+              <tr key={charge.id} className="border-b border-surface-divider last:border-0">
                 <td className="px-4 py-3 font-medium text-text-primary">{charge.name}</td>
                 <td className="px-4 py-3 text-text-secondary">{charge.source}</td>
                 <td className="px-4 py-3 text-right text-text-secondary">{formatINR(charge.amount)}</td>
-                <td className="px-4 py-3 text-right text-emerald-700">{formatINR(charge.paid)}</td>
-                <td className="px-4 py-3 text-right font-semibold text-rose-700">
+                <td className="px-4 py-3 text-right text-status-success">{formatINR(charge.paid)}</td>
+                <td className="px-4 py-3 text-right font-semibold text-status-error">
                   {formatINR(charge.due)}
                 </td>
                 <td className="px-4 py-3 text-text-secondary">{charge.dueDate ?? "—"}</td>
@@ -506,16 +506,16 @@ function InstallmentsTab({
           </thead>
           <tbody>
             {account.installments.map((inst) => (
-              <tr key={inst.id} className="border-b border-gray-100 last:border-0">
+              <tr key={inst.id} className="border-b border-surface-divider last:border-0">
                 <td className="px-4 py-3 font-medium text-text-primary">
                   {inst.name}
                   {inst.isCustom && (
-                    <span className="ml-2 text-xs text-amber-700">(custom)</span>
+                    <span className="ml-2 text-xs text-status-warning">(custom)</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-text-secondary">{inst.dueDate}</td>
                 <td className="px-4 py-3 text-right text-text-secondary">{formatINR(inst.amount)}</td>
-                <td className="px-4 py-3 text-right text-emerald-700">
+                <td className="px-4 py-3 text-right text-status-success">
                   {formatINR(inst.paidAmount ?? 0)}
                 </td>
                 <td className="px-4 py-3">
@@ -563,7 +563,7 @@ function LedgerTab({ account }: { account: FeeAccountDetail }) {
           </thead>
           <tbody>
             {account.ledgerEntries.map((entry) => (
-              <tr key={entry.id} className="border-b border-gray-100 last:border-0">
+              <tr key={entry.id} className="border-b border-surface-divider last:border-0">
                 <td className="px-4 py-3 text-text-secondary">
                   {new Date(entry.postedAt).toLocaleDateString("en-IN")}
                 </td>
@@ -571,10 +571,10 @@ function LedgerTab({ account }: { account: FeeAccountDetail }) {
                   <Badge variant="default">{entry.entryType}</Badge>
                 </td>
                 <td className="px-4 py-3 text-text-secondary">{entry.description ?? "—"}</td>
-                <td className="px-4 py-3 text-right text-rose-700">
+                <td className="px-4 py-3 text-right text-status-error">
                   {entry.debit > 0 ? formatINR(entry.debit) : "—"}
                 </td>
-                <td className="px-4 py-3 text-right text-emerald-700">
+                <td className="px-4 py-3 text-right text-status-success">
                   {entry.credit > 0 ? formatINR(entry.credit) : "—"}
                 </td>
               </tr>
@@ -616,7 +616,7 @@ function ConcessionsTab({
                   <p className="mt-1 text-xs text-text-muted">{c.reason}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-emerald-700">{formatINR(c.amount)}</p>
+                  <p className="text-sm font-semibold text-status-success">{formatINR(c.amount)}</p>
                   <Badge variant={c.status === "approved" ? "success" : "warning"}>
                     {c.status}
                   </Badge>

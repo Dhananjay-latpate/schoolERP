@@ -10,7 +10,7 @@ export function ResumeDraftTrigger() {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-surface-border bg-white px-4 py-3 text-sm">
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-surface-border bg-surface-card px-4 py-3.5 text-sm">
         <div className="flex items-start gap-3">
           <Save className="mt-0.5 h-4 w-4 shrink-0 text-brand-royal" />
           <div>
@@ -34,12 +34,12 @@ export function ResumeDraftTrigger() {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          className="overlay-backdrop z-50 flex items-center justify-center px-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="resume-modal-title"
         >
-          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+          <div className="modal-panel w-full max-w-md">
             <div className="flex items-center justify-between border-b border-surface-border px-5 py-4">
               <h2
                 id="resume-modal-title"

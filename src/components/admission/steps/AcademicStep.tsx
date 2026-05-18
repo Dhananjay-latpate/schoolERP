@@ -103,14 +103,14 @@ export function AcademicStep({ register, errors, watch }: StepProps) {
           )}
         </Select>
         {classesError && (
-          <p className="mt-1 text-xs text-status-error" role="alert">
+          <p className="form-error" role="alert">
             {classesError}
           </p>
         )}
         {errors.classAdmitted && (
           <p
             id="classAdmitted-error"
-            className="mt-1 text-xs text-status-error"
+            className="form-error"
             role="alert"
           >
             {errors.classAdmitted.message}

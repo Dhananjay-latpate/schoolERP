@@ -130,7 +130,9 @@ export default function FeesDashboardPage() {
                   <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
                     Fees & Accounts Command Center
                   </p>
-                  <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Collections Overview</h1>
+                  <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Collections Overview
+                  </h1>
                   <p className="mt-2 max-w-3xl text-sm text-white/70">
                     Track payments, manage student accounts, run the cashier counter, and
                     configure fee masters from a single workspace.
@@ -144,8 +146,8 @@ export default function FeesDashboardPage() {
           </Card>
 
           {summaryError && (
-            <Card className="flex flex-wrap items-center justify-between gap-3 border-rose-200 bg-rose-50 p-3">
-              <p className="text-sm text-rose-700">{summaryError}</p>
+            <Card className="flex flex-wrap items-center justify-between gap-3 border-brand-rose/25 bg-brand-rose-light p-3">
+              <p className="text-sm text-status-error">{summaryError}</p>
               <Button variant="secondary" onClick={() => void refreshSummary()}>
                 Retry
               </Button>
@@ -153,17 +155,17 @@ export default function FeesDashboardPage() {
           )}
 
           {payoutActive === false && (
-            <Card className="flex flex-wrap items-center justify-between gap-3 border-amber-200 bg-amber-50 p-3">
+            <Card className="flex flex-wrap items-center justify-between gap-3 border-brand-amber/30 bg-brand-amber-light p-3">
               <div className="flex items-start gap-2">
-                <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
-                <p className="text-sm text-amber-800">
+                <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" />
+                <p className="text-sm text-status-warning">
                   No payment gateway is active — online collections are not yet routing to
                   the school's bank account. Set up the Payment Account to enable routing.
                 </p>
               </div>
               <Link
                 href="/principal/fees/settings"
-                className="inline-flex items-center rounded-md bg-amber-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-800"
+                className="btn-primary btn-sm no-underline"
               >
                 Set up <ArrowRight className="ml-1 h-3.5 w-3.5" />
               </Link>
@@ -191,21 +193,21 @@ export default function FeesDashboardPage() {
           <Card
             className={`flex flex-wrap items-center justify-between gap-3 p-3 ${
               integrityOpen && integrityOpen > 0
-                ? "border-amber-200 bg-amber-50"
-                : "border-emerald-200 bg-emerald-50"
+                ? "border-brand-amber/30 bg-brand-amber-light"
+                : "border-brand-emerald/25 bg-brand-emerald-light"
             }`}
           >
             <div className="flex items-center gap-2">
               {integrityOpen && integrityOpen > 0 ? (
-                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
+                <AlertTriangle className="h-4 w-4 shrink-0 text-status-warning" />
               ) : (
-                <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-700" />
+                <ShieldCheck className="h-4 w-4 shrink-0 text-status-success" />
               )}
               <p
                 className={`text-sm ${
                   integrityOpen && integrityOpen > 0
-                    ? "text-amber-800"
-                    : "text-emerald-800"
+                    ? "text-status-warning"
+                    : "text-status-success"
                 }`}
               >
                 {integrityOpen === null

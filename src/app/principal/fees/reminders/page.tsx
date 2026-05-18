@@ -170,9 +170,9 @@ function TemplatesView({
       ) : templates.length === 0 ? (
         <Card className="p-8 text-center text-sm text-text-muted">
           No templates yet. Templates render placeholders like{" "}
-          <code className="rounded bg-slate-100 px-1">{"{{studentName}}"}</code>,{" "}
-          <code className="rounded bg-slate-100 px-1">{"{{amount}}"}</code>,{" "}
-          <code className="rounded bg-slate-100 px-1">{"{{dueDate}}"}</code>.
+          <code className="rounded bg-surface-muted px-1">{"{{studentName}}"}</code>,{" "}
+          <code className="rounded bg-surface-muted px-1">{"{{amount}}"}</code>,{" "}
+          <code className="rounded bg-surface-muted px-1">{"{{dueDate}}"}</code>.
         </Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
@@ -189,7 +189,7 @@ function TemplatesView({
                 <button
                   type="button"
                   onClick={() => void handleDelete(t.id)}
-                  className="text-text-muted hover:text-rose-700"
+                  className="text-text-muted hover:text-status-error"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -199,7 +199,7 @@ function TemplatesView({
                   <strong>Subject:</strong> {t.subject}
                 </p>
               )}
-              <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-slate-50 p-2 text-xs text-text-secondary">
+              <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-surface-muted p-2 text-xs text-text-secondary">
                 {t.body}
               </pre>
             </Card>
@@ -245,7 +245,7 @@ function TemplateModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-lg rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="font-semibold text-text-primary">New reminder template</h2>
           <button type="button" onClick={onClose} className="text-text-muted">
             <X className="h-5 w-5" />
@@ -429,7 +429,7 @@ function RulesView({
       </div>
 
       {templates.length === 0 && (
-        <Card className="border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+        <Card className="border-brand-amber/30 bg-brand-amber-light p-3 text-sm text-status-warning">
           Create a reminder template first.
         </Card>
       )}
@@ -488,7 +488,7 @@ function RulesView({
                   <button
                     type="button"
                     onClick={() => void handleDelete(rule.id)}
-                    className="text-text-muted hover:text-rose-700"
+                    className="text-text-muted hover:text-status-error"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -544,7 +544,7 @@ function RuleModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="font-semibold text-text-primary">New reminder rule</h2>
           <button type="button" onClick={onClose} className="text-text-muted">
             <X className="h-5 w-5" />
@@ -675,7 +675,7 @@ function PreviewModal({ preview, onClose }: { preview: ReminderPreview; onClose:
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-3xl rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <div>
             <h2 className="font-semibold text-text-primary">Preview · {preview.rule.name}</h2>
             <p className="text-xs text-text-muted">
@@ -704,14 +704,14 @@ function PreviewModal({ preview, onClose }: { preview: ReminderPreview; onClose:
               </thead>
               <tbody>
                 {preview.recipients.map((r) => (
-                  <tr key={r.accountId} className="border-b border-gray-100 last:border-0">
+                  <tr key={r.accountId} className="border-b border-surface-divider last:border-0">
                     <td className="px-2 py-2">
                       <p className="font-medium text-text-primary">{r.studentName}</p>
                       <p className="text-xs text-text-muted">{r.applicationId ?? ""}</p>
                     </td>
                     <td className="px-2 py-2 text-text-secondary">{r.className ?? "—"}</td>
                     <td className="px-2 py-2 text-text-secondary">{r.contact ?? "—"}</td>
-                    <td className="px-2 py-2 text-right text-rose-700">
+                    <td className="px-2 py-2 text-right text-status-error">
                       {formatINR(r.amountDue)}
                     </td>
                     <td className="px-2 py-2 text-text-secondary">{r.earliestDueDate ?? "—"}</td>
@@ -806,7 +806,7 @@ function LogView({
             </thead>
             <tbody>
               {log.map((entry) => (
-                <tr key={entry.id} className="border-b border-gray-100 last:border-0">
+                <tr key={entry.id} className="border-b border-surface-divider last:border-0">
                   <td className="px-4 py-3 text-xs text-text-muted">
                     {new Date(entry.sentAt ?? entry.createdAt).toLocaleString("en-IN")}
                   </td>
@@ -814,7 +814,7 @@ function LogView({
                     <Badge variant="default">{entry.channel}</Badge>
                   </td>
                   <td className="px-4 py-3 text-text-secondary">{entry.recipient}</td>
-                  <td className="px-4 py-3 text-right text-rose-700">
+                  <td className="px-4 py-3 text-right text-status-error">
                     {formatINR(entry.dueAmount)}
                   </td>
                   <td className="px-4 py-3">
@@ -830,7 +830,7 @@ function LogView({
                       {entry.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-xs text-rose-600">{entry.error ?? "—"}</td>
+                  <td className="px-4 py-3 text-xs text-status-error">{entry.error ?? "—"}</td>
                 </tr>
               ))}
             </tbody>

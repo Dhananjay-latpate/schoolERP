@@ -232,7 +232,7 @@ export default function TransportPage() {
           </div>
 
           {error && (
-            <Card className="border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</Card>
+            <Card className="border-brand-rose/25 bg-brand-rose-light p-3 text-sm text-status-error">{error}</Card>
           )}
 
           {/* ── Routes & stops ──────────────────────────────────────────── */}
@@ -306,7 +306,7 @@ export default function TransportPage() {
                             {route.stops.map((stop) => (
                               <tr
                                 key={stop.id}
-                                className="border-b border-gray-100 last:border-0"
+                                className="border-b border-surface-divider last:border-0"
                               >
                                 <td className="px-3 py-2">
                                   <span className="inline-flex items-center gap-1.5 text-text-primary">
@@ -438,7 +438,7 @@ export default function TransportPage() {
                     {assignments.map((assignment) => (
                       <tr
                         key={assignment.id}
-                        className="border-b border-gray-100 last:border-0"
+                        className="border-b border-surface-divider last:border-0"
                       >
                         <td className="px-4 py-3">
                           <p className="font-medium text-text-primary">
@@ -465,7 +465,7 @@ export default function TransportPage() {
                             type="button"
                             onClick={() => void handleEnd(assignment)}
                             disabled={endingId === assignment.id}
-                            className="inline-flex items-center text-xs font-medium text-rose-700 hover:underline disabled:opacity-50"
+                            className="inline-flex items-center text-xs font-medium text-status-error hover:underline disabled:opacity-50"
                           >
                             {endingId === assignment.id ? (
                               <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -530,12 +530,12 @@ export default function TransportPage() {
                     <BillingTile
                       label="Charged"
                       value={String(billingResult.generated)}
-                      tone="text-emerald-700"
+                      tone="text-status-success"
                     />
                     <BillingTile
                       label="Already billed"
                       value={String(billingResult.skipped)}
-                      tone="text-amber-700"
+                      tone="text-status-warning"
                     />
                     <BillingTile
                       label="Total billed"
@@ -647,7 +647,7 @@ function RouteModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
             <Bus className="h-4 w-4 text-brand-royal" />
             New route
@@ -777,7 +777,7 @@ function StopModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
             <MapPin className="h-4 w-4 text-brand-royal" />
             Add stop · {route.name}

@@ -234,7 +234,7 @@ export default function ReportsPage() {
           </div>
 
           {error && (
-            <Card className="border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</Card>
+            <Card className="border-brand-rose/25 bg-brand-rose-light p-3 text-sm text-status-error">{error}</Card>
           )}
 
           {isLoading ? (
@@ -288,7 +288,7 @@ function CollectionView({ rows }: { rows: CashbookRow[] | null }) {
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-text-muted">Total collected</p>
-            <p className="mt-1 text-2xl font-bold text-emerald-700">
+            <p className="mt-1 text-2xl font-bold text-status-success">
               {formatINR(grouped?.grandTotal ?? 0)}
             </p>
           </div>
@@ -323,14 +323,14 @@ function CollectionView({ rows }: { rows: CashbookRow[] | null }) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} className="border-b border-gray-100 last:border-0">
+              <tr key={i} className="border-b border-surface-divider last:border-0">
                 <td className="px-4 py-3 text-text-secondary">
                   {new Date(r.day).toLocaleDateString("en-IN")}
                 </td>
                 <td className="px-4 py-3">
                   <Badge variant="default">{r.method}</Badge>
                 </td>
-                <td className="px-4 py-3 text-right text-emerald-700">{formatINR(r.amount)}</td>
+                <td className="px-4 py-3 text-right text-status-success">{formatINR(r.amount)}</td>
                 <td className="px-4 py-3 text-right text-text-secondary">{r.count}</td>
               </tr>
             ))}
@@ -349,7 +349,7 @@ function AgingView({ buckets }: { buckets: AgingBuckets | null }) {
     <div className="space-y-4">
       <Card className="p-4">
         <p className="text-xs uppercase tracking-wide text-text-muted">Total outstanding</p>
-        <p className="mt-1 text-2xl font-bold text-rose-700">{formatINR(total)}</p>
+        <p className="mt-1 text-2xl font-bold text-status-error">{formatINR(total)}</p>
       </Card>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {order.map((bucket) => {
@@ -357,15 +357,15 @@ function AgingView({ buckets }: { buckets: AgingBuckets | null }) {
           const pct = total > 0 ? (value / total) * 100 : 0;
           const tone =
             bucket === "0-30"
-              ? "text-emerald-700"
+              ? "text-status-success"
               : bucket === "31-60"
-                ? "text-amber-700"
-                : "text-rose-700";
+                ? "text-status-warning"
+                : "text-status-error";
           return (
             <Card key={bucket} className="p-4">
               <p className="text-xs uppercase tracking-wide text-text-muted">{bucket} days</p>
               <p className={`mt-1 text-xl font-bold ${tone}`}>{formatINR(value)}</p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-muted">
                 <div
                   className="h-full bg-brand-royal"
                   style={{ width: `${Math.min(100, pct)}%` }}
@@ -384,7 +384,7 @@ function DefaultersView({ rows }: { rows: DefaulterRow[] | null }) {
   if (!rows) return <Card className="p-8 text-center text-sm text-text-muted">No data.</Card>;
   if (rows.length === 0) {
     return (
-      <Card className="p-8 text-center text-sm text-emerald-700">
+      <Card className="p-8 text-center text-sm text-status-success">
         🎉 No defaulters with the current filter.
       </Card>
     );
@@ -406,7 +406,7 @@ function DefaultersView({ rows }: { rows: DefaulterRow[] | null }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.accountId} className="border-b border-gray-100 last:border-0">
+            <tr key={r.accountId} className="border-b border-surface-divider last:border-0">
               <td className="px-4 py-3">
                 <p className="font-medium text-text-primary">{r.studentName}</p>
                 <p className="text-xs text-text-muted">
@@ -418,7 +418,7 @@ function DefaultersView({ rows }: { rows: DefaulterRow[] | null }) {
                 {r.className ? `${r.className}${r.section ? " · " + r.section : ""}` : "—"}
               </td>
               <td className="px-4 py-3 text-text-secondary">{r.contact ?? "—"}</td>
-              <td className="px-4 py-3 text-right font-semibold text-rose-700">
+              <td className="px-4 py-3 text-right font-semibold text-status-error">
                 {formatINR(r.totalDue)}
               </td>
               <td className="px-4 py-3 text-right text-text-secondary">{r.overdueCharges}</td>
@@ -460,14 +460,14 @@ function ClassWiseView({ rows }: { rows: ClassWiseRow[] | null }) {
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-b border-gray-100 last:border-0">
+            <tr key={i} className="border-b border-surface-divider last:border-0">
               <td className="px-4 py-3 font-mono text-xs text-text-secondary">
                 {r.classId ?? "—"}
               </td>
               <td className="px-4 py-3 text-right text-text-secondary">{r.students}</td>
               <td className="px-4 py-3 text-right text-text-secondary">{formatINR(r.charged)}</td>
-              <td className="px-4 py-3 text-right text-emerald-700">{formatINR(r.paid)}</td>
-              <td className="px-4 py-3 text-right text-rose-700">{formatINR(r.due)}</td>
+              <td className="px-4 py-3 text-right text-status-success">{formatINR(r.paid)}</td>
+              <td className="px-4 py-3 text-right text-status-error">{formatINR(r.due)}</td>
             </tr>
           ))}
         </tbody>
@@ -491,13 +491,13 @@ function HeadWiseView({ rows }: { rows: HeadWiseRow[] | null }) {
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-b border-gray-100 last:border-0">
+            <tr key={i} className="border-b border-surface-divider last:border-0">
               <td className="px-4 py-3 font-mono text-xs text-text-secondary">
                 {r.feeHeadId ?? "(unattributed)"}
               </td>
               <td className="px-4 py-3 text-right text-text-secondary">{formatINR(r.charged)}</td>
-              <td className="px-4 py-3 text-right text-emerald-700">{formatINR(r.paid)}</td>
-              <td className="px-4 py-3 text-right text-rose-700">{formatINR(r.due)}</td>
+              <td className="px-4 py-3 text-right text-status-success">{formatINR(r.paid)}</td>
+              <td className="px-4 py-3 text-right text-status-error">{formatINR(r.due)}</td>
             </tr>
           ))}
         </tbody>

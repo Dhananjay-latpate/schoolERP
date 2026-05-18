@@ -64,7 +64,7 @@ export default function InstallmentTemplatesPage() {
           </div>
 
           {error && (
-            <Card className="border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</Card>
+            <Card className="border-brand-rose/25 bg-brand-rose-light p-3 text-sm text-status-error">{error}</Card>
           )}
 
           {isLoading ? (
@@ -108,7 +108,7 @@ export default function InstallmentTemplatesPage() {
                           .slice()
                           .sort((a, b) => a.sequence - b.sequence)
                           .map((line) => (
-                            <tr key={line.sequence} className="border-t border-gray-100">
+                            <tr key={line.sequence} className="border-t border-surface-divider">
                               <td className="py-1.5">{line.sequence}</td>
                               <td className="py-1.5 text-text-primary">
                                 {line.name ?? `Installment ${line.sequence}`}

@@ -95,7 +95,7 @@ export default function FamiliesPage() {
           </div>
 
           {error && (
-            <Card className="border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</Card>
+            <Card className="border-brand-rose/25 bg-brand-rose-light p-3 text-sm text-status-error">{error}</Card>
           )}
 
           {/* ── Families table ──────────────────────────────────────────── */}
@@ -124,7 +124,7 @@ export default function FamiliesPage() {
                   </thead>
                   <tbody>
                     {families.map((family) => (
-                      <tr key={family.id} className="border-b border-gray-100 last:border-0">
+                      <tr key={family.id} className="border-b border-surface-divider last:border-0">
                         <td className="px-4 py-3">
                           <p className="font-medium text-text-primary">{family.name}</p>
                           {family.primaryEmail && (
@@ -139,7 +139,7 @@ export default function FamiliesPage() {
                         </td>
                         <td
                           className={`px-4 py-3 text-right font-semibold ${
-                            family.combinedDue > 0 ? "text-rose-700" : "text-emerald-700"
+                            family.combinedDue > 0 ? "text-status-error" : "text-status-success"
                           }`}
                         >
                           {formatINR(family.combinedDue)}
@@ -309,7 +309,7 @@ function NewFamilyModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-md rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
             <Home className="h-4 w-4 text-brand-royal" />
             New family

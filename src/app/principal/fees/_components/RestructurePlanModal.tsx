@@ -132,7 +132,7 @@ export function RestructurePlanModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-2xl rounded-xl bg-surface-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-surface-divider px-5 py-4">
           <h2 className="font-semibold text-text-primary">Restructure remaining installments</h2>
           <button type="button" onClick={onClose} className="text-text-muted">
             <X className="h-5 w-5" />
@@ -140,7 +140,7 @@ export function RestructurePlanModal({
         </div>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 p-5">
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <div className="rounded-md border border-brand-amber/30 bg-brand-amber-light px-3 py-2 text-xs text-status-warning">
             Paid installments and their transactions are preserved. Only unpaid installments
             ({unpaid.length}) totalling <strong>{formatINR(remainingRupees)}</strong> will be
             replaced by the new schedule below. New rows must sum to the same total.
@@ -149,7 +149,7 @@ export function RestructurePlanModal({
           <div className="overflow-x-auto rounded-md border border-surface-border">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-border bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
+                <tr className="border-b border-surface-border bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
                   <th className="px-2 py-2">#</th>
                   <th className="px-2 py-2">Name</th>
                   <th className="px-2 py-2">Due date</th>
@@ -159,7 +159,7 @@ export function RestructurePlanModal({
               </thead>
               <tbody>
                 {drafts.map((d, i) => (
-                  <tr key={i} className="border-b border-gray-100 last:border-0">
+                  <tr key={i} className="border-b border-surface-divider last:border-0">
                     <td className="px-2 py-2 text-xs text-text-muted">{i + 1}</td>
                     <td className="px-2 py-2">
                       <Input
@@ -194,7 +194,7 @@ export function RestructurePlanModal({
                         type="button"
                         onClick={() => removeRow(i)}
                         disabled={loading || drafts.length === 1}
-                        className="text-text-muted hover:text-rose-700 disabled:opacity-30"
+                        className="text-text-muted hover:text-status-error disabled:opacity-30"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -203,7 +203,7 @@ export function RestructurePlanModal({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t border-surface-border bg-slate-50 text-xs">
+                <tr className="border-t border-surface-border bg-surface-muted text-xs">
                   <td className="px-2 py-2" colSpan={3}>
                     <button
                       type="button"
@@ -217,7 +217,7 @@ export function RestructurePlanModal({
                   <td className="px-2 py-2 text-right font-semibold">
                     <span
                       className={
-                        totalsMatch ? "text-emerald-700" : "text-rose-700"
+                        totalsMatch ? "text-status-success" : "text-status-error"
                       }
                     >
                       {formatINR(draftTotalCents / 100)}
@@ -245,7 +245,7 @@ export function RestructurePlanModal({
             />
           </div>
 
-          {error && <p className="text-sm text-rose-600">{error}</p>}
+          {error && <p className="text-sm text-status-error">{error}</p>}
 
           <div className="flex justify-end gap-3 pt-1">
             <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>

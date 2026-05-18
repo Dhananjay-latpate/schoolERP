@@ -69,7 +69,9 @@ export function AdmissionsClosedNotice({
       >
         <Icon size={28} aria-hidden="true" />
       </div>
-      <h2 className="text-lg font-bold text-text-primary">{detail.title}</h2>
+      <h2 className="text-lg font-semibold tracking-tight text-text-primary">
+        {detail.title}
+      </h2>
       <p className="mt-2 text-sm text-text-secondary">{status.message}</p>
 
       {status.sessionCode && (
@@ -86,11 +88,9 @@ export function AdmissionsClosedNotice({
         </p>
       )}
 
-      <div className="mt-6 rounded-xl border border-surface-border bg-surface-muted/60 px-4 py-3 text-left">
-        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">
-          What's next?
-        </p>
-        <p className="mt-1 text-xs text-text-secondary">
+      <div className="callout mt-6 px-4 py-3.5 text-left">
+        <p className="eyebrow">What's next?</p>
+        <p className="mt-1.5 text-xs text-text-secondary">
           Please come back once the school announces that admissions are open.
           If you've already started an application earlier, you can still log in
           to your application status page using your application ID and mobile

@@ -287,7 +287,7 @@ function ActiveSessionView({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-emerald-700" />
+              <Clock className="h-4 w-4 text-status-success" />
               <p className="text-sm font-semibold text-text-primary">Session open</p>
               <Badge variant="success">{session.status}</Badge>
             </div>
@@ -313,7 +313,7 @@ function ActiveSessionView({
           <SummaryTile
             label="Cash Collected"
             value={formatINR(cashCollected)}
-            tone="text-emerald-700"
+            tone="text-status-success"
           />
           <SummaryTile
             label="Expected in Drawer"
@@ -391,7 +391,7 @@ function ActiveSessionView({
             </thead>
             <tbody>
               {cashbook.transactions.map((t) => (
-                <tr key={t.id} className="border-b border-gray-100 last:border-0">
+                <tr key={t.id} className="border-b border-surface-divider last:border-0">
                   <td className="px-4 py-3 text-xs text-text-muted">
                     {new Date(t.paidAt).toLocaleTimeString("en-IN")}
                   </td>
@@ -400,7 +400,7 @@ function ActiveSessionView({
                   <td className="px-4 py-3">
                     <Badge variant="default">{t.method}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-right font-medium text-emerald-700">
+                  <td className="px-4 py-3 text-right font-medium text-status-success">
                     {formatINR(t.amount)}
                   </td>
                   <td className="px-4 py-3 text-xs text-text-muted">

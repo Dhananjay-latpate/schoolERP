@@ -117,8 +117,8 @@ export default function ParentServicesPage() {
           <Card
             className={`p-3 text-sm ${
               toast.kind === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                : "border-rose-200 bg-rose-50 text-rose-700"
+                ? "border-brand-emerald/25 bg-brand-emerald-light text-status-success"
+                : "border-brand-rose/25 bg-brand-rose-light text-status-error"
             }`}
           >
             {toast.message}
@@ -138,7 +138,7 @@ export default function ParentServicesPage() {
             <Loader2 className="mx-auto h-4 w-4 animate-spin text-text-muted" />
           </Card>
         ) : error ? (
-          <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <Card className="border-brand-rose/25 bg-brand-rose-light p-4 text-sm text-status-error">
             {error}
           </Card>
         ) : (

@@ -196,7 +196,7 @@ export default function AdmissionStatusPage() {
 
   if (loading) {
     return (
-      <Card className="mx-auto max-w-3xl p-6">
+      <Card className="mx-auto max-w-3xl p-7 sm:p-9">
         <p className="text-sm text-text-secondary">
           Loading application status...
         </p>
@@ -206,8 +206,8 @@ export default function AdmissionStatusPage() {
 
   if (error || !data) {
     return (
-      <Card className="mx-auto max-w-3xl p-6">
-        <p className="text-sm text-rose-600">
+      <Card className="mx-auto max-w-3xl p-7 sm:p-9">
+        <p className="text-sm text-status-error">
           {error || "Application not found"}
         </p>
         <Link
@@ -312,15 +312,13 @@ export default function AdmissionStatusPage() {
 
     if (data.status === "payment_pending") {
       return (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
-            <CreditCard size={18} aria-hidden="true" />
-          </div>
+        <div className="callout callout-warning mb-7 flex items-start gap-3">
+          <CreditCard size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-amber-900">
+            <p className="text-sm font-semibold">
               Action needed — complete your payment
             </p>
-            <p className="mt-0.5 text-xs text-amber-800">
+            <p className="mt-0.5 text-xs opacity-90">
               Your application {idChip}
               {data.payment?.amount
                 ? ` is ready for a ${formatINR(Number(data.payment.amount))} payment.`
@@ -335,15 +333,13 @@ export default function AdmissionStatusPage() {
 
     if (isCustomAwaitingPrincipal) {
       return (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
-            <Clock size={18} aria-hidden="true" />
-          </div>
+        <div className="callout callout-info mb-7 flex items-start gap-3">
+          <Clock size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-blue-900">
+            <p className="text-sm font-semibold">
               Custom payment request submitted
             </p>
-            <p className="mt-0.5 text-xs text-blue-800">
+            <p className="mt-0.5 text-xs opacity-90">
               Your application {idChip} is with the principal for review of
               your proposed amount. Once approved, you'll be able to pay the
               agreed amount here — this page will update automatically when
@@ -357,15 +353,13 @@ export default function AdmissionStatusPage() {
 
     if (data.status === "submitted") {
       return (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
-            <Clock size={18} aria-hidden="true" />
-          </div>
+        <div className="callout callout-info mb-7 flex items-start gap-3">
+          <Clock size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-blue-900">
+            <p className="text-sm font-semibold">
               Application submitted — awaiting principal review
             </p>
-            <p className="mt-0.5 text-xs text-blue-800">
+            <p className="mt-0.5 text-xs opacity-90">
               Save your application ID {idChip} to track status. The principal
               will review and you'll receive an admission decision soon.
             </p>
@@ -376,15 +370,13 @@ export default function AdmissionStatusPage() {
 
     if (data.status === "payment_completed") {
       return (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
-            <CheckCircle size={18} aria-hidden="true" />
-          </div>
+        <div className="callout callout-success mb-7 flex items-start gap-3">
+          <CheckCircle size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-emerald-900">
+            <p className="text-sm font-semibold">
               Payment received — application submitted
             </p>
-            <p className="mt-0.5 text-xs text-emerald-800">
+            <p className="mt-0.5 text-xs opacity-90">
               Your application {idChip} is in the principal's queue. You'll
               receive a decision soon.
             </p>
@@ -395,15 +387,13 @@ export default function AdmissionStatusPage() {
 
     if (data.status === "under_review") {
       return (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-4">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-white">
-            <Clock size={18} aria-hidden="true" />
-          </div>
+        <div className="callout callout-info mb-7 flex items-start gap-3">
+          <Clock size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-indigo-900">
+            <p className="text-sm font-semibold">
               Under review by the principal
             </p>
-            <p className="mt-0.5 text-xs text-indigo-800">
+            <p className="mt-0.5 text-xs opacity-90">
               Application {idChip} is being reviewed. We'll update this page
               when there's a decision.
             </p>
@@ -414,15 +404,13 @@ export default function AdmissionStatusPage() {
 
     if (data.status === "rejected") {
       return (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white">
-            <AlertCircle size={18} aria-hidden="true" />
-          </div>
+        <div className="callout callout-error mb-7 flex items-start gap-3">
+          <AlertCircle size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-rose-900">
+            <p className="text-sm font-semibold">
               Application not accepted
             </p>
-            <p className="mt-0.5 text-xs text-rose-800">
+            <p className="mt-0.5 text-xs opacity-90">
               The principal could not accept application {idChip} at this
               time. Please contact the admissions office for next steps.
             </p>
@@ -501,18 +489,18 @@ export default function AdmissionStatusPage() {
     })();
 
     return (
-      <ol className="mb-6 grid grid-cols-4 gap-2 text-[11px]">
+      <ol className="mb-7 grid grid-cols-4 gap-2 text-[11px]">
         {stages.map((s, idx) => {
           const done = idx <= currentIndex;
           const active = idx === currentIndex;
           return (
             <li
               key={s.key}
-              className={`flex flex-col items-center rounded-lg border px-2 py-2 text-center ${
+              className={`flex flex-col items-center rounded-md border px-2 py-2.5 text-center ${
                 active
-                  ? "border-brand-royal bg-brand-royal/10 text-brand-royal"
+                  ? "border-brand-royal/30 bg-brand-sky-light text-brand-royal"
                   : done
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                    ? "border-brand-emerald/30 bg-brand-emerald-light text-brand-emerald"
                     : "border-surface-border bg-surface-muted text-text-muted"
               }`}
             >
@@ -521,8 +509,8 @@ export default function AdmissionStatusPage() {
                   done
                     ? active
                       ? "bg-brand-royal text-white"
-                      : "bg-emerald-500 text-white"
-                    : "bg-white text-text-muted border border-surface-border"
+                      : "bg-brand-emerald text-white"
+                    : "bg-surface-card text-text-muted border border-surface-border"
                 }`}
               >
                 {idx + 1}
@@ -536,16 +524,14 @@ export default function AdmissionStatusPage() {
   };
 
   return (
-    <Card className="mx-auto max-w-3xl p-6 sm:p-8">
+    <Card className="mx-auto max-w-3xl p-7 sm:p-9">
       {renderStatusBanner()}
       {renderTimeline()}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-royal">
-            Application Tracker
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-text-primary">
+          <p className="eyebrow eyebrow-accent">Application Tracker</p>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-text-primary">
             {data.firstName} {data.lastName}
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
@@ -557,28 +543,34 @@ export default function AdmissionStatusPage() {
         </Badge>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-surface-border bg-surface-muted p-3">
-          <p className="text-xs uppercase text-text-muted">Class Applied</p>
-          <p className="text-sm font-semibold text-text-primary">
+      <div className="mt-7 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-md border border-surface-border bg-surface-muted px-3.5 py-3">
+          <p className="text-[0.6875rem] uppercase tracking-wide text-text-muted">
+            Class Applied
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-text-primary">
             {data.classAdmitted}
           </p>
         </div>
-        <div className="rounded-lg border border-surface-border bg-surface-muted p-3">
-          <p className="text-xs uppercase text-text-muted">Emergency Contact</p>
-          <p className="text-sm font-semibold text-text-primary">
+        <div className="rounded-md border border-surface-border bg-surface-muted px-3.5 py-3">
+          <p className="text-[0.6875rem] uppercase tracking-wide text-text-muted">
+            Emergency Contact
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-text-primary">
             {data.emergencyContact}
           </p>
         </div>
-        <div className="rounded-lg border border-surface-border bg-surface-muted p-3 sm:col-span-2">
-          <p className="text-xs uppercase text-text-muted">Address</p>
-          <p className="text-sm font-semibold text-text-primary">
+        <div className="rounded-md border border-surface-border bg-surface-muted px-3.5 py-3 sm:col-span-2">
+          <p className="text-[0.6875rem] uppercase tracking-wide text-text-muted">
+            Address
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-text-primary">
             {data.address}
           </p>
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-brand-sky/20 bg-brand-sky/10 p-4 text-sm text-text-secondary">
+      <div className="callout mt-6 text-sm">
         Keep this page bookmarked to track updates from school administration.
       </div>
 
@@ -587,15 +579,15 @@ export default function AdmissionStatusPage() {
           submission and the post-principal-approval custom-payment flow,
           so the parent always lands on the same "Pay Now" experience. */}
       {data.status === "payment_pending" && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-start gap-3">
+        <div className="mt-6 rounded-lg border border-surface-border bg-surface-card p-5 shadow-sm">
+          <div className="mb-5 flex items-start gap-3">
             <CreditCard
               size={20}
-              className="mt-0.5 shrink-0 text-amber-600"
+              className="mt-0.5 shrink-0 text-status-warning"
               aria-hidden="true"
             />
             <div>
-              <p className="text-sm font-bold text-text-primary">
+              <p className="text-sm font-semibold text-text-primary">
                 Complete your payment to continue
               </p>
               <p className="mt-0.5 text-xs text-text-secondary">
@@ -624,14 +616,12 @@ export default function AdmissionStatusPage() {
       )}
 
       {data.status === "approved" && (
-        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
-            Admission Confirmed
-          </p>
-          <h2 className="mt-1 text-lg font-bold text-emerald-900">
+        <div className="callout callout-success mt-6 p-5">
+          <p className="eyebrow">Admission Confirmed</p>
+          <h2 className="mt-1.5 text-lg font-semibold">
             Your admission letter is ready
           </h2>
-          <p className="mt-1 text-sm text-emerald-800">
+          <p className="mt-1 text-sm opacity-90">
             Welcome to the school. Preview your confirmation letter or
             download the PDF for your records.
           </p>
@@ -640,13 +630,13 @@ export default function AdmissionStatusPage() {
               href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}/api/admissions/${encodeURIComponent(data.applicationId)}/letter`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-emerald-700 bg-surface-card px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+              className="btn-secondary btn-sm no-underline"
             >
               Preview Letter
             </a>
             <a
               href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}/api/admissions/${encodeURIComponent(data.applicationId)}/letter/pdf`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
+              className="btn-primary btn-sm no-underline"
             >
               Download PDF
             </a>
@@ -657,11 +647,11 @@ export default function AdmissionStatusPage() {
       {planStatus?.hasPlan &&
         planStatus.isCustomPlan === true &&
         planStatus.status === "rejected" && (
-          <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4">
-            <p className="text-sm font-semibold text-rose-800">
+          <div className="callout callout-error mt-6 p-4">
+            <p className="text-sm font-semibold">
               Custom fee request was rejected.
             </p>
-            <p className="mt-1 text-xs text-rose-700">
+            <p className="mt-1 text-xs opacity-90">
               Please choose a standard payment option below to continue.
             </p>
 
@@ -670,7 +660,7 @@ export default function AdmissionStatusPage() {
                 {feeStructure.installmentOptions.map((option, index) => (
                   <label
                     key={option.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-rose-200 bg-surface-card px-3 py-2"
+                    className="flex cursor-pointer items-center gap-2.5 rounded-md border border-surface-border bg-surface-card px-3.5 py-2.5"
                   >
                     <input
                       type="radio"
@@ -689,7 +679,7 @@ export default function AdmissionStatusPage() {
                   type="button"
                   onClick={handleCreateStandardPlan}
                   disabled={actionLoading}
-                  className="mt-2 rounded-lg bg-brand-royal px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary btn-sm mt-2"
                 >
                   {actionLoading
                     ? "Creating Plan..."
@@ -697,7 +687,7 @@ export default function AdmissionStatusPage() {
                 </button>
               </div>
             ) : (
-              <p className="mt-3 text-xs text-rose-700">
+              <p className="mt-3 text-xs opacity-90">
                 Standard fee options are not available yet. Please contact
                 school administration.
               </p>
@@ -708,7 +698,7 @@ export default function AdmissionStatusPage() {
       {paymentPlan &&
         (paymentPlan.status === "approved" ||
           paymentPlan.status === "completed") && (
-          <div className="mt-6 rounded-xl border border-surface-border bg-surface-muted p-4">
+          <div className="mt-6 rounded-lg border border-surface-border bg-surface-muted p-4 sm:p-5">
             <p className="text-sm font-semibold text-text-primary">
               {paymentPlan.isCustomPlan
                 ? "Approved Custom Fee Plan"
@@ -724,7 +714,7 @@ export default function AdmissionStatusPage() {
               {paymentPlan.installments.map((installment, index) => (
                 <div
                   key={installment.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-surface-border bg-surface-card px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-surface-border bg-surface-card px-3.5 py-2.5"
                 >
                   <div>
                     <p className="text-sm font-semibold text-text-primary">
@@ -743,7 +733,7 @@ export default function AdmissionStatusPage() {
                       type="button"
                       onClick={() => handlePayInstallment(index)}
                       disabled={installmentPayingIndex !== null}
-                      className="rounded-lg bg-brand-royal px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      className="btn-primary btn-sm"
                     >
                       {installmentPayingIndex === index
                         ? "Processing..."

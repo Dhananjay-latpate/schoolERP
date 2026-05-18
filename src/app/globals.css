@@ -1,89 +1,99 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════════
-   RESILLIX DESIGN SYSTEM — "Calm Operations"
+   CLARITY DESIGN SYSTEM
    ───────────────────────────────────────────────────────────────────────
-   Principles (modeled on the restraint of modern AI product UIs):
-     1. Content first — chrome recedes, data leads.
-     2. Neutral foundation — warm near-blacks on warm off-whites; colour is
-        used sparingly and only to carry meaning (status, focus, brand).
-     3. Borders over shadows — surfaces are defined by hairline borders;
-        elevation is reserved for true overlays (menus, modals, toasts).
-     4. One brand accent — Resillix teal. Easily re-themable for clients via
-        the `--color-brand-*` tokens below.
-     5. Generous, consistent spacing and a single type scale.
+   A calm, minimal design language for the school ERP — modeled on the
+   restraint of Apple's product surfaces.
+
+   Principles:
+     1. Generous whitespace. Air is the primary layout tool; density is
+        earned, never default.
+     2. One accent. A single confident blue carries every primary action,
+        link and focus state. Everything else is neutral.
+     3. Crisp hierarchy. Type and spacing — not boxes and colour — separate
+        one thing from the next.
+     4. Quiet surfaces. Soft, diffuse shadows and hairline borders. No
+        decorative gradients, no noise.
+     5. Consistent rhythm. One spacing scale, one type scale, one motion
+        curve.
+     6. Accessible by default. Visible focus, reduced-motion support,
+        AA-contrast text.
+
+   The accent is a single token (`--color-brand-royal`). Re-brand for a
+   specific school by overriding it — nothing else needs to change.
    ═══════════════════════════════════════════════════════════════════════ */
 
 @layer base {
   :root {
-    /* ── Brand accent (client-themeable) ─────────────────────────────── */
-    --color-brand-navy: #14130f;        /* deep ink — dark panels / logo   */
-    --color-brand-sapphire: #1f1e19;    /* ink step toward accent          */
-    --color-brand-royal: #0b6e5f;       /* PRIMARY ACCENT — Resillix teal  */
-    --color-brand-sky: #0e8a78;         /* lighter accent                  */
-    --color-brand-sky-light: #e6f3f0;   /* accent wash (badge / hover bg)  */
-    --color-brand-amber: #9a6212;       /* attention / payment             */
-    --color-brand-amber-light: #faf2e3;
-    --color-brand-emerald: #1a7a45;     /* success                         */
-    --color-brand-emerald-light: #e8f3ec;
-    --color-brand-rose: #b3372f;        /* error / destructive             */
-    --color-brand-rose-light: #fbeceb;
-    --color-brand-violet: #5b4c8a;      /* info / secondary category       */
-    --color-brand-violet-light: #efedf7;
+    /* ── Brand accent (single, themeable) ────────────────────────────── */
+    --color-brand-navy: #1d1d1f;        /* near-black — dark panels / logo */
+    --color-brand-sapphire: #2c2c2e;    /* ink step toward panels          */
+    --color-brand-royal: #0071e3;       /* PRIMARY ACCENT — clarity blue   */
+    --color-brand-sky: #2b8fff;         /* lighter accent                  */
+    --color-brand-sky-light: #e8f1fd;   /* accent wash (badge / hover bg)  */
+    --color-brand-amber: #8a6500;       /* attention / payment             */
+    --color-brand-amber-light: #fbf2dd;
+    --color-brand-emerald: #1d8a4e;     /* success                         */
+    --color-brand-emerald-light: #e7f5ec;
+    --color-brand-rose: #cc2e2a;        /* error / destructive             */
+    --color-brand-rose-light: #fbeaea;
+    --color-brand-violet: #5a4ad1;      /* info / secondary category       */
+    --color-brand-violet-light: #ecebfb;
 
     /* ── Surfaces ────────────────────────────────────────────────────── */
-    --color-surface-bg: #f7f7f5;        /* app canvas — warm off-white     */
+    --color-surface-bg: #f5f5f7;        /* app canvas — cool off-white     */
     --color-surface-card: #ffffff;      /* raised content                  */
-    --color-surface-border: #e7e6e2;    /* hairline border                 */
-    --color-surface-muted: #f2f1ee;     /* inset / hover fill              */
-    --color-surface-divider: #ebeae6;   /* thin separators                 */
-    --color-surface-overlay: rgba(20, 19, 15, 0.4);
+    --color-surface-border: #e3e3e6;    /* hairline border                 */
+    --color-surface-muted: #f0f0f3;     /* inset / hover fill              */
+    --color-surface-divider: #ededf0;   /* thin separators                 */
+    --color-surface-overlay: rgba(0, 0, 0, 0.45);
 
     /* ── Text ────────────────────────────────────────────────────────── */
-    --color-text-primary: #1a1a17;      /* warm near-black                 */
-    --color-text-secondary: #5b5a53;    /* supporting copy                 */
-    --color-text-muted: #8d8c84;        /* meta / placeholders             */
+    --color-text-primary: #1d1d1f;      /* near-black ink                  */
+    --color-text-secondary: #5c5c61;    /* supporting copy                 */
+    --color-text-muted: #86868b;        /* meta / placeholders             */
     --color-text-inverse: #ffffff;
-    --color-text-link: #0b6e5f;
+    --color-text-link: #0066cc;
 
     /* ── Status (text-on-light foregrounds) ──────────────────────────── */
-    --color-status-success: #1a7a45;
-    --color-status-warning: #9a6212;
-    --color-status-error: #b3372f;
-    --color-status-info: #0b6e5f;
+    --color-status-success: #1d8a4e;
+    --color-status-warning: #8a6500;
+    --color-status-error: #cc2e2a;
+    --color-status-info: #0071e3;
 
-    /* ── Radii ───────────────────────────────────────────────────────── */
-    --radius-xs: 4px;
-    --radius-sm: 8px;     /* inputs, buttons, chips                       */
-    --radius-md: 10px;
-    --radius-lg: 14px;    /* cards, panels                               */
-    --radius-xl: 20px;
+    /* ── Radii — generous, soft ──────────────────────────────────────── */
+    --radius-xs: 6px;
+    --radius-sm: 10px;    /* inputs, buttons, chips                       */
+    --radius-md: 12px;    /* mid surfaces, callouts                       */
+    --radius-lg: 16px;    /* cards, panels                               */
+    --radius-xl: 22px;
     --radius-2xl: 28px;
     --radius-full: 9999px;
 
-    /* ── Elevation — deliberately quiet ──────────────────────────────── */
-    --shadow-xs: 0 1px 2px rgb(20 19 15 / 0.04);
-    --shadow-sm: 0 1px 2px rgb(20 19 15 / 0.05), 0 1px 3px rgb(20 19 15 / 0.04);
-    --shadow-card: 0 1px 2px rgb(20 19 15 / 0.04);
-    --shadow-raised: 0 2px 4px rgb(20 19 15 / 0.04), 0 8px 24px -8px rgb(20 19 15 / 0.10);
-    --shadow-modal: 0 4px 12px rgb(20 19 15 / 0.06), 0 24px 56px -12px rgb(20 19 15 / 0.20);
-    --shadow-glow: 0 0 0 3px rgb(11 110 95 / 0.16);
-    --shadow-glow-emerald: 0 0 0 3px rgb(26 122 69 / 0.16);
-    --shadow-glow-amber: 0 0 0 3px rgb(154 98 18 / 0.18);
-    --shadow-glow-rose: 0 0 0 3px rgb(179 55 47 / 0.14);
-    --shadow-btn: 0 1px 2px rgb(20 19 15 / 0.08);
-    --shadow-btn-hover: 0 1px 2px rgb(20 19 15 / 0.10);
+    /* ── Elevation — soft and diffuse ────────────────────────────────── */
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.04);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05), 0 2px 6px rgb(0 0 0 / 0.04);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -12px rgb(0 0 0 / 0.12);
+    --shadow-raised: 0 2px 6px rgb(0 0 0 / 0.05), 0 14px 36px -16px rgb(0 0 0 / 0.16);
+    --shadow-modal: 0 8px 24px rgb(0 0 0 / 0.10), 0 32px 64px -16px rgb(0 0 0 / 0.28);
+    --shadow-glow: 0 0 0 4px rgb(0 113 227 / 0.16);
+    --shadow-glow-emerald: 0 0 0 4px rgb(29 138 78 / 0.16);
+    --shadow-glow-amber: 0 0 0 4px rgb(138 101 0 / 0.18);
+    --shadow-glow-rose: 0 0 0 4px rgb(204 46 42 / 0.16);
+    --shadow-btn: 0 1px 2px rgb(0 0 0 / 0.06);
+    --shadow-btn-hover: 0 2px 6px rgb(0 0 0 / 0.10);
 
     /* ── Motion ──────────────────────────────────────────────────────── */
-    --ease-brand: cubic-bezier(0.2, 0, 0, 1);
+    --ease-brand: cubic-bezier(0.32, 0.08, 0.24, 1);
     --ease-bounce: cubic-bezier(0.34, 1.4, 0.64, 1);
-    --duration-fast: 120ms;
-    --duration-normal: 200ms;
-    --duration-slow: 320ms;
+    --duration-fast: 130ms;
+    --duration-normal: 220ms;
+    --duration-slow: 340ms;
 
     /* ── Type ────────────────────────────────────────────────────────── */
     --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
-      "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
 
@@ -135,7 +145,6 @@
   --shadow-raised: var(--shadow-raised);
   --shadow-modal: var(--shadow-modal);
   --shadow-glow: var(--shadow-glow);
-  --shadow-btn: var(--shadow-btn);
 
   --font-sans: var(--font-sans);
 }
@@ -159,28 +168,23 @@
     background-color: var(--color-surface-bg);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;          /* 15px base — comfortable for dense ERP */
-    line-height: 1.55;
+    font-size: 0.9375rem;          /* 15px base */
+    line-height: 1.6;
     font-feature-settings: "cv11", "ss01";
-    letter-spacing: -0.003em;
+    letter-spacing: -0.006em;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.018em;
-    /* Inherit the surrounding text colour. `body` already sets
-       --color-text-primary, so headings on normal pages are unchanged —
-       but headings inside a dark `text-white` panel (login hero, the
-       dashboard headers) now correctly render white instead of being
-       forced dark-on-dark by an element-level rule. */
+    line-height: 1.18;
+    letter-spacing: -0.021em;
     color: inherit;
     text-wrap: balance;
   }
 
-  h1 { font-size: 1.75rem; letter-spacing: -0.025em; }
-  h2 { font-size: 1.375rem; }
-  h3 { font-size: 1.125rem; }
+  h1 { font-size: 2rem; letter-spacing: -0.03em; }
+  h2 { font-size: 1.5rem; letter-spacing: -0.025em; }
+  h3 { font-size: 1.1875rem; }
 
   p { text-wrap: pretty; }
 
@@ -188,12 +192,12 @@
     color: var(--color-text-link);
     text-decoration: none;
   }
-  a:hover { text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
   input, textarea, select, button { font: inherit; }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-brand-royal) 22%, transparent);
+    background: color-mix(in oklab, var(--color-brand-royal) 20%, transparent);
     color: var(--color-text-primary);
   }
 
@@ -205,7 +209,7 @@
   }
 
   /* Scrollbar — slim and quiet */
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     background: var(--color-surface-divider);
@@ -237,13 +241,13 @@
     margin-inline: auto;
     width: 100%;
     max-width: 80rem;            /* 1280px */
-    padding-inline: 1rem;
+    padding-inline: 1.25rem;
   }
-  @media (min-width: 640px) { .page-shell { padding-inline: 1.5rem; } }
+  @media (min-width: 640px) { .page-shell { padding-inline: 2rem; } }
 
-  .stack-loose > * + * { margin-top: 1.5rem; }
-  .stack > * + * { margin-top: 1rem; }
-  .stack-tight > * + * { margin-top: 0.5rem; }
+  .stack-loose > * + * { margin-top: 2rem; }
+  .stack > * + * { margin-top: 1.25rem; }
+  .stack-tight > * + * { margin-top: 0.625rem; }
 
   .divider {
     height: 1px;
@@ -256,7 +260,7 @@
   .eyebrow {
     font-size: 0.6875rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--color-text-muted);
   }
@@ -268,15 +272,15 @@
   /* ── Brand / dark panel ──────────────────────────────────────────── */
   .brand-gradient {
     background:
-      radial-gradient(120% 140% at 0% 0%, rgb(11 110 95 / 0.28) 0%, transparent 55%),
-      linear-gradient(155deg, var(--color-brand-navy) 0%, var(--color-brand-sapphire) 55%, #26241d 100%);
+      radial-gradient(120% 140% at 100% 0%, rgb(0 113 227 / 0.22) 0%, transparent 58%),
+      linear-gradient(168deg, var(--color-brand-navy) 0%, var(--color-brand-sapphire) 100%);
     color: var(--color-text-inverse);
   }
 
   .sidebar-dark {
     background:
-      radial-gradient(110% 90% at 100% 0%, rgb(11 110 95 / 0.22) 0%, transparent 50%),
-      linear-gradient(165deg, var(--color-brand-navy) 0%, var(--color-brand-sapphire) 100%);
+      radial-gradient(110% 80% at 100% 0%, rgb(0 113 227 / 0.18) 0%, transparent 52%),
+      linear-gradient(172deg, var(--color-brand-navy) 0%, var(--color-brand-sapphire) 100%);
     border-radius: var(--radius-lg);
   }
 
@@ -288,8 +292,8 @@
     color: var(--color-text-inverse);
     font-weight: 700;
     letter-spacing: -0.04em;
-    background: linear-gradient(150deg, var(--color-brand-navy) 0%, #2a2820 100%);
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    background: var(--color-brand-navy);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
   }
 
   /* ── Cards / surfaces ────────────────────────────────────────────── */
@@ -305,13 +309,14 @@
     border: 1px solid var(--color-surface-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
-    transition: border-color var(--duration-fast) var(--ease-brand),
-      box-shadow var(--duration-fast) var(--ease-brand),
-      transform var(--duration-fast) var(--ease-brand);
+    transition: border-color var(--duration-normal) var(--ease-brand),
+      box-shadow var(--duration-normal) var(--ease-brand),
+      transform var(--duration-normal) var(--ease-brand);
   }
   .card-interactive:hover {
-    border-color: color-mix(in oklab, var(--color-brand-royal) 35%, var(--color-surface-border));
+    border-color: color-mix(in oklab, var(--color-brand-royal) 30%, var(--color-surface-border));
     box-shadow: var(--shadow-raised);
+    transform: translateY(-2px);
   }
 
   .card-raised {
@@ -321,19 +326,20 @@
     box-shadow: var(--shadow-raised);
   }
 
-  /* Card with a thin brand keyline along the top */
+  /* Card with a thin accent keyline along the top */
   .card-accent {
     background: var(--color-surface-card);
     border: 1px solid var(--color-surface-border);
     border-top: 2px solid var(--color-brand-royal);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
+    padding: 1.25rem 1.375rem;
   }
 
   .card-glass {
-    background: color-mix(in oklab, var(--color-surface-card) 82%, transparent);
-    backdrop-filter: blur(14px) saturate(1.3);
-    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    background: color-mix(in oklab, var(--color-surface-card) 78%, transparent);
+    backdrop-filter: blur(18px) saturate(1.6);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
     border: 1px solid var(--color-surface-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
@@ -351,7 +357,7 @@
     width: 100%;
     border: 1px solid var(--color-surface-border);
     border-radius: var(--radius-sm);
-    padding: 0.5625rem 0.8125rem;
+    padding: 0.625rem 0.875rem;
     font-size: 0.9375rem;
     line-height: 1.5;
     color: var(--color-text-primary);
@@ -362,7 +368,7 @@
     outline: none;
   }
   .input-base:hover:not(:disabled):not(:focus) {
-    border-color: color-mix(in oklab, var(--color-text-muted) 60%, var(--color-surface-border));
+    border-color: color-mix(in oklab, var(--color-text-muted) 55%, var(--color-surface-border));
   }
   .input-base:focus {
     border-color: var(--color-brand-royal);
@@ -383,6 +389,14 @@
     box-shadow: var(--shadow-glow-rose) !important;
   }
 
+  /* Field-level error message — one consistent treatment everywhere */
+  .form-error {
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--color-status-error);
+  }
+
   /* ── Buttons ─────────────────────────────────────────────────────── */
   .btn-primary,
   .btn-secondary,
@@ -395,7 +409,7 @@
     gap: 0.5rem;
     font-weight: 500;
     line-height: 1.25rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
@@ -404,24 +418,32 @@
       border-color var(--duration-fast) var(--ease-brand),
       color var(--duration-fast) var(--ease-brand),
       box-shadow var(--duration-fast) var(--ease-brand),
+      transform var(--duration-fast) var(--ease-brand),
       opacity var(--duration-fast) var(--ease-brand);
   }
   .btn-primary,
   .btn-secondary,
   .btn-danger {
-    padding: 0.5rem 1rem;
+    padding: 0.5625rem 1.125rem;
     font-size: 0.9375rem;
   }
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled),
+  .btn-danger:active:not(:disabled),
+  .btn-pay:active:not(:disabled) { transform: scale(0.985); }
 
-  /* Primary — solid ink. Confident, low-chrome. */
+  /* Primary — the accent. One confident blue for the main action. */
   .btn-primary {
     color: var(--color-text-inverse);
-    background: var(--color-text-primary);
-    border: 1px solid var(--color-text-primary);
+    background: var(--color-brand-royal);
+    border: 1px solid var(--color-brand-royal);
     box-shadow: var(--shadow-btn);
   }
-  .btn-primary:hover:not(:disabled) { background: #000; border-color: #000; }
-  .btn-primary:active:not(:disabled) { background: #2c2b27; border-color: #2c2b27; }
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--color-brand-royal) 90%, #000);
+    border-color: color-mix(in oklab, var(--color-brand-royal) 90%, #000);
+    box-shadow: var(--shadow-btn-hover);
+  }
 
   /* Secondary — white surface, hairline border. */
   .btn-secondary {
@@ -432,13 +454,12 @@
   }
   .btn-secondary:hover:not(:disabled) {
     background: var(--color-surface-muted);
-    border-color: color-mix(in oklab, var(--color-text-muted) 50%, var(--color-surface-border));
+    border-color: color-mix(in oklab, var(--color-text-muted) 45%, var(--color-surface-border));
   }
-  .btn-secondary:active:not(:disabled) { background: var(--color-surface-divider); }
 
   /* Ghost — chromeless, for toolbars / inline actions. */
   .btn-ghost {
-    padding: 0.4375rem 0.75rem;
+    padding: 0.5rem 0.8125rem;
     font-size: 0.875rem;
     color: var(--color-text-secondary);
     background: transparent;
@@ -456,11 +477,14 @@
     border: 1px solid var(--color-status-error);
     box-shadow: var(--shadow-btn);
   }
-  .btn-danger:hover:not(:disabled) { background: #9c2f28; border-color: #9c2f28; }
+  .btn-danger:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--color-status-error) 88%, #000);
+    border-color: color-mix(in oklab, var(--color-status-error) 88%, #000);
+  }
 
-  /* Pay — primary call-to-action for payment flows (brand accent). */
+  /* Pay — the large call-to-action for payment flows. */
   .btn-pay {
-    padding: 0.625rem 1.5rem;
+    padding: 0.6875rem 1.5rem;
     font-size: 0.9375rem;
     font-weight: 600;
     color: var(--color-text-inverse);
@@ -469,11 +493,9 @@
     box-shadow: var(--shadow-btn);
   }
   .btn-pay:hover:not(:disabled) {
-    background: color-mix(in oklab, var(--color-brand-royal) 88%, #000);
-    border-color: color-mix(in oklab, var(--color-brand-royal) 88%, #000);
-  }
-  .btn-pay:active:not(:disabled) {
-    background: color-mix(in oklab, var(--color-brand-royal) 80%, #000);
+    background: color-mix(in oklab, var(--color-brand-royal) 90%, #000);
+    border-color: color-mix(in oklab, var(--color-brand-royal) 90%, #000);
+    box-shadow: var(--shadow-btn-hover);
   }
 
   .btn-primary:disabled,
@@ -481,14 +503,45 @@
   .btn-ghost:disabled,
   .btn-danger:disabled,
   .btn-pay:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
     box-shadow: none;
   }
 
-  .btn-sm { padding-block: 0.375rem; padding-inline: 0.75rem; font-size: 0.8125rem; }
-  .btn-lg { padding-block: 0.625rem; padding-inline: 1.25rem; font-size: 1rem; }
+  .btn-sm { padding-block: 0.4375rem; padding-inline: 0.875rem; font-size: 0.8125rem; }
+  .btn-lg { padding-block: 0.6875rem; padding-inline: 1.375rem; font-size: 1rem; }
   .btn-block { display: flex; width: 100%; }
+
+  /* ── Callout / notice block ──────────────────────────────────────────
+     One shared treatment for inline notices — replaces ad-hoc coloured
+     boxes. Compose with flex utilities for an icon + copy layout. */
+  .callout {
+    border: 1px solid var(--color-surface-border);
+    background: var(--color-surface-muted);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+    color: var(--color-text-secondary);
+  }
+  .callout-info {
+    border-color: color-mix(in oklab, var(--color-brand-royal) 24%, transparent);
+    background: var(--color-brand-sky-light);
+    color: color-mix(in oklab, var(--color-brand-royal) 78%, #000);
+  }
+  .callout-success {
+    border-color: color-mix(in oklab, var(--color-brand-emerald) 24%, transparent);
+    background: var(--color-brand-emerald-light);
+    color: color-mix(in oklab, var(--color-brand-emerald) 80%, #000);
+  }
+  .callout-warning {
+    border-color: color-mix(in oklab, var(--color-brand-amber) 26%, transparent);
+    background: var(--color-brand-amber-light);
+    color: color-mix(in oklab, var(--color-brand-amber) 86%, #000);
+  }
+  .callout-error {
+    border-color: color-mix(in oklab, var(--color-brand-rose) 24%, transparent);
+    background: var(--color-brand-rose-light);
+    color: color-mix(in oklab, var(--color-brand-rose) 80%, #000);
+  }
 
   /* ── Step timeline (used on dark sidebars & light panels) ────────── */
   .step-item {
@@ -509,7 +562,7 @@
     background: rgb(255 255 255 / 0.12);
     transform: translateX(-50%);
   }
-  .step-item.step-done:not(:last-child)::after { background: rgb(255 255 255 / 0.32); }
+  .step-item.step-done:not(:last-child)::after { background: rgb(255 255 255 / 0.34); }
 
   .step-icon {
     flex-shrink: 0;
@@ -537,17 +590,17 @@
   }
   .step-icon-inactive {
     background: rgb(255 255 255 / 0.07);
-    color: rgb(255 255 255 / 0.45);
-    border: 1.5px solid rgb(255 255 255 / 0.14);
+    color: rgb(255 255 255 / 0.5);
+    border: 1.5px solid rgb(255 255 255 / 0.16);
   }
 
   /* Light-surface variant: add `.steps-on-light` on the wrapper */
   .steps-on-light .step-item:not(:last-child)::after { background: var(--color-surface-divider); }
   .steps-on-light .step-item.step-done:not(:last-child)::after { background: var(--color-brand-royal); }
   .steps-on-light .step-icon-active {
-    background: var(--color-text-primary);
+    background: var(--color-brand-royal);
     color: #fff;
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-text-primary) 14%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-brand-royal) 18%, transparent);
   }
   .steps-on-light .step-icon-done {
     background: var(--color-brand-sky-light);
@@ -564,7 +617,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375em;
-    padding: 0.1875em 0.5625em;
+    padding: 0.25em 0.625em;
     border-radius: var(--radius-full);
     font-size: 0.75rem;
     font-weight: 500;
@@ -589,7 +642,7 @@
   .badge-warning {
     background: var(--color-brand-amber-light);
     color: var(--color-brand-amber);
-    border-color: color-mix(in oklab, var(--color-brand-amber) 20%, transparent);
+    border-color: color-mix(in oklab, var(--color-brand-amber) 22%, transparent);
   }
   .badge-rose,
   .badge-error {
@@ -633,14 +686,14 @@
     font-weight: 500;
     color: var(--color-text-muted);
     font-size: 0.75rem;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
-    padding: 0.625rem 0.875rem;
+    padding: 0.6875rem 1rem;
     border-bottom: 1px solid var(--color-surface-border);
     background: var(--color-surface-muted);
   }
   .data-table tbody td {
-    padding: 0.75rem 0.875rem;
+    padding: 0.8125rem 1rem;
     border-bottom: 1px solid var(--color-surface-divider);
     color: var(--color-text-primary);
     vertical-align: middle;
@@ -656,13 +709,13 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--color-surface-border);
     background: var(--color-surface-muted);
-    padding: 1rem 1.25rem;
+    padding: 1.125rem 1.375rem;
   }
   .fee-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.4375rem 0;
+    padding: 0.5rem 0;
     font-size: 0.875rem;
     color: var(--color-text-secondary);
   }
@@ -672,9 +725,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.6875rem 0 0;
+    padding: 0.75rem 0 0;
     border-top: 1.5px solid var(--color-text-primary);
-    margin-top: 0.375rem;
+    margin-top: 0.4375rem;
     font-weight: 600;
     font-size: 0.9375rem;
     color: var(--color-text-primary);
@@ -686,13 +739,13 @@
     position: fixed;
     inset: 0;
     background: var(--color-surface-overlay);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
   }
   .modal-panel {
     background: var(--color-surface-card);
     border: 1px solid var(--color-surface-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-modal);
   }
 
@@ -714,20 +767,16 @@
   }
 
   /* ─── Premium components ──────────────────────────────────────────────
-     Richer surfaces layered on the calm base — KPI tiles, showcase cards
-     and key actions in the Fees & Accounts module. */
+     Richer surfaces layered on the calm base — KPI tiles and showcase
+     cards in the data-heavy modules. */
 
-  /* Premium metric tile: soft top-down wash + layered shadow + hover lift. */
+  /* Premium metric tile: clean surface + hover lift. */
   .kpi-tile {
     position: relative;
     overflow: hidden;
     border: 1px solid var(--color-surface-border);
     border-radius: var(--radius-lg);
-    background: linear-gradient(
-      180deg,
-      var(--color-surface-card) 0%,
-      var(--color-surface-muted) 100%
-    );
+    background: var(--color-surface-card);
     box-shadow: var(--shadow-card);
     transition:
       box-shadow var(--duration-normal) var(--ease-brand),
@@ -737,7 +786,7 @@
   .kpi-tile:hover {
     box-shadow: var(--shadow-raised);
     transform: translateY(-2px);
-    border-color: color-mix(in oklab, var(--color-brand-royal) 24%, var(--color-surface-border));
+    border-color: color-mix(in oklab, var(--color-brand-royal) 22%, var(--color-surface-border));
   }
   /* A 3px accent strip down the left edge of a KPI tile. */
   .kpi-tile-accent::before {
@@ -777,11 +826,11 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    box-shadow: 0 0 0 0 rgb(26 122 69 / 0.5);
+    box-shadow: 0 0 0 0 rgb(29 138 78 / 0.5);
     animation: pulse-ring 2s var(--ease-brand) infinite;
   }
   @keyframes pulse-ring {
-    to { box-shadow: 0 0 0 7px rgb(26 122 69 / 0); }
+    to { box-shadow: 0 0 0 7px rgb(29 138 78 / 0); }
   }
 }
 
@@ -818,4 +867,3 @@ iframe[src*="vercel-toolbar"],
   visibility: hidden !important;
   pointer-events: none !important;
 }
-

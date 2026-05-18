@@ -96,7 +96,7 @@ export function ResumeDraftFormCard({
             disabled={submitting}
           />
           {fieldErrors.applicationId && (
-            <p className="mt-1 text-xs text-status-error" role="alert">
+            <p className="form-error" role="alert">
               {fieldErrors.applicationId}
             </p>
           )}
@@ -117,7 +117,7 @@ export function ResumeDraftFormCard({
             disabled={submitting}
           />
           {fieldErrors.mobile && (
-            <p className="mt-1 text-xs text-status-error" role="alert">
+            <p className="form-error" role="alert">
               {fieldErrors.mobile}
             </p>
           )}
@@ -126,7 +126,7 @@ export function ResumeDraftFormCard({
         {formError && (
           <div
             id="resume-form-error"
-            className="flex items-start gap-3 rounded-xl border border-status-error/30 bg-status-error/5 px-3 py-2 text-sm text-status-error"
+            className="callout callout-error flex items-start gap-3 text-sm"
             role="alert"
           >
             <AlertCircle size={16} className="mt-0.5 shrink-0" />

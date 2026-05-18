@@ -5,7 +5,7 @@ import type { StepProps } from "../types";
 
 export function ParentInfoStep({ register, errors }: StepProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-5 sm:grid-cols-2">
       <div>
         <Label htmlFor="fatherName">Father Name *</Label>
         <Input
@@ -21,7 +21,7 @@ export function ParentInfoStep({ register, errors }: StepProps) {
         {errors.fatherName && (
           <p
             id="fatherName-error"
-            className="mt-1 text-xs text-[#e11d48]"
+            className="form-error"
             role="alert"
           >
             {errors.fatherName.message}
@@ -43,7 +43,7 @@ export function ParentInfoStep({ register, errors }: StepProps) {
         {errors.motherName && (
           <p
             id="motherName-error"
-            className="mt-1 text-xs text-[#e11d48]"
+            className="form-error"
             role="alert"
           >
             {errors.motherName.message}
@@ -74,7 +74,7 @@ export function ParentInfoStep({ register, errors }: StepProps) {
         {errors.emergencyContact && (
           <p
             id="emergencyContact-error"
-            className="mt-1 text-xs text-[#e11d48]"
+            className="form-error"
             role="alert"
           >
             {errors.emergencyContact.message}
@@ -96,7 +96,7 @@ export function ParentInfoStep({ register, errors }: StepProps) {
         {errors.address && (
           <p
             id="address-error"
-            className="mt-1 text-xs text-[#e11d48]"
+            className="form-error"
             role="alert"
           >
             {errors.address.message}

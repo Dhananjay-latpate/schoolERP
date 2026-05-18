@@ -78,24 +78,22 @@ export function FeesSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:fixed lg:inset-y-0 lg:flex lg:flex-col">
-      <div className="border-b border-slate-100 px-4 py-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-brand-royal">
-          Principal
-        </p>
-        <h1 className="mt-1 text-base font-bold text-slate-900">
-          Fees & Accounts
+    <aside className="hidden w-60 shrink-0 border-r border-surface-border bg-surface-card lg:fixed lg:inset-y-0 lg:flex lg:flex-col">
+      <div className="border-b border-surface-divider px-5 py-5">
+        <p className="eyebrow eyebrow-accent">Principal</p>
+        <h1 className="mt-1 text-base font-semibold tracking-tight text-text-primary">
+          Fees &amp; Accounts
         </h1>
       </div>
 
       <nav className="flex-1 space-y-0.5 p-2">
         <Link
           href="/principal"
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50"
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted"
         >
           ← Back to modules
         </Link>
-        <div className="my-2 border-t border-slate-100" />
+        <div className="my-2 border-t border-surface-divider" />
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.exact
@@ -108,7 +106,7 @@ export function FeesSidebar({
               className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition ${
                 isActive
                   ? "bg-brand-royal/10 text-brand-royal"
-                  : "text-slate-700 hover:bg-slate-50"
+                  : "text-text-primary hover:bg-surface-muted"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -120,7 +118,7 @@ export function FeesSidebar({
         })}
 
         <div className="mt-3">
-          <div className="flex items-center gap-2.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <div className="flex items-center gap-2.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-text-muted">
             <Settings2 className="h-3 w-3" /> Masters
           </div>
           {masterItems.map((item) => {
@@ -132,7 +130,7 @@ export function FeesSidebar({
                 className={`block rounded-lg px-3 py-2 text-xs transition ${
                   isActive
                     ? "bg-brand-royal/10 font-semibold text-brand-royal"
-                    : "text-slate-600 hover:bg-slate-50"
+                    : "text-text-secondary hover:bg-surface-muted"
                 }`}
               >
                 {item.label}
@@ -142,37 +140,37 @@ export function FeesSidebar({
         </div>
       </nav>
 
-      <div className="border-t border-slate-100 p-3 space-y-2">
+      <div className="border-t border-surface-divider p-3 space-y-2">
         <div className="flex items-start justify-between gap-2 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-500">
+          <div className="flex items-center gap-1.5 text-text-secondary">
             <CheckCircle2 className="h-3 w-3" />
             <span>Collected (MTD)</span>
           </div>
-          <span className="font-semibold text-emerald-700">
+          <span className="font-semibold text-status-success">
             {isLoading || !summary ? "..." : formatINR(summary.monthCollection)}
           </span>
         </div>
         <div className="flex items-start justify-between gap-2 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-500">
+          <div className="flex items-center gap-1.5 text-text-secondary">
             <AlertCircle className="h-3 w-3" />
             <span>Outstanding</span>
           </div>
-          <span className="font-semibold text-amber-700">
+          <span className="font-semibold text-status-warning">
             {isLoading || !summary ? "..." : formatINR(summary.totalDue)}
           </span>
         </div>
         <div className="flex items-start justify-between gap-2 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-500">
+          <div className="flex items-center gap-1.5 text-text-secondary">
             <Receipt className="h-3 w-3" />
             <span>Today's txns</span>
           </div>
-          <span className="font-semibold text-slate-700">
+          <span className="font-semibold text-text-primary">
             {isLoading || !summary ? "..." : summary.todayTransactionCount}
           </span>
         </div>
       </div>
 
-      <div className="border-t border-slate-100 p-2">
+      <div className="border-t border-surface-divider p-2">
         <Button
           variant="secondary"
           className="h-8 w-full justify-center text-xs"
