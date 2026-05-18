@@ -20,7 +20,7 @@ interface HeaderProps {
 const SECTION_TITLES: Record<SectionId, string> = {
   pipeline: "Admission Pipeline",
   custom_plans: "Custom Payment Plans",
-  settings: "Setup — Classes & Fees",
+  setup: "Setup — Sessions, Classes & Fees",
   audit: "Audit Logs",
 };
 

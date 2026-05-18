@@ -92,6 +92,7 @@ export type PrincipalAdmissionSession = {
   initializedAt?: string | null;
   commencedAt?: string | null;
   closedAt?: string | null;
+  archivedAt?: string | null;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -137,6 +138,7 @@ export type PrincipalFeeStructure = {
   classId: string;
   academicYear: string;
   totalAmount: number;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
   class: {
@@ -482,10 +484,12 @@ export async function listClasses(
   token: string,
   academicYear?: string,
   includeAllYears?: boolean,
+  includeArchived?: boolean,
 ): Promise<PrincipalClass[]> {
   const query = new URLSearchParams();
   if (academicYear) query.set("academicYear", academicYear);
   if (includeAllYears) query.set("includeAllYears", "true");
+  if (includeArchived) query.set("includeArchived", "true");
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return request<PrincipalClass[]>(`/api/classes${suffix}`, token);
 }
@@ -505,11 +509,48 @@ export async function createPrincipalClass(
   });
 }
 
+export async function updatePrincipalClass(
+  token: string,
+  classId: string,
+  payload: {
+    name?: string;
+    section?: string;
+    capacity?: number | null;
+    isActive?: boolean;
+  },
+): Promise<PrincipalClass> {
+  return request<PrincipalClass>(
+    `/api/classes/${encodeURIComponent(classId)}`,
+    token,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
+}
+
+// Soft-delete: the backend marks the class inactive (archived) rather than
+// destroying it, preserving any applications/students linked to it.
+export async function archivePrincipalClass(
+  token: string,
+  classId: string,
+): Promise<void> {
+  await request<unknown>(`/api/classes/${encodeURIComponent(classId)}`, token, {
+    method: "DELETE",
+  });
+}
+
+export async function restorePrincipalClass(
+  token: string,
+  classId: string,
+): Promise<PrincipalClass> {
+  return updatePrincipalClass(token, classId, { isActive: true });
+}
+
 export async function listAdmissionSessions(
   token: string,
+  includeArchived?: boolean,
 ): Promise<PrincipalAdmissionSession[]> {
+  const suffix = includeArchived ? "?includeArchived=true" : "";
   return request<PrincipalAdmissionSession[]>(
-    "/api/principal/admissions/sessions",
+    `/api/principal/admissions/sessions${suffix}`,
     token,
   );
 }
@@ -525,6 +566,42 @@ export async function createAdmissionSession(
       method: "POST",
       body: JSON.stringify(payload),
     },
+  );
+}
+
+export async function updateAdmissionSession(
+  token: string,
+  sessionId: string,
+  payload: { notes?: string },
+): Promise<PrincipalAdmissionSession> {
+  return request<PrincipalAdmissionSession>(
+    `/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}`,
+    token,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
+}
+
+// Soft-delete: archives the session (hidden from Setup) while keeping every
+// application, class and fee structure tied to it intact.
+export async function archiveAdmissionSession(
+  token: string,
+  sessionId: string,
+): Promise<void> {
+  await request<unknown>(
+    `/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}`,
+    token,
+    { method: "DELETE" },
+  );
+}
+
+export async function restoreAdmissionSession(
+  token: string,
+  sessionId: string,
+): Promise<PrincipalAdmissionSession> {
+  return request<PrincipalAdmissionSession>(
+    `/api/principal/admissions/sessions/${encodeURIComponent(sessionId)}/restore`,
+    token,
+    { method: "POST", body: JSON.stringify({}) },
   );
 }
 
@@ -590,8 +667,13 @@ export async function closeAdmissionSession(
 
 export async function listFeeStructures(
   token: string,
+  includeArchived?: boolean,
 ): Promise<PrincipalFeeStructure[]> {
-  return request<PrincipalFeeStructure[]>("/api/fees/structure", token);
+  const suffix = includeArchived ? "?includeArchived=true" : "";
+  return request<PrincipalFeeStructure[]>(
+    `/api/fees/structure${suffix}`,
+    token,
+  );
 }
 
 export async function createFeeStructure(
@@ -607,6 +689,45 @@ export async function createFeeStructure(
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function updateFeeStructure(
+  token: string,
+  feeStructureId: string,
+  payload: {
+    feeComponents: FeeComponentInput[];
+    installmentOptions: InstallmentOptionInput[];
+  },
+): Promise<PrincipalFeeStructure> {
+  return request<PrincipalFeeStructure>(
+    `/api/fees/structure/${encodeURIComponent(feeStructureId)}`,
+    token,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
+}
+
+// Soft-delete: archives the fee structure so historical student charges
+// raised against it stay auditable.
+export async function archiveFeeStructure(
+  token: string,
+  feeStructureId: string,
+): Promise<void> {
+  await request<unknown>(
+    `/api/fees/structure/${encodeURIComponent(feeStructureId)}`,
+    token,
+    { method: "DELETE" },
+  );
+}
+
+export async function restoreFeeStructure(
+  token: string,
+  feeStructureId: string,
+): Promise<PrincipalFeeStructure> {
+  return request<PrincipalFeeStructure>(
+    `/api/fees/structure/${encodeURIComponent(feeStructureId)}/restore`,
+    token,
+    { method: "POST", body: JSON.stringify({}) },
+  );
 }
 
 export async function reviewPrincipalApplication(
