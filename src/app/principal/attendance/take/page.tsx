@@ -1,72 +1,174 @@
 "use client";
 
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
-  ChevronDown,
-  Clock,
+  Loader2,
   Save,
   Search,
   XCircle,
-  Mail,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { PageHero } from "@/components/shared/PageHero";
 import { cn } from "@/lib/utils";
+import {
+  PrincipalApiError,
+  getAttendanceRoster,
+  listClasses,
+  submitClassAttendance,
+  type AttendanceRoster,
+  type AttendanceRosterStatus,
+  type PrincipalClass,
+} from "@/lib/principalApi";
+import { clearPrincipalSession, getPrincipalToken } from "@/lib/principalSession";
 
 type Status = "present" | "absent" | "late" | "excused";
 
-type Student = {
+type RosterRow = {
   id: string;
-  roll: string;
+  rollNumber: string;
   name: string;
-  guardianPhone: string;
-  status: Status;
+  phone: string;
+  status: AttendanceRosterStatus;
 };
 
-const SEED: Student[] = [
-  { id: "STU-2026-0182", roll: "07", name: "Aarav Mehta",     guardianPhone: "+91 98 0001 1820", status: "present" },
-  { id: "STU-2026-0192", roll: "08", name: "Bilal Anwar",     guardianPhone: "+91 98 0001 1921", status: "present" },
-  { id: "STU-2026-0145", roll: "09", name: "Chen Wei",        guardianPhone: "+91 98 0001 1450", status: "absent"  },
-  { id: "STU-2026-0167", roll: "10", name: "Diya Patel",      guardianPhone: "+91 98 0001 1671", status: "present" },
-  { id: "STU-2026-0211", roll: "11", name: "Ezra Cohen",      guardianPhone: "+91 98 0002 1111", status: "late"    },
-  { id: "STU-2026-0203", roll: "12", name: "Fatima Noor",     guardianPhone: "+91 98 0002 0303", status: "present" },
-  { id: "STU-2026-0156", roll: "13", name: "Gabriel Lima",    guardianPhone: "+91 98 0001 5611", status: "present" },
-  { id: "STU-2026-0188", roll: "14", name: "Hina Suzuki",     guardianPhone: "+91 98 0001 8888", status: "excused" },
-  { id: "STU-2026-0174", roll: "15", name: "Idris Adebayo",   guardianPhone: "+91 98 0001 7474", status: "present" },
-  { id: "STU-2026-0199", roll: "16", name: "Julia Romero",    guardianPhone: "+91 98 0001 9999", status: "present" },
-  { id: "STU-2026-0211", roll: "17", name: "Kabir Banerjee",  guardianPhone: "+91 98 0002 1212", status: "present" },
-  { id: "STU-2026-0220", roll: "18", name: "Lina Petrova",    guardianPhone: "+91 98 0002 2020", status: "present" },
-];
+const todayISO = () => new Date().toISOString().slice(0, 10);
 
-const STATUS_META: Record<Status, { label: string; chip: string; dot: string; badge: "success" | "error" | "warning" | "info" }> = {
-  present: { label: "Present", chip: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", badge: "success" },
-  absent:  { label: "Absent",  chip: "bg-rose-50 text-rose-700 border-rose-200",          dot: "bg-rose-500",    badge: "error"   },
-  late:    { label: "Late",    chip: "bg-amber-50 text-amber-700 border-amber-200",       dot: "bg-amber-500",   badge: "warning" },
-  excused: { label: "Excused", chip: "bg-brand-sky-light text-brand-royal border-brand-royal/20", dot: "bg-brand-royal", badge: "info" },
+const STATUS_META: Record<Status, { label: string; chip: string; dot: string }> = {
+  present: { label: "Present", chip: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+  absent: { label: "Absent", chip: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500" },
+  late: { label: "Late", chip: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+  excused: { label: "Excused", chip: "bg-brand-sky-light text-brand-royal border-brand-royal/20", dot: "bg-brand-royal" },
 };
 
-export default function TakeAttendancePage() {
-  const [students, setStudents] = useState<Student[]>(SEED);
+const TOGGLES: Status[] = ["present", "absent", "late", "excused"];
 
-  const setStatus = (id: string, roll: string, status: Status) =>
-    setStudents((s) =>
-      s.map((x) => (x.id === id && x.roll === roll ? { ...x, status } : x)),
-    );
+function TakeAttendanceInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialClassId = searchParams.get("classId") ?? "";
+  const initialDate = searchParams.get("date") ?? todayISO();
 
-  const markAll = (status: Status) =>
-    setStudents((s) => s.map((x) => ({ ...x, status })));
+  const [token, setToken] = useState("");
+  const [classes, setClasses] = useState<PrincipalClass[]>([]);
+  const [classId, setClassId] = useState(initialClassId);
+  const [date, setDate] = useState(initialDate);
 
-  const counts = students.reduce(
-    (acc, s) => ({ ...acc, [s.status]: (acc[s.status] ?? 0) + 1 }),
-    { present: 0, absent: 0, late: 0, excused: 0 } as Record<Status, number>,
+  const [roster, setRoster] = useState<AttendanceRoster | null>(null);
+  const [rows, setRows] = useState<RosterRow[]>([]);
+  const [query, setQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    const existing = getPrincipalToken();
+    if (!existing) {
+      router.replace("/principal/login?next=%2Fprincipal%2Fattendance%2Ftake");
+      return;
+    }
+    setToken(existing);
+  }, [router]);
+
+  useEffect(() => {
+    if (!token) return;
+    listClasses(token, undefined, true)
+      .then((data) => {
+        setClasses(data);
+        if (!classId && data.length > 0) setClassId(data[0].id);
+      })
+      .catch(() => setClasses([]));
+  }, [token, classId]);
+
+  const loadRoster = useCallback(async () => {
+    if (!token || !classId) return;
+    setIsLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const data = await getAttendanceRoster(token, classId, date);
+      setRoster(data);
+      setRows(
+        data.students.map((s) => ({
+          id: s.id,
+          rollNumber: s.rollNumber,
+          name: s.name,
+          phone: s.phone,
+          status: (s.status ?? "present") as AttendanceRosterStatus,
+        })),
+      );
+    } catch (err) {
+      if (err instanceof PrincipalApiError && (err.status === 401 || err.status === 403)) {
+        clearPrincipalSession();
+        router.replace("/principal/login?next=%2Fprincipal%2Fattendance%2Ftake");
+        return;
+      }
+      setError(err instanceof PrincipalApiError ? err.message : "Failed to load roster");
+      setRoster(null);
+      setRows([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token, classId, date, router]);
+
+  useEffect(() => {
+    void loadRoster();
+  }, [loadRoster]);
+
+  const setStatus = (id: string, status: Status) =>
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, status } : r)));
+
+  const markAll = (status: Status) => setRows((rs) => rs.map((r) => ({ ...r, status })));
+
+  const counts = useMemo(
+    () =>
+      rows.reduce(
+        (acc, r) => {
+          acc[r.status] = (acc[r.status] ?? 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+    [rows],
   );
+
+  const visibleRows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (r) => r.name.toLowerCase().includes(q) || r.rollNumber.toLowerCase().includes(q),
+    );
+  }, [rows, query]);
+
+  const handleSubmit = async () => {
+    if (!token || !classId || rows.length === 0) return;
+    setIsSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await submitClassAttendance(token, {
+        classId,
+        date,
+        records: rows.map((r) => ({ studentId: r.id, status: r.status })),
+      });
+      setNotice(`Saved attendance for ${result.saved} student${result.saved === 1 ? "" : "s"}.`);
+    } catch (err) {
+      setError(err instanceof PrincipalApiError ? err.message : "Failed to save attendance");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const selectedClass = classes.find((c) => c.id === classId);
 
   return (
     <main className="min-h-screen bg-surface-bg px-4 py-6 sm:px-6 lg:px-8">
@@ -75,39 +177,59 @@ export default function TakeAttendancePage() {
           href="/principal/attendance"
           className="inline-flex items-center text-sm text-text-secondary hover:text-text-primary"
         >
-          <ArrowLeft className="mr-1 h-3.5 w-3.5" />
-          Back to attendance overview
+          <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to attendance overview
         </Link>
 
         <PageHero
           icon={CalendarDays}
           eyebrow="Mark attendance"
-          title="Grade 7 — Section B"
-          description="Mark each student. Bulk-action available in the toolbar. Saves automatically every 30 seconds."
-          badges={[
-            { label: "Period 1 · 08:30 AM", tone: "live" },
-            { label: "Dr. Anita Rao" },
-          ]}
+          title={
+            roster
+              ? `${roster.class.name}${roster.class.section ? ` — ${roster.class.section}` : ""}`
+              : selectedClass
+                ? `${selectedClass.name}${selectedClass.section ? ` — ${selectedClass.section}` : ""}`
+                : "Select a class"
+          }
+          description="Mark each student, then submit. Re-submitting updates the day's record."
+          badges={[{ label: new Date(date).toDateString(), tone: "live" }]}
           actions={
-            <Button variant="pay">
-              <Save className="mr-1.5 h-4 w-4" />
+            <Button variant="pay" onClick={handleSubmit} disabled={isSaving || rows.length === 0}>
+              {isSaving ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-1.5 h-4 w-4" />
+              )}
               Submit
             </Button>
           }
         />
 
-        {/* Toolbar */}
+        {/* Controls */}
         <Card className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <button className="btn-ghost btn-sm">
-                <ChevronDown className="mr-1 h-3.5 w-3.5" />
-                Grade 7 — Section B
-              </button>
-              <span className="h-5 w-px bg-surface-divider" />
-              <span className="text-sm text-text-secondary">
-                {students.length} students
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={classId}
+                onChange={(e) => setClassId(e.target.value)}
+                className="w-56"
+              >
+                <option value="" disabled>
+                  Choose a class
+                </option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {c.section ? ` · ${c.section}` : ""}
+                  </option>
+                ))}
+              </Select>
+              <input
+                type="date"
+                value={date}
+                max={todayISO()}
+                onChange={(e) => setDate(e.target.value)}
+                className="input-base w-44"
+              />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -115,23 +237,22 @@ export default function TakeAttendancePage() {
                 <Search className="h-3.5 w-3.5 text-text-muted" />
                 <Input
                   placeholder="Find by name or roll…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
                   className="w-48 border-0 bg-transparent p-0 text-sm shadow-none focus:shadow-none"
                 />
               </div>
-              <Button variant="secondary" size="sm" onClick={() => markAll("present")}>
-                <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-                Mark all present
+              <Button variant="secondary" size="sm" onClick={() => markAll("present")} disabled={rows.length === 0}>
+                <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> All present
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => markAll("absent")}>
-                <XCircle className="mr-1 h-3.5 w-3.5" />
-                Mark all absent
+              <Button variant="ghost" size="sm" onClick={() => markAll("absent")} disabled={rows.length === 0}>
+                <XCircle className="mr-1 h-3.5 w-3.5" /> All absent
               </Button>
             </div>
           </div>
 
-          {/* Summary chips */}
           <div className="mt-4 grid grid-cols-2 gap-3 border-t border-surface-divider pt-4 sm:grid-cols-4">
-            {(Object.keys(STATUS_META) as Status[]).map((s) => {
+            {TOGGLES.map((s) => {
               const meta = STATUS_META[s];
               return (
                 <div
@@ -143,7 +264,7 @@ export default function TakeAttendancePage() {
                     {meta.label}
                   </span>
                   <span className="text-sm font-semibold tabular-nums text-text-primary">
-                    {counts[s]}
+                    {counts[s] ?? 0}
                   </span>
                 </div>
               );
@@ -151,20 +272,37 @@ export default function TakeAttendancePage() {
           </div>
         </Card>
 
+        {notice && (
+          <Card className="border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{notice}</Card>
+        )}
+        {error && (
+          <Card className="border-brand-rose/25 bg-brand-rose-light p-3 text-sm text-status-error">
+            {error}
+          </Card>
+        )}
+
         {/* Roster */}
         <Card className="overflow-hidden p-0">
-          <ul className="divide-y divide-surface-divider">
-            {students.map((s) => {
-              const meta = STATUS_META[s.status];
-              return (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-4 w-4 animate-spin text-text-secondary" />
+            </div>
+          ) : rows.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-text-secondary">
+              {classId
+                ? "No active students in this class yet."
+                : "Choose a class to load its roster."}
+            </p>
+          ) : (
+            <ul className="divide-y divide-surface-divider">
+              {visibleRows.map((s) => (
                 <li
-                  key={s.id + s.roll}
+                  key={s.id}
                   className="grid grid-cols-[40px_1fr_auto] items-center gap-4 px-5 py-3 transition-colors hover:bg-surface-muted/50"
                 >
                   <span className="text-center text-xs font-medium text-text-muted">
-                    {s.roll}
+                    {s.rollNumber}
                   </span>
-
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="inline-grid h-9 w-9 place-items-center rounded-full bg-brand-sky-light text-xs font-semibold text-brand-royal">
                       {s.name
@@ -174,22 +312,17 @@ export default function TakeAttendancePage() {
                         .join("")}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-text-primary">
-                        {s.name}
-                      </p>
-                      <p className="font-mono text-[11px] text-text-muted">
-                        {s.id} · {s.guardianPhone}
-                      </p>
+                      <p className="truncate text-sm font-medium text-text-primary">{s.name}</p>
+                      <p className="font-mono text-[11px] text-text-muted">{s.phone}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-1">
-                    {(Object.keys(STATUS_META) as Status[]).map((opt) => {
+                    {TOGGLES.map((opt) => {
                       const active = s.status === opt;
                       return (
                         <button
                           key={opt}
-                          onClick={() => setStatus(s.id, s.roll, opt)}
+                          onClick={() => setStatus(s.id, opt)}
                           className={cn(
                             "rounded-sm border px-2.5 py-1 text-[11px] font-medium capitalize transition-colors",
                             active
@@ -201,36 +334,45 @@ export default function TakeAttendancePage() {
                         </button>
                       );
                     })}
-                    {s.status === "absent" && (
-                      <button
-                        className="ml-1 rounded-sm border border-surface-border bg-surface-card px-2 py-1 text-[11px] text-text-secondary hover:bg-surface-muted"
-                        title="Notify guardian"
-                      >
-                        <Mail className="inline h-3 w-3" />
-                      </button>
-                    )}
                   </div>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          )}
 
-          <div className="flex items-center justify-between border-t border-surface-divider bg-surface-muted/40 px-5 py-3">
-            <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <Clock className="h-3.5 w-3.5" />
-              Auto-saved 12:14 PM
-            </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="info">{counts.present} present</Badge>
-              <Badge variant="error">{counts.absent} absent</Badge>
-              <Button variant="pay">
-                <Save className="mr-1.5 h-4 w-4" />
-                Submit attendance
-              </Button>
+          {rows.length > 0 && (
+            <div className="flex items-center justify-between border-t border-surface-divider bg-surface-muted/40 px-5 py-3">
+              <p className="text-xs text-text-secondary">{rows.length} students</p>
+              <div className="flex items-center gap-2">
+                <Badge variant="success">{counts.present ?? 0} present</Badge>
+                <Badge variant="error">{counts.absent ?? 0} absent</Badge>
+                <Button variant="pay" onClick={handleSubmit} disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-1.5 h-4 w-4" />
+                  )}
+                  Submit attendance
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </Card>
       </div>
     </main>
+  );
+}
+
+export default function TakeAttendancePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-surface-bg">
+          <Loader2 className="h-4 w-4 animate-spin text-text-secondary" />
+        </main>
+      }
+    >
+      <TakeAttendanceInner />
+    </Suspense>
   );
 }

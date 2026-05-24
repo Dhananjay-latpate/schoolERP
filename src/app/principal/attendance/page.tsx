@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   ArrowRight,
@@ -9,58 +10,83 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
-  Download,
-  Filter,
-  Search,
+  Loader2,
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHero } from "@/components/shared/PageHero";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { TabPills } from "@/components/shared/TabPills";
+import {
+  PrincipalApiError,
+  getAttendanceOverview,
+  type AttendanceOverview,
+} from "@/lib/principalApi";
+import { clearPrincipalSession, getPrincipalToken } from "@/lib/principalSession";
 
-type ClassRow = {
-  id: string;
-  grade: string;
-  section: string;
-  teacher: string;
-  total: number;
-  present: number;
-  absent: number;
-  late: number;
-  status: "marked" | "pending" | "in_progress";
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+const prettyDate = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" });
 };
 
-const CLASSES: ClassRow[] = [
-  { id: "7B",  grade: "Grade 7",  section: "B", teacher: "Dr. Anita Rao",      total: 32, present: 30, absent: 1, late: 1, status: "marked" },
-  { id: "9A",  grade: "Grade 9",  section: "A", teacher: "Mr. Bernard Wells",  total: 28, present: 26, absent: 2, late: 0, status: "marked" },
-  { id: "3C",  grade: "Grade 3",  section: "C", teacher: "Ms. Carla Diaz",     total: 30, present: 0,  absent: 0, late: 0, status: "pending" },
-  { id: "11S", grade: "Grade 11", section: "S", teacher: "Dr. Eleanor Hughes", total: 24, present: 23, absent: 0, late: 1, status: "marked" },
-  { id: "5A",  grade: "Grade 5",  section: "A", teacher: "Ms. Hannah Lee",     total: 31, present: 18, absent: 0, late: 0, status: "in_progress" },
-  { id: "8D",  grade: "Grade 8",  section: "D", teacher: "Ms. Farah Siddiqui", total: 29, present: 0,  absent: 0, late: 0, status: "pending" },
-  { id: "10B", grade: "Grade 10", section: "B", teacher: "Mr. Devansh Kapoor", total: 30, present: 28, absent: 1, late: 1, status: "marked" },
-  { id: "6A",  grade: "Grade 6",  section: "A", teacher: "Mr. Gabriel Costa",  total: 33, present: 31, absent: 2, late: 0, status: "marked" },
-];
-
-const ALERTS = [
-  { name: "Liam Bennett",  id: "STU-2026-0180", absentStreak: 4, grade: "Grade 3-C", reason: "Reported sick" },
-  { name: "Noah Park",     id: "STU-2026-0178", absentStreak: 3, grade: "Grade 5-A", reason: "No explanation" },
-  { name: "Zara Khan",     id: "STU-2026-0177", absentStreak: 2, grade: "Grade 8-D", reason: "Family event" },
-];
-
 export default function AttendanceModulePage() {
-  const [tab, setTab] = useState<"today" | "marked" | "pending">("today");
+  const router = useRouter();
+  const [token, setToken] = useState("");
+  const [date, setDate] = useState(todayISO());
+  const [tab, setTab] = useState<"all" | "marked" | "pending">("all");
+  const [overview, setOverview] = useState<AttendanceOverview | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered =
-    tab === "marked"
-      ? CLASSES.filter((c) => c.status === "marked")
-      : tab === "pending"
-        ? CLASSES.filter((c) => c.status !== "marked")
-        : CLASSES;
+  useEffect(() => {
+    const existing = getPrincipalToken();
+    if (!existing) {
+      router.replace("/principal/login?next=%2Fprincipal%2Fattendance");
+      return;
+    }
+    setToken(existing);
+  }, [router]);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    setIsLoading(true);
+    setError("");
+    (async () => {
+      try {
+        const data = await getAttendanceOverview(token, date);
+        if (!cancelled) setOverview(data);
+      } catch (err) {
+        if (cancelled) return;
+        if (err instanceof PrincipalApiError && (err.status === 401 || err.status === 403)) {
+          clearPrincipalSession();
+          router.replace("/principal/login?next=%2Fprincipal%2Fattendance");
+          return;
+        }
+        setError(err instanceof PrincipalApiError ? err.message : "Failed to load attendance");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, date, router]);
+
+  const classes = useMemo(() => overview?.classes ?? [], [overview]);
+  const totals = overview?.totals;
+
+  const filtered = useMemo(() => {
+    if (tab === "marked") return classes.filter((c) => c.status === "marked");
+    if (tab === "pending") return classes.filter((c) => c.status !== "marked");
+    return classes;
+  }, [classes, tab]);
 
   return (
     <main className="min-h-screen bg-surface-bg px-4 py-6 sm:px-6 lg:px-8">
@@ -69,52 +95,55 @@ export default function AttendanceModulePage() {
           icon={CalendarCheck2}
           eyebrow="Attendance"
           title="Daily attendance"
-          description="Track classroom-level attendance, follow up on absences, and review trends across grades."
+          description="Track classroom-level attendance and follow up on absences across grades."
           badges={[
-            { label: "Today · Sat, May 16", tone: "live" },
-            { label: "48 classes" },
+            { label: prettyDate(date), tone: "live" },
+            { label: `${totals?.totalClasses ?? 0} classes` },
           ]}
           actions={
-            <>
-              <Button variant="secondary">
-                <Download className="mr-1.5 h-4 w-4" />
-                Report
-              </Button>
-              <Link href="/principal/attendance/take" className="btn-pay">
-                Take attendance
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </>
+            <input
+              type="date"
+              value={date}
+              max={todayISO()}
+              onChange={(e) => setDate(e.target.value)}
+              className="input-base w-44"
+            />
           }
         />
+
+        {error && (
+          <Card className="border-brand-rose/25 bg-brand-rose-light p-3 text-sm text-status-error">
+            {error}
+          </Card>
+        )}
 
         {/* KPIs */}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Present today"
-            value="1,238"
-            meta="96.4% of enrolled"
+            label="Present"
+            value={isLoading ? "…" : String(totals?.present ?? 0)}
+            meta={`${totals?.enrolled ?? 0} enrolled`}
             icon={CheckCircle2}
             tone="emerald"
           />
           <StatCard
-            label="Absent today"
-            value="46"
-            meta="3.6% — 4 unexplained"
+            label="Absent"
+            value={isLoading ? "…" : String(totals?.absent ?? 0)}
+            meta={`${totals?.late ?? 0} late · ${totals?.excused ?? 0} excused`}
             icon={AlertCircle}
             tone="rose"
           />
           <StatCard
-            label="Late arrivals"
-            value="12"
-            meta="2 first-time this month"
+            label="On leave"
+            value={isLoading ? "…" : String(totals?.onLeave ?? 0)}
+            meta={`${totals?.halfDay ?? 0} half-day`}
             icon={Clock}
             tone="amber"
           />
           <StatCard
             label="Classes marked"
-            value="42 / 48"
-            meta="6 pending teacher submission"
+            value={isLoading ? "…" : `${totals?.classesMarked ?? 0} / ${totals?.totalClasses ?? 0}`}
+            meta="completed today"
             icon={Users}
             tone="brand"
           />
@@ -124,189 +153,116 @@ export default function AttendanceModulePage() {
         <Card className="overflow-hidden p-0">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-border px-5 py-3.5">
             <SectionHeader
-              eyebrow="Today · Sat, May 16"
+              eyebrow={prettyDate(date)}
               title="Class submissions"
-              description="Each class is owned by its homeroom teacher. Tap a row to view the roster."
+              description="Tap a class to mark or review its roster for the selected day."
             />
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-divider px-5 py-3">
             <TabPills
               tabs={[
-                { key: "today", label: "All classes", count: CLASSES.length },
-                { key: "marked", label: "Marked", count: CLASSES.filter((c) => c.status === "marked").length },
-                { key: "pending", label: "Pending", count: CLASSES.filter((c) => c.status !== "marked").length },
+                { key: "all", label: "All classes", count: classes.length },
+                { key: "marked", label: "Marked", count: classes.filter((c) => c.status === "marked").length },
+                { key: "pending", label: "Pending", count: classes.filter((c) => c.status !== "marked").length },
               ]}
               active={tab}
               onChange={(k) => setTab(k as typeof tab)}
             />
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 rounded-sm border border-surface-border bg-surface-card px-2.5 py-1.5 text-sm">
-                <Search className="h-3.5 w-3.5 text-text-muted" />
-                <Input
-                  placeholder="Class, teacher…"
-                  className="w-44 border-0 bg-transparent p-0 text-sm shadow-none focus:shadow-none"
-                />
-              </div>
-              <Button variant="secondary" size="sm">
-                <Filter className="mr-1 h-3.5 w-3.5" />
-                Filter
-              </Button>
-            </div>
           </div>
 
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Homeroom teacher</th>
-                <th>Strength</th>
-                <th>Present</th>
-                <th>Absent</th>
-                <th>Late</th>
-                <th>%</th>
-                <th>Status</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((c) => {
-                const pct =
-                  c.status === "pending"
-                    ? 0
-                    : Math.round((c.present / c.total) * 100);
-                return (
-                  <tr key={c.id}>
-                    <td>
-                      <span className="font-medium text-text-primary">
-                        {c.grade} — {c.section}
-                      </span>
-                    </td>
-                    <td className="text-text-secondary">{c.teacher}</td>
-                    <td className="tabular-nums">{c.total}</td>
-                    <td className="tabular-nums text-emerald-700">
-                      {c.status === "pending" ? "—" : c.present}
-                    </td>
-                    <td className="tabular-nums text-rose-700">
-                      {c.status === "pending" ? "—" : c.absent}
-                    </td>
-                    <td className="tabular-nums text-amber-700">
-                      {c.status === "pending" ? "—" : c.late}
-                    </td>
-                    <td>
-                      {c.status === "pending" ? (
-                        <span className="text-text-muted">—</span>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-muted">
-                            <div
-                              className={
-                                pct >= 95
-                                  ? "h-full rounded-full bg-emerald-600"
-                                  : pct >= 85
-                                    ? "h-full rounded-full bg-brand-royal"
-                                    : "h-full rounded-full bg-amber-600"
-                              }
-                              style={{ width: `${pct}%` }}
-                            />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-4 w-4 animate-spin text-text-secondary" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-text-secondary">
+              No classes to show for this filter.
+            </p>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Class</th>
+                  <th>Strength</th>
+                  <th>Present</th>
+                  <th>Absent</th>
+                  <th>Late</th>
+                  <th>%</th>
+                  <th>Status</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c) => {
+                  const pct = c.total > 0 ? Math.round((c.present / c.total) * 100) : 0;
+                  return (
+                    <tr key={c.classId}>
+                      <td>
+                        <span className="font-medium text-text-primary">
+                          {c.className}
+                          {c.section ? ` — ${c.section}` : ""}
+                        </span>
+                      </td>
+                      <td className="tabular-nums">{c.total}</td>
+                      <td className="tabular-nums text-emerald-700">
+                        {c.status === "pending" ? "—" : c.present}
+                      </td>
+                      <td className="tabular-nums text-rose-700">
+                        {c.status === "pending" ? "—" : c.absent}
+                      </td>
+                      <td className="tabular-nums text-amber-700">
+                        {c.status === "pending" ? "—" : c.late}
+                      </td>
+                      <td>
+                        {c.status === "pending" ? (
+                          <span className="text-text-muted">—</span>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-muted">
+                              <div
+                                className={
+                                  pct >= 95
+                                    ? "h-full rounded-full bg-emerald-600"
+                                    : pct >= 85
+                                      ? "h-full rounded-full bg-brand-royal"
+                                      : "h-full rounded-full bg-amber-600"
+                                }
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium tabular-nums">{pct}%</span>
                           </div>
-                          <span className="text-xs font-medium tabular-nums">
-                            {pct}%
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      {c.status === "marked" && <Badge variant="success">Marked</Badge>}
-                      {c.status === "in_progress" && <Badge variant="warning">In progress</Badge>}
-                      {c.status === "pending" && <Badge variant="error">Pending</Badge>}
-                    </td>
-                    <td className="text-right">
-                      <Link
-                        href="/principal/attendance/take"
-                        className="inline-flex items-center text-xs font-semibold text-brand-royal hover:underline"
-                      >
-                        {c.status === "marked" ? "Review" : "Mark now"}
-                        <ChevronRight className="ml-0.5 h-3 w-3" />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        )}
+                      </td>
+                      <td>
+                        {c.status === "marked" && <Badge variant="success">Marked</Badge>}
+                        {c.status === "in_progress" && <Badge variant="warning">In progress</Badge>}
+                        {c.status === "pending" && <Badge variant="error">Pending</Badge>}
+                      </td>
+                      <td className="text-right">
+                        <Link
+                          href={`/principal/attendance/take?classId=${encodeURIComponent(c.classId)}&date=${date}`}
+                          className="inline-flex items-center text-xs font-semibold text-brand-royal hover:underline"
+                        >
+                          {c.status === "marked" ? "Review" : "Mark now"}
+                          <ChevronRight className="ml-0.5 h-3 w-3" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </Card>
 
-        {/* Alerts + trend */}
-        <div className="grid gap-6 xl:grid-cols-3">
-          <Card className="xl:col-span-2 p-5">
-            <SectionHeader
-              eyebrow="Trend · 30 days"
-              title="School-wide attendance"
-              description="Daily attendance percentage across all enrolled students."
-            />
-            <div className="mt-4 flex h-44 items-end gap-1.5">
-              {Array.from({ length: 30 }).map((_, i) => {
-                const v = 80 + ((i * 7 + 11) % 20);
-                return (
-                  <div key={i} className="flex flex-1 flex-col items-center gap-1">
-                    <div
-                      className={
-                        i === 29
-                          ? "w-full rounded-sm bg-brand-royal"
-                          : v >= 92
-                            ? "w-full rounded-sm bg-emerald-200"
-                            : v >= 85
-                              ? "w-full rounded-sm bg-surface-muted"
-                              : "w-full rounded-sm bg-amber-200"
-                      }
-                      style={{ height: `${v}%` }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-4 flex items-center justify-between border-t border-surface-divider pt-3 text-xs text-text-muted">
-              <span>30 days ago</span>
-              <span>Today · 96.4%</span>
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <SectionHeader
-              eyebrow="Needs follow-up"
-              title="Absence alerts"
-              description="Students with 2+ consecutive absences."
-            />
-            <ul className="mt-4 divide-y divide-surface-divider">
-              {ALERTS.map((a) => (
-                <li key={a.id} className="flex items-start gap-3 py-3">
-                  <span className="mt-0.5 grid h-8 w-8 place-items-center rounded-full bg-rose-50 text-rose-700">
-                    <AlertCircle className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-medium text-text-primary">
-                        {a.name}
-                      </p>
-                      <Badge variant="error">{a.absentStreak} days</Badge>
-                    </div>
-                    <p className="font-mono text-[11px] text-text-muted">
-                      {a.id} · {a.grade}
-                    </p>
-                    <p className="mt-1 text-xs text-text-secondary">{a.reason}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/principal/attendance/take"
-              className="mt-3 inline-flex items-center text-xs font-semibold text-brand-royal hover:underline"
-            >
-              Contact guardians <ArrowRight className="ml-1 h-3 w-3" />
-            </Link>
-          </Card>
-        </div>
+        <Link
+          href="/principal/attendance/take"
+          className="inline-flex items-center text-sm font-semibold text-brand-royal hover:underline"
+        >
+          Open the marking workspace <ArrowRight className="ml-1 h-3.5 w-3.5" />
+        </Link>
       </div>
     </main>
   );

@@ -45,6 +45,14 @@ const MODULES: PrincipalModule[] = [
     icon: FileCheck2,
   },
   {
+    key: "students",
+    title: "Students",
+    description: "Student directory, profiles, and enrollment of approved applicants.",
+    href: "/principal/students",
+    status: "active",
+    icon: GraduationCap,
+  },
+  {
     key: "attendance",
     title: "Attendance",
     description: "Monitor daily class attendance and student absence patterns.",

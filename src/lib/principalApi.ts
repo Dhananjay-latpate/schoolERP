@@ -2544,3 +2544,251 @@ export async function bulkCarryForwardArrears(
   }
   return parsed.data;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Student Information System (directory, enrollment, attendance)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type StudentListItem = {
+  id: string;
+  rollNumber: string;
+  name: string;
+  status: string;
+  section: string;
+  classId: string | null;
+  className: string | null;
+  classSection: string | null;
+  grNumber: string | null;
+  parentName: string;
+  phone: string;
+  enrolledAt: string;
+};
+
+export type StudentListResponse = {
+  data: StudentListItem[];
+  total: number;
+  pages: number;
+  currentPage: number;
+};
+
+export type StudentProfile = {
+  id: string;
+  rollNumber: string;
+  name: string;
+  status: string;
+  section: string;
+  enrolledAt: string;
+  classId: string | null;
+  className: string | null;
+  classSection: string | null;
+  academicYear: string | null;
+  applicationId: string | null;
+  grNumber: string | null;
+  demographics: {
+    gender: string;
+    dateOfBirth: string;
+    placeOfBirth: string | null;
+    nationality: string | null;
+    religion: string | null;
+    caste: string | null;
+    motherTongue: string | null;
+    adharNumber: string | null;
+  } | null;
+  guardian: {
+    parentName: string;
+    phone: string;
+    email: string | null;
+    fatherName: string | null;
+    motherName: string | null;
+    address: string | null;
+    emergencyContact: string | null;
+  };
+  fee: {
+    accountId: string | null;
+    totalCharged: number;
+    totalConcession: number;
+    totalPaid: number;
+    totalDue: number;
+  };
+  attendance: {
+    summary: Record<string, number>;
+    recent: Array<{ id: string; date: string; status: string; remarks: string | null }>;
+  };
+};
+
+export type PendingEnrollment = {
+  id: string;
+  applicationId: string;
+  studentName: string;
+  grNumber: string | null;
+  admissionConfirmed: boolean;
+  admissionYear: string;
+  classId: string | null;
+  className: string | null;
+  classSection: string | null;
+  gender: string;
+  dateOfBirth: string;
+  fatherName: string;
+  emergencyContact: string;
+  suggestedRollNumber: string | null;
+  lastUpdatedAt: string;
+};
+
+export type AttendanceOverview = {
+  date: string;
+  totals: {
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+    halfDay: number;
+    onLeave: number;
+    enrolled: number;
+    classesMarked: number;
+    totalClasses: number;
+  };
+  classes: Array<{
+    classId: string;
+    className: string;
+    section: string | null;
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+    status: "marked" | "in_progress" | "pending";
+  }>;
+};
+
+export type AttendanceRosterStatus = "present" | "absent" | "late" | "half_day" | "excused" | "on_leave";
+
+export type AttendanceRoster = {
+  class: { id: string; name: string; section: string | null; academicYear: string };
+  date: string;
+  students: Array<{
+    id: string;
+    rollNumber: string;
+    name: string;
+    phone: string;
+    status: AttendanceRosterStatus | null;
+    remarks: string | null;
+  }>;
+};
+
+export async function listStudents(
+  token: string,
+  options?: {
+    search?: string;
+    classId?: string;
+    section?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  },
+): Promise<StudentListResponse> {
+  const query = new URLSearchParams();
+  if (options?.search) query.set("search", options.search);
+  if (options?.classId) query.set("classId", options.classId);
+  if (options?.section) query.set("section", options.section);
+  if (options?.status) query.set("status", options.status);
+  if (options?.page) query.set("page", String(options.page));
+  if (options?.limit) query.set("limit", String(options.limit));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+
+  const response = await fetch(`${API_BASE_URL}/api/principal/students${suffix}`, {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+  const body = (await parseErrorBody(response)) as
+    | { success: boolean; total?: number; pages?: number; currentPage?: number; data?: StudentListItem[]; message?: string }
+    | undefined;
+  if (!response.ok || !body?.success) {
+    throw new PrincipalApiError(body?.message || "Failed to load students", response.status, body);
+  }
+  return {
+    data: body.data ?? [],
+    total: body.total ?? 0,
+    pages: body.pages ?? 1,
+    currentPage: body.currentPage ?? 1,
+  };
+}
+
+export async function getStudentProfile(
+  token: string,
+  studentId: string,
+): Promise<StudentProfile> {
+  return request<StudentProfile>(
+    `/api/principal/students/${encodeURIComponent(studentId)}`,
+    token,
+  );
+}
+
+export async function updateStudent(
+  token: string,
+  studentId: string,
+  patch: {
+    name?: string;
+    section?: string;
+    classId?: string;
+    status?: string;
+    parentName?: string;
+    phone?: string;
+    email?: string;
+  },
+): Promise<StudentListItem> {
+  return request<StudentListItem>(
+    `/api/principal/students/${encodeURIComponent(studentId)}`,
+    token,
+    { method: "PATCH", body: JSON.stringify(patch) },
+  );
+}
+
+export async function listPendingEnrollment(
+  token: string,
+): Promise<PendingEnrollment[]> {
+  return request<PendingEnrollment[]>("/api/principal/enrollment/pending", token);
+}
+
+export async function enrollApplication(
+  token: string,
+  applicationDbId: string,
+  payload: { rollNumber?: string; section?: string; classId?: string },
+): Promise<StudentListItem> {
+  return request<StudentListItem>(
+    `/api/principal/enrollment/${encodeURIComponent(applicationDbId)}`,
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export async function getAttendanceOverview(
+  token: string,
+  date?: string,
+): Promise<AttendanceOverview> {
+  const suffix = date ? `?date=${encodeURIComponent(date)}` : "";
+  return request<AttendanceOverview>(`/api/principal/attendance/overview${suffix}`, token);
+}
+
+export async function getAttendanceRoster(
+  token: string,
+  classId: string,
+  date: string,
+): Promise<AttendanceRoster> {
+  const query = new URLSearchParams({ classId, date });
+  return request<AttendanceRoster>(`/api/principal/attendance/roster?${query.toString()}`, token);
+}
+
+export async function submitClassAttendance(
+  token: string,
+  payload: {
+    classId: string;
+    date: string;
+    records: Array<{ studentId: string; status: AttendanceRosterStatus; remarks?: string }>;
+  },
+): Promise<{ classId: string; date: string; saved: number }> {
+  return request<{ classId: string; date: string; saved: number }>(
+    "/api/principal/attendance",
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
