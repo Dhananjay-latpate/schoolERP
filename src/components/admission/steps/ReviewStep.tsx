@@ -68,7 +68,7 @@ function buildSections(values: AdmissionFormValues): ReviewSection[] {
     {
       title: "Academic & Identification",
       items: [
-        { label: "Applying for Class", value: values.classAdmitted },
+        { label: "Applying for Class", value: values.classLabel ?? values.classAdmitted },
         { label: "Aadhaar Number", value: formatAadhaar(values.adharNumber) },
         { label: "Religion", value: values.religion },
         { label: "Caste", value: values.caste },

@@ -12,6 +12,7 @@ export type AdmissionFormValues = {
   gender: "male" | "female" | "other";
   dateOfBirth: string;
   classAdmitted: string;
+  classLabel?: string;
   fatherName: string;
   motherName: string;
   address: string;

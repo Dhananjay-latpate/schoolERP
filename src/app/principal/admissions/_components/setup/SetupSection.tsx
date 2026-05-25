@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import {
+  commenceAdmissionSession,
   listAdmissionSessions,
   listClasses,
   listFeeStructures,
@@ -174,6 +175,16 @@ export function SetupSection({
         onGoToSessions={() => setSubTab("sessions")}
         onGoToClasses={() => setSubTab("classes")}
         onGoToFees={() => setSubTab("fees")}
+        onCommence={async () => {
+          if (!selectedSession) return;
+          try {
+            await commenceAdmissionSession(token, selectedSession.id);
+            addToast("success", "Admissions are now open.");
+            await handleMutated();
+          } catch (err) {
+            addToast("error", err instanceof Error ? err.message : "Failed to open admissions.");
+          }
+        }}
       />
 
       {/* Sub-tab nav */}

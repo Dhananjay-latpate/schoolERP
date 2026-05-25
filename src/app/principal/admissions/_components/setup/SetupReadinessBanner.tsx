@@ -21,6 +21,7 @@ interface SetupReadinessBannerProps {
   onGoToSessions: () => void;
   onGoToClasses: () => void;
   onGoToFees: () => void;
+  onCommence?: () => Promise<void>;
 }
 
 export function SetupReadinessBanner({
@@ -31,6 +32,7 @@ export function SetupReadinessBanner({
   onGoToSessions,
   onGoToClasses,
   onGoToFees,
+  onCommence,
 }: SetupReadinessBannerProps) {
   // No session at all — the entry point of the whole admission setup.
   if (sessions.length === 0) {
@@ -120,7 +122,7 @@ export function SetupReadinessBanner({
             Admissions are open — parents can apply now.
           </div>
         ) : canCommence ? (
-          <Button onClick={onGoToSessions}>
+          <Button onClick={() => void onCommence?.()}>
             <Rocket size={14} className="mr-1.5" /> Ready — Open Admissions
           </Button>
         ) : null}

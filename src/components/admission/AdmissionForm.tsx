@@ -144,6 +144,7 @@ const schema = z
         "Date of birth must be a real date for a student aged 3 to 25 years",
       ),
     classAdmitted: z.string().trim().min(1, "Please select a class"),
+    classLabel: z.string().optional(),
     fatherName: requiredName("Father's name"),
     motherName: requiredName("Mother's name"),
     address: z
@@ -534,7 +535,9 @@ export function AdmissionForm() {
           ...values,
           status: "submitted",
         });
-        setSubmittedApp(response);
+        // Server only returns {applicationId, status} — merge with form values
+        // so PaymentPanel has name/class fields for the Application Summary card.
+        setSubmittedApp({ ...values, ...response });
 
         if (values.paymentMethod === "custom_payment") {
           // Custom hardship: the server already created the pending custom
@@ -608,7 +611,7 @@ export function AdmissionForm() {
       if (!payload.dateOfBirth)
         delete (payload as Record<string, unknown>).dateOfBirth;
       const response = await submitAdmission(payload);
-      setSubmittedApp(response);
+      setSubmittedApp({ ...values, ...response });
       setDraftNotification({ applicationId: response.applicationId });
     } catch (error) {
       setErrorMessage(humanizeDraftError(error));
@@ -626,7 +629,7 @@ export function AdmissionForm() {
         return <ParentInfoStep register={register} errors={errors} />;
       case 2:
         return (
-          <AcademicStep register={register} errors={errors} watch={watch} />
+          <AcademicStep register={register} errors={errors} watch={watch} setValue={setValue} />
         );
       case 3:
         return <AdditionalInfoStep register={register} errors={errors} />;

@@ -8,7 +8,7 @@ import type { StepProps } from "../types";
 
 const LOAD_TIMEOUT_MS = 12_000;
 
-export function AcademicStep({ register, errors, watch }: StepProps) {
+export function AcademicStep({ register, errors, watch, setValue }: StepProps) {
   const [availableClasses, setAvailableClasses] = useState<PublicClass[]>([]);
   const [classesLoading, setClassesLoading] = useState(true);
   const [classesError, setClassesError] = useState<string | null>(null);
@@ -68,6 +68,21 @@ export function AcademicStep({ register, errors, watch }: StepProps) {
     }
     return unique;
   }, [availableClasses]);
+
+  // Keep classLabel in sync with classAdmitted so ReviewStep can show the
+  // full display label (e.g. "Class 1 — Section A") without changing the
+  // stored value that the backend matches against.
+  useEffect(() => {
+    const matched = dedupedClasses.find(
+      (c) => c.name.toLowerCase() === (currentClass ?? "").toLowerCase(),
+    );
+    if (matched && setValue) {
+      const label = matched.section
+        ? `${matched.name} — Section ${matched.section}`
+        : matched.name;
+      setValue("classLabel", label);
+    }
+  }, [currentClass, dedupedClasses, setValue]);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">

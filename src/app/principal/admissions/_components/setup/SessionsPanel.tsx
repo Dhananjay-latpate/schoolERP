@@ -38,6 +38,7 @@ import {
   computeSessionReadiness,
   ConfirmDialog,
   formatDateTime,
+  inferNextSessionCode,
   Modal,
   SESSION_STATUS_META,
 } from "./setupShared";
@@ -94,7 +95,10 @@ export function SessionsPanel({
   );
 
   useEffect(() => {
-    if (!newCode && codeOptions.length > 0) setNewCode(codeOptions[0]);
+    if (!newCode && codeOptions.length > 0) {
+      const preferred = inferNextSessionCode();
+      setNewCode(codeOptions.includes(preferred) ? preferred : codeOptions[0]);
+    }
   }, [codeOptions, newCode]);
 
   const loadArchived = useCallback(async () => {
@@ -234,6 +238,7 @@ export function SessionsPanel({
             <Button
               variant={isSelected ? "primary" : "secondary"}
               size="sm"
+              disabled={isSelected}
               onClick={() => onSelectSession(session.id)}
             >
               {isSelected ? "Configuring" : "Configure"}
