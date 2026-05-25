@@ -109,7 +109,9 @@ export function SessionsPanel({
     } catch (err) {
       addToast(
         "error",
-        err instanceof Error ? err.message : "Failed to load archived sessions.",
+        err instanceof Error
+          ? err.message
+          : "Failed to load archived sessions.",
       );
     } finally {
       setLoadingArchived(false);
@@ -188,10 +190,7 @@ export function SessionsPanel({
       setDialog(null);
       await refreshAll();
     } catch (err) {
-      addToast(
-        "error",
-        err instanceof Error ? err.message : "Action failed.",
-      );
+      addToast("error", err instanceof Error ? err.message : "Action failed.");
     } finally {
       setBusy(false);
     }
@@ -226,7 +225,10 @@ export function SessionsPanel({
               </h3>
               <Badge variant={meta.variant}>{meta.label}</Badge>
               {session.isActive && (
-                <Badge variant="success" className="inline-flex items-center gap-1">
+                <Badge
+                  variant="success"
+                  className="inline-flex items-center gap-1"
+                >
                   <Star size={11} /> Active
                 </Badge>
               )}
@@ -253,10 +255,7 @@ export function SessionsPanel({
             value={`${readiness.classesWithFees}/${readiness.classCount}`}
           />
           <Stat label="Created" value={formatDateTime(session.createdAt)} />
-          <Stat
-            label="Opened"
-            value={formatDateTime(session.commencedAt)}
-          />
+          <Stat label="Opened" value={formatDateTime(session.commencedAt)} />
         </div>
 
         {session.notes && (
@@ -537,9 +536,8 @@ export function SessionsPanel({
           message={
             <>
               Classes and fee structures from the most recent earlier session
-              will be copied into{" "}
-              <strong>{dialog.session.sessionCode}</strong>. Existing records
-              are kept — nothing is overwritten.
+              will be copied into <strong>{dialog.session.sessionCode}</strong>.
+              Existing records are kept — nothing is overwritten.
             </>
           }
           onCancel={closeDialog}

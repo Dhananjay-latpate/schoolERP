@@ -123,11 +123,7 @@ export function AcademicStep({ register, errors, watch, setValue }: StepProps) {
           </p>
         )}
         {errors.classAdmitted && (
-          <p
-            id="classAdmitted-error"
-            className="form-error"
-            role="alert"
-          >
+          <p id="classAdmitted-error" className="form-error" role="alert">
             {errors.classAdmitted.message}
           </p>
         )}

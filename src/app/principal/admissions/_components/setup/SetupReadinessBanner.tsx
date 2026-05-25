@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  AlertTriangle,
-  ArrowRight,
-  CheckCircle2,
-  Rocket,
-} from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Rocket } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -172,8 +167,7 @@ export function SetupReadinessBanner({
             <>
               <span>
                 {classesMissingFees.length} class(es) still need a fee
-                structure:
-                {" "}
+                structure:{" "}
                 {classesMissingFees
                   .map((c) => (c.section ? `${c.name}-${c.section}` : c.name))
                   .join(", ")}

@@ -125,27 +125,26 @@ export function SetupSection({
   }, [onRefreshDashboard]);
 
   const tabs = useMemo(
-    () =>
-      [
-        {
-          id: "sessions" as const,
-          label: "Sessions",
-          icon: CalendarRange,
-          count: sessions.length,
-        },
-        {
-          id: "classes" as const,
-          label: "Classes",
-          icon: GraduationCap,
-          count: readiness.classCount,
-        },
-        {
-          id: "fees" as const,
-          label: "Fees",
-          icon: IndianRupee,
-          count: readiness.classesWithFees,
-        },
-      ],
+    () => [
+      {
+        id: "sessions" as const,
+        label: "Sessions",
+        icon: CalendarRange,
+        count: sessions.length,
+      },
+      {
+        id: "classes" as const,
+        label: "Classes",
+        icon: GraduationCap,
+        count: readiness.classCount,
+      },
+      {
+        id: "fees" as const,
+        label: "Fees",
+        icon: IndianRupee,
+        count: readiness.classesWithFees,
+      },
+    ],
     [sessions.length, readiness.classCount, readiness.classesWithFees],
   );
 
@@ -182,7 +181,10 @@ export function SetupSection({
             addToast("success", "Admissions are now open.");
             await handleMutated();
           } catch (err) {
-            addToast("error", err instanceof Error ? err.message : "Failed to open admissions.");
+            addToast(
+              "error",
+              err instanceof Error ? err.message : "Failed to open admissions.",
+            );
           }
         }}
       />
