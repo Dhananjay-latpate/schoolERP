@@ -144,6 +144,7 @@ const schema = z
         "Date of birth must be a real date for a student aged 3 to 25 years",
       ),
     classAdmitted: z.string().trim().min(1, "Please select a class"),
+    classLabel: z.string().optional(),
     fatherName: requiredName("Father's name"),
     motherName: requiredName("Mother's name"),
     address: z
@@ -174,10 +175,9 @@ const schema = z
       .optional()
       .default(""),
     motherTongue: optionalText(40, "Mother tongue"),
-    paymentMethod: z.enum(
-      ["full_payment", "installment", "custom_payment"],
-      { errorMap: () => ({ message: "Please choose a payment method" }) },
-    ),
+    paymentMethod: z.enum(["full_payment", "installment", "custom_payment"], {
+      errorMap: () => ({ message: "Please choose a payment method" }),
+    }),
     customPaymentAmount: z
       .number({ invalid_type_error: "Enter a valid amount" })
       .positive("Amount must be greater than zero")
@@ -251,7 +251,12 @@ const STEP_FIELDS: Record<number, Array<keyof AdmissionFormValues>> = {
   3: ["adharNumber"],
   4: [],
   5: [],
-  6: ["paymentMethod", "installmentOptionId", "customPaymentAmount", "customPaymentReason"],
+  6: [
+    "paymentMethod",
+    "installmentOptionId",
+    "customPaymentAmount",
+    "customPaymentReason",
+  ],
 };
 
 const FIELD_TO_STEP: Partial<Record<keyof AdmissionFormValues, number>> = {
@@ -534,7 +539,9 @@ export function AdmissionForm() {
           ...values,
           status: "submitted",
         });
-        setSubmittedApp(response);
+        // Server only returns {applicationId, status} — merge with form values
+        // so PaymentPanel has name/class fields for the Application Summary card.
+        setSubmittedApp({ ...values, ...response });
 
         if (values.paymentMethod === "custom_payment") {
           // Custom hardship: the server already created the pending custom
@@ -608,7 +615,7 @@ export function AdmissionForm() {
       if (!payload.dateOfBirth)
         delete (payload as Record<string, unknown>).dateOfBirth;
       const response = await submitAdmission(payload);
-      setSubmittedApp(response);
+      setSubmittedApp({ ...values, ...response });
       setDraftNotification({ applicationId: response.applicationId });
     } catch (error) {
       setErrorMessage(humanizeDraftError(error));
@@ -626,7 +633,12 @@ export function AdmissionForm() {
         return <ParentInfoStep register={register} errors={errors} />;
       case 2:
         return (
-          <AcademicStep register={register} errors={errors} watch={watch} />
+          <AcademicStep
+            register={register}
+            errors={errors}
+            watch={watch}
+            setValue={setValue}
+          />
         );
       case 3:
         return <AdditionalInfoStep register={register} errors={errors} />;
@@ -730,10 +742,7 @@ export function AdmissionForm() {
                       role="status"
                       aria-live="polite"
                     >
-                      <CheckCircle2
-                        size={18}
-                        className="mt-0.5 shrink-0"
-                      />
+                      <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold">
                           Draft saved successfully
@@ -774,10 +783,7 @@ export function AdmissionForm() {
                       role="alert"
                       aria-live="assertive"
                     >
-                      <AlertCircle
-                        size={18}
-                        className="mt-0.5 shrink-0"
-                      />
+                      <AlertCircle size={18} className="mt-0.5 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold">
                           Something went wrong

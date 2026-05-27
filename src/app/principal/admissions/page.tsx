@@ -18,7 +18,7 @@ import { Sidebar } from "./_components/Sidebar";
 import { Header } from "./_components/Header";
 import { PipelineSection } from "./_components/pipeline/PipelineSection";
 import { CustomPlansSection } from "./_components/custom-plans/CustomPlansSection";
-import { SettingsSection } from "./_components/settings/SettingsSection";
+import { SetupSection } from "./_components/setup/SetupSection";
 import { AuditSection } from "./_components/audit/AuditSection";
 import {
   type AuditLogEntry,
@@ -32,7 +32,7 @@ import { BarChart3, ClipboardCheck, Files, Settings2 } from "lucide-react";
 const VALID_SECTIONS: SectionId[] = [
   "pipeline",
   "custom_plans",
-  "settings",
+  "setup",
   "audit",
 ];
 
@@ -133,7 +133,7 @@ function PrincipalAdmissionsDashboard() {
   const navItems = [
     { id: "pipeline" as const, label: "Pipeline", icon: Files, badge: stats.pendingReview + stats.underReview },
     { id: "custom_plans" as const, label: "Custom Plans", icon: BarChart3, badge: pendingCustomPlansCount },
-    { id: "settings" as const, label: "Setup", icon: Settings2, badge: 0 },
+    { id: "setup" as const, label: "Setup", icon: Settings2, badge: 0 },
     { id: "audit" as const, label: "Audit", icon: ClipboardCheck, badge: auditLogs.length },
   ];
 
@@ -194,8 +194,8 @@ function PrincipalAdmissionsDashboard() {
               />
             )}
 
-            {activeSection === "settings" && (
-              <SettingsSection
+            {activeSection === "setup" && (
+              <SetupSection
                 token={token}
                 refreshSignal={refreshSignal}
                 addToast={addToast}

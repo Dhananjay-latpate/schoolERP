@@ -49,7 +49,10 @@ function buildSections(values: AdmissionFormValues): ReviewSection[] {
       title: "Student Information",
       items: [
         { label: "Full Name", value: fullName },
-        { label: "Gender", value: GENDER_LABELS[values.gender] ?? values.gender },
+        {
+          label: "Gender",
+          value: GENDER_LABELS[values.gender] ?? values.gender,
+        },
         { label: "Date of Birth", value: formatDate(values.dateOfBirth) },
         { label: "Place of Birth", value: values.placeOfBirth },
         { label: "Nationality", value: values.nationality },
@@ -68,7 +71,10 @@ function buildSections(values: AdmissionFormValues): ReviewSection[] {
     {
       title: "Academic & Identification",
       items: [
-        { label: "Applying for Class", value: values.classAdmitted },
+        {
+          label: "Applying for Class",
+          value: values.classLabel ?? values.classAdmitted,
+        },
         { label: "Aadhaar Number", value: formatAadhaar(values.adharNumber) },
         { label: "Religion", value: values.religion },
         { label: "Caste", value: values.caste },
@@ -81,7 +87,7 @@ function buildSections(values: AdmissionFormValues): ReviewSection[] {
         {
           label: "Payment Method",
           value: values.paymentMethod
-            ? PAYMENT_LABELS[values.paymentMethod] ?? values.paymentMethod
+            ? (PAYMENT_LABELS[values.paymentMethod] ?? values.paymentMethod)
             : undefined,
         },
         ...(values.paymentMethod === "custom_payment"

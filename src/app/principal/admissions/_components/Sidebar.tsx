@@ -28,7 +28,7 @@ export function Sidebar({
   const navItems = [
     { id: "pipeline" as const, label: "Pipeline", icon: Files, badge: pipelineBadge },
     { id: "custom_plans" as const, label: "Custom Plans", icon: BarChart3, badge: pendingCustomPlansCount },
-    { id: "settings" as const, label: "Setup", icon: Settings2, badge: 0 },
+    { id: "setup" as const, label: "Setup", icon: Settings2, badge: 0 },
     { id: "audit" as const, label: "Audit", icon: ClipboardCheck, badge: auditLogsCount },
   ];
 

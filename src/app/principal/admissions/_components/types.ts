@@ -33,7 +33,7 @@ export type PipelineStage =
   | "rejected";
 
 export const STAGE_MATCHES: Record<PipelineStage, string[]> = {
-  payment_completed: ["payment_completed", "submitted"],
+  payment_completed: ["payment_completed", "payment_pending", "submitted"],
   under_review: ["under_review"],
   on_hold: ["on_hold"],
   needs_correction: ["needs_correction"],
@@ -83,7 +83,7 @@ export const STAGE_TRANSITIONS: Record<
 };
 
 export type ToastItem = { id: number; type: "success" | "error"; message: string };
-export type SectionId = "pipeline" | "custom_plans" | "settings" | "audit";
+export type SectionId = "pipeline" | "custom_plans" | "setup" | "audit";
 export type BulkActionType = "under_review" | "on_hold" | "needs_correction";
 export type BulkActionResult = { ok: number; failed: number };
 
@@ -98,12 +98,6 @@ export type AuditLogEntry = {
 };
 
 export type CustomPlanDraftMap = Record<string, EditableCustomInstallment[]>;
-
-export type SettingsInstallmentDraft = {
-  name: string;
-  dueOffsetDays: number;
-  percentage: number;
-};
 
 export type TransitionModalData = {
   app: PrincipalApplication;

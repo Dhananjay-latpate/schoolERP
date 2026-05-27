@@ -4,5 +4,5 @@ import { redirect } from "next/navigation";
 // Setup section already selected. Without this, the dynamic [id] route would
 // match "setup" as an applicationId and show "Application not found".
 export default function PrincipalAdmissionsSetupRedirect() {
-  redirect("/principal/admissions?section=settings");
+  redirect("/principal/admissions?section=setup");
 }

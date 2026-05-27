@@ -23,7 +23,7 @@ export function formatDateInput(date: Date): string {
 }
 
 export function isReviewableStatus(status: string): boolean {
-  return ["payment_completed", "under_review", "on_hold", "needs_correction"].includes(status);
+  return ["payment_pending", "payment_completed", "under_review", "on_hold", "needs_correction"].includes(status);
 }
 
 export function csvEscape(value: string | number | null | undefined): string {
