@@ -124,6 +124,7 @@ export function PaymentPanel({
       description: `Admission Fee — ${application.classAdmitted ?? ""} (${application.applicationId})`,
       prefill: {
         name: `${application.firstName} ${application.lastName}`,
+        contact: application.emergencyContact ?? "",
       },
       theme: { color: "#0071e3" },
       handler: async (response) => {
