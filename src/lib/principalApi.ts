@@ -2665,3 +2665,288 @@ export async function bulkCarryForwardArrears(
   }
   return parsed.data;
 }
+
+// ─── Students ─────────────────────────────────────────────────────────────────
+
+export type StudentClass = {
+  id: string;
+  name: string;
+  section: string | null;
+  academicYear?: string;
+};
+
+export type StudentContactInfo = {
+  parentName?: string | null;
+  phone?: string | null;
+  email?: string | null;
+};
+
+// Summary row returned by the directory list endpoint.
+export type StudentListItem = {
+  id: string;
+  rollNumber: string;
+  name: string;
+  section: string | null;
+  status: string;
+  classId: string | null;
+  class: StudentClass | null;
+  contactInfo: StudentContactInfo | null;
+};
+
+export type StudentListResponse = {
+  items: StudentListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+// Lightweight fee-account view embedded in the student detail payload.
+export type StudentFeeAccountSummary = {
+  id: string;
+  academicYear?: string | null;
+  status?: string | null;
+  totalCharged: number; // RUPEES
+  totalConcession?: number; // RUPEES
+  totalPaid: number; // RUPEES
+  totalDue: number; // RUPEES
+};
+
+// One marked attendance day embedded in the student detail payload.
+export type StudentAttendanceEntry = {
+  id: string;
+  date: string;
+  status: AttendanceStatus;
+  remarks?: string | null;
+  className?: string | null;
+};
+
+// Full student record returned by GET /api/students/:id.
+export type Student = {
+  id: string;
+  rollNumber: string;
+  name: string;
+  section: string | null;
+  status: string;
+  classId: string | null;
+  class: StudentClass | null;
+  contactInfo: StudentContactInfo | null;
+  feeAccounts?: StudentFeeAccountSummary[];
+  recentAttendance?: StudentAttendanceEntry[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateStudentInput = {
+  rollNumber: string;
+  name: string;
+  section?: string;
+  classId?: string;
+  contactInfo: {
+    parentName: string;
+    phone: string;
+    email?: string;
+  };
+};
+
+export type UpdateStudentInput = {
+  name?: string;
+  section?: string;
+  classId?: string;
+  contactInfo?: {
+    parentName?: string;
+    phone?: string;
+    email?: string;
+  };
+};
+
+export async function getStudents(
+  token: string,
+  params?: {
+    search?: string;
+    classId?: string;
+    section?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+  },
+): Promise<StudentListResponse> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.classId) query.set("classId", params.classId);
+  if (params?.section) query.set("section", params.section);
+  if (params?.status) query.set("status", params.status);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.pageSize) query.set("pageSize", String(params.pageSize));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<StudentListResponse>(`/api/students${suffix}`, token);
+}
+
+export async function getStudent(token: string, id: string): Promise<Student> {
+  return request<Student>(`/api/students/${encodeURIComponent(id)}`, token);
+}
+
+export async function createStudent(
+  token: string,
+  body: CreateStudentInput,
+): Promise<Student> {
+  return request<Student>("/api/students", token, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateStudent(
+  token: string,
+  id: string,
+  body: UpdateStudentInput,
+): Promise<Student> {
+  return request<Student>(`/api/students/${encodeURIComponent(id)}`, token, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteStudent(token: string, id: string): Promise<void> {
+  await request<unknown>(`/api/students/${encodeURIComponent(id)}`, token, {
+    method: "DELETE",
+  });
+}
+
+export async function enrollStudent(
+  token: string,
+  applicationId: string,
+): Promise<Student> {
+  return request<Student>(
+    `/api/students/enroll/${encodeURIComponent(applicationId)}`,
+    token,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
+// ─── Enrollment (approved admission → enrolled student) ───────────────────────
+
+export type PendingEnrollment = {
+  id: string;
+  applicationId: string;
+  studentName: string;
+  grNumber: string | null;
+  admissionConfirmed: boolean;
+  admissionYear: string;
+  classId: string | null;
+  className: string | null;
+  classSection: string | null;
+  gender: string;
+  dateOfBirth: string;
+  fatherName: string;
+  emergencyContact: string;
+  suggestedRollNumber: string | null;
+  lastUpdatedAt: string;
+};
+
+export async function listPendingEnrollment(
+  token: string,
+): Promise<PendingEnrollment[]> {
+  return request<PendingEnrollment[]>("/api/principal/enrollment/pending", token);
+}
+
+export async function enrollApplication(
+  token: string,
+  applicationDbId: string,
+  payload: { rollNumber?: string; section?: string; classId?: string },
+): Promise<Student> {
+  return request<Student>(
+    `/api/principal/enrollment/${encodeURIComponent(applicationDbId)}`,
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+// Lowercase values that match the take-grid UI. Backend also accepts
+// half_day / on_leave for fuller records.
+export type AttendanceStatus =
+  | "present"
+  | "absent"
+  | "late"
+  | "excused"
+  | "half_day"
+  | "on_leave";
+
+// One class row in the daily overview.
+export type AttendanceOverviewRow = {
+  classId: string;
+  className: string;
+  section: string | null;
+  totalStudents: number;
+  present: number;
+  absent: number;
+  late: number;
+  half_day: number;
+  excused: number;
+  on_leave: number;
+  markedCount: number;
+  pending: number;
+  marked: boolean;
+};
+
+// One student row in a class roster (status null when not yet marked).
+export type RosterRow = {
+  studentId: string;
+  rollNumber: string;
+  name: string;
+  parentPhone: string | null;
+  status: AttendanceStatus | null;
+};
+
+export type BulkAttendanceRecord = {
+  studentId: string;
+  status: AttendanceStatus;
+  remarks?: string;
+};
+
+export type BulkAttendancePayload = {
+  date: string; // ISO date
+  records: BulkAttendanceRecord[];
+};
+
+export async function getAttendanceOverview(
+  token: string,
+  date: string,
+): Promise<AttendanceOverviewRow[]> {
+  return request<AttendanceOverviewRow[]>(
+    `/api/attendance/overview?date=${encodeURIComponent(date)}`,
+    token,
+  );
+}
+
+export async function getAttendanceRoster(
+  token: string,
+  classId: string,
+  date: string,
+): Promise<RosterRow[]> {
+  return request<RosterRow[]>(
+    `/api/attendance/roster/${encodeURIComponent(classId)}?date=${encodeURIComponent(date)}`,
+    token,
+  );
+}
+
+export async function bulkMarkAttendance(
+  token: string,
+  payload: BulkAttendancePayload,
+): Promise<unknown> {
+  return request<unknown>("/api/attendance/bulk", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getStudentAttendance(
+  token: string,
+  studentId: string,
+): Promise<StudentAttendanceEntry[]> {
+  return request<StudentAttendanceEntry[]>(
+    `/api/attendance/student/${encodeURIComponent(studentId)}`,
+    token,
+  );
+}
